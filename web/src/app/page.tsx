@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Metadata } from "next";
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Star, Zap, Shield, Building, FileText, Users, Calculator, Car, Bike } from "lucide-react"
+import logoCrediexpress from "../../public/crediexpress-logo.png";
 
 export const metadata: Metadata = {
   title: 'Créditos Prendarios Inteligentes | Crediexpress Auto',
@@ -41,11 +42,12 @@ export default function Home() {
         <div className="w-full px-1 py-4">
           <div className="flex items-center justify-between">
             <Image
-              src="/crediexpress-logo.png"
+              src={logoCrediexpress}
               alt="Crediexpress Automotor"
               width={400}
               height={98}
-              className="h-auto object-contain max-h-14"
+              priority
+              className="h-auto w-auto object-contain max-h-14"
             />
             <nav className="hidden md:flex items-center space-x-6" role="navigation" aria-label="Navegación principal">
               <a href="#beneficios" className="text-gray-600 hover:text-brand-primary-600 font-medium transition-colors">Beneficios</a>
