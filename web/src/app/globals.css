@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+:root {
+  /* Design tokens base (light) */
+  --color-bg: #ffffff;
+  --color-surface: #f5f7fa;
+  --color-text: #333333;
+
+  --brand-primary-600: #2e3192;
+  --brand-primary-700: #1f2266;
+  /* Escala extendida para gradientes profundos */
+  --brand-primary-800: #16184b;
+  --brand-accent-500: #ffc20e;
+
+  --state-success-500: #00a859;
+  --state-warning-500: #ff6b35;
+  --state-error-500: #e53935;
+
+  --border-200: #e6eaf0;
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+
+  --radius-8: 8px;
+  --radius-12: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0b1220;
+    --color-surface: #111827;
+    --color-text: #e5e7eb;
+    --border-200: #273248;
+  }
+}
+
+@theme {
+  /* Colores principales */
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-text: var(--color-text);
+  
+  /* Compatibilidad con clases existentes */
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+
+  /* Marca y estados - usando nombres que Tailwind reconoce */
+  --color-brand-primary-600: #2e3192;
+  --color-brand-primary-700: #1f2266;
+  --color-brand-primary-800: #16184b;
+  --color-brand-accent-500: #ffc20e;
+
+  --color-state-success-500: var(--state-success-500);
+  --color-state-warning-500: var(--state-warning-500);
+  --color-state-error-500: var(--state-error-500);
+
+  /* Bordes, radios, sombras */
+  --color-border-200: var(--border-200);
+  --radius-md: var(--radius-8);
+  --radius-lg: var(--radius-12);
+  --shadow-card: var(--shadow);
+
+  /* Semántica shadcn/ui para compatibilidad */
+  --color-primary: #2e3192;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-surface);
+  --color-secondary-foreground: var(--color-text);
+  --color-muted: var(--color-surface);
+  --color-muted-foreground: #6b7280;
+  --color-accent: #ffc20e;
+  --color-accent-foreground: #1f2937;
+  --color-destructive: var(--state-error-500);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--border-200);
+  --color-input: var(--border-200);
+  --color-ring: #2e3192;
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+
+  /* Radio base utilizado por shadcn/ui */
+  --radius: var(--radius-8);
+
+  /* Tipografía: Inter y Mono via next/font (variables definidas en layout) */
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-mono);
+
+  /* Espaciado base (puedes extender según Guia UI-UX) */
+  --spacing-1: 0.25rem;  /* 4px */
+  --spacing-2: 0.5rem;   /* 8px */
+  --spacing-3: 0.75rem;  /* 12px */
+  --spacing-4: 1rem;     /* 16px */
+  --spacing-6: 1.5rem;   /* 24px */
+  --spacing-8: 2rem;     /* 32px */
+  --spacing-12: 3rem;    /* 48px */
+  --spacing-16: 4rem;    /* 64px */
+}
+
+/* Base */
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+/* Accesibilidad */
+:focus-visible {
+  outline: 2px solid var(--color-brand-accent-500);
+  outline-offset: 2px;
+}

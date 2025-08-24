@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums basados en columnas ENUM de MySQL
+enum DealerStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum UserRole {
+  ADMIN
+  DEALER
+}
+
+enum UserStatus {
+  PENDING
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+// Modelo dealers
+model Dealer {
+  id                 Int           @id @default(autoincrement())
+  publicId           String        @unique @db.Char(36)
+  legalName          String?       @db.VarChar(255)
+  tradeName          String        @db.VarChar(255)
+  cuit               String?       @unique @db.VarChar(20)
+  email              String?       @db.VarChar(255)
+  phone              String?       @db.VarChar(50)
+  addressStreet      String?       @db.VarChar(255)
+  addressCity        String?       @db.VarChar(120)
+  addressProvince    String?       @db.VarChar(120)
+  postalCode         String?       @db.VarChar(20)
+  status             DealerStatus  @default(PENDING_APPROVAL)
+  approvedAt         DateTime?
+  approvedByUserId   Int?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  deletedAt          DateTime?
+
+  // Relaciones
+  approvedByUser     User?         @relation("DealerApprovedByUser", fields: [approvedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  users              User[]
+
+  @@index([status], name: "idx_dealers_status")
+  @@index([approvedByUserId], name: "idx_dealers_approvedByUserId")
+  @@map("dealers")
+}
+
+// Modelo users
+model User {
+  id                    Int                   @id @default(autoincrement())
+  publicId              String                @unique @db.Char(36)
+  email                 String                @unique @db.VarChar(255)
+  firstName             String                @db.VarChar(120)
+  lastName              String                @db.VarChar(120)
+  phone                 String?               @db.VarChar(50)
+  passwordHash          String?               @db.VarChar(255)
+  role                  UserRole              @default(DEALER)
+  status                UserStatus            @default(PENDING)
+  dealerId              Int?
+  lastLoginAt           DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  deletedAt             DateTime?
+
+  // Relaciones
+  dealer                Dealer?               @relation(fields: [dealerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  approvedDealers       Dealer[]              @relation("DealerApprovedByUser")
+  refreshTokens         RefreshToken[]
+  passwordResetTokens   PasswordResetToken[]
+  auditLogs             AuditLog[]            @relation("AuditActor")
+
+  @@index([dealerId], name: "idx_users_dealerId")
+  @@index([status], name: "idx_users_status")
+  @@map("users")
+}
+
+// Modelo audit_log
+model AuditLog {
+  id           Int       @id @default(autoincrement())
+  actorUserId  Int?
+  action       String    @db.VarChar(100)
+  entityType   String    @db.VarChar(100)
+  entityId     String    @db.VarChar(100)
+  metadata     Json?
+  ip           String?   @db.VarChar(45)
+  createdAt    DateTime  @default(now())
+
+  // Relaciones
+  actorUser    User?     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([entityType, entityId], name: "idx_audit_entity")
+  @@index([actorUserId], name: "idx_audit_actor")
+  @@index([createdAt], name: "idx_audit_createdAt")
+  @@map("audit_log")
+}
+
+// Modelo refresh_tokens
+model RefreshToken {
+  id                 Int             @id @default(autoincrement())
+  userId             Int
+  tokenHash          String          @unique @db.VarChar(128)
+  expiresAt          DateTime
+  revokedAt          DateTime?
+  replacedByTokenId  Int?
+  userAgent          String?         @db.VarChar(255)
+  ip                 String?         @db.VarChar(45)
+  createdAt          DateTime        @default(now())
+
+  // Relaciones
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  replacedBy         RefreshToken?   @relation("RefreshReplacement", fields: [replacedByTokenId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  replaces           RefreshToken[]  @relation("RefreshReplacement")
+
+  @@index([userId, revokedAt], name: "idx_refresh_user_revoked")
+  @@index([expiresAt], name: "idx_refresh_expiresAt")
+  @@map("refresh_tokens")
+}
+
+// Modelo password_reset_tokens
+model PasswordResetToken {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  tokenHash   String    @unique @db.VarChar(128)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  // Relaciones
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId], name: "idx_prt_user")
+  @@index([expiresAt], name: "idx_prt_expiresAt")
+  @@map("password_reset_tokens")
+}
+ 
