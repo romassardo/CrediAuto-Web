@@ -1,16 +1,15 @@
 {
-  "name": "web",
-  "version": "0.1.0",
+  "name": "crediauto-monorepo",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint",
-    "postinstall": "prisma generate",
-    "prisma:generate": "prisma generate",
-    "prisma:pull": "prisma db pull",
-    "prisma:studio": "prisma studio"
+    "dev": "npm run dev --workspace=web",
+    "build": "npm run build --workspace=web",
+    "start": "npm run start --workspace=web",
+    "lint": "npm run lint --workspace=web"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
@@ -35,6 +34,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.0",
+    "prettier": "^3.2.5",
     "prisma": "^6.14.0",
     "tailwindcss": "^4",
     "tailwindcss-animate": "^1.0.7",
