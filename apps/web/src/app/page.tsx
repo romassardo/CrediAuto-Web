@@ -734,7 +734,7 @@ export default function Home() {
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full overflow-hidden shadow-md">
                               <Image
-                                src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
+                                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
                                 alt="María González"
                                 width={48}
                                 height={48}
