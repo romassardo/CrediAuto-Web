@@ -12,5 +12,4 @@
     "prisma:pull": "prisma db pull",
     "prisma:studio": "prisma studio"
   }
-
 }
