@@ -5,6 +5,7 @@ import { CheckCircle, Star, Zap, Shield, Building, FileText, Users, Calculator, 
 import logoCrediexpress from "../../public/crediexpress-logo.png";
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://crediexpressauto.vercel.app'),
   title: 'Créditos Prendarios Inteligentes | Crediexpress Auto',
   description: 'Financiá tu auto o moto con las mejores condiciones del mercado. Tasas competitivas, aprobación rápida y transparencia total. +500 concesionarios aliados.',
   keywords: 'créditos prendarios, financiación auto, préstamos moto, créditos vehiculares, concesionarios Argentina',
