@@ -1,0 +1,30 @@
+2025-08-24 20:45:29.608 [info] Extension host with pid 39852 started
+2025-08-24 20:45:29.623 [info] ExtensionService#_doActivateExtension vscode.github-authentication, startup: false, activationEvent: 'onAuthenticationRequest:github'
+2025-08-24 20:45:29.650 [info] ExtensionService#_doActivateExtension vscode.git-base, startup: true, activationEvent: '*', root cause: vscode.git
+2025-08-24 20:45:29.656 [info] ExtensionService#_doActivateExtension vscode.git, startup: true, activationEvent: '*'
+2025-08-24 20:45:29.681 [info] ExtensionService#_doActivateExtension vscode.github, startup: true, activationEvent: '*'
+2025-08-24 20:45:29.741 [info] Eager extensions activated
+2025-08-24 20:45:29.743 [info] ExtensionService#_doActivateExtension vscode.debug-auto-launch, startup: false, activationEvent: 'onStartupFinished'
+2025-08-24 20:45:29.752 [info] ExtensionService#_doActivateExtension vscode.merge-conflict, startup: false, activationEvent: 'onStartupFinished'
+2025-08-24 20:45:37.343 [info] Extension host terminating: renderer closed the MessagePort
+2025-08-24 20:45:37.350 [info] Extension host with pid 39852 exiting with code 0
+2025-08-24 20:45:37.931 [info] Extension host with pid 39544 started
+2025-08-24 20:45:37.945 [info] ExtensionService#_doActivateExtension vscode.github-authentication, startup: false, activationEvent: 'onAuthenticationRequest:github'
+2025-08-24 20:45:37.969 [info] ExtensionService#_doActivateExtension vscode.git-base, startup: true, activationEvent: '*', root cause: vscode.git
+2025-08-24 20:45:37.973 [info] ExtensionService#_doActivateExtension vscode.git, startup: true, activationEvent: '*'
+2025-08-24 20:45:37.995 [info] ExtensionService#_doActivateExtension vscode.github, startup: true, activationEvent: '*'
+2025-08-24 20:45:38.053 [info] Eager extensions activated
+2025-08-24 20:45:38.056 [info] ExtensionService#_doActivateExtension vscode.debug-auto-launch, startup: false, activationEvent: 'onStartupFinished'
+2025-08-24 20:45:38.058 [info] ExtensionService#_doActivateExtension vscode.merge-conflict, startup: false, activationEvent: 'onStartupFinished'
+2025-08-24 20:45:38.069 [info] ExtensionService#_doActivateExtension google.geminicodeassist, startup: false, activationEvent: 'onStartupFinished'
+2025-08-24 20:45:58.147 [info] Extension host terminating: renderer closed the MessagePort
+2025-08-24 20:45:58.161 [error] ProxyResolver#resolveProxy DIRECT Canceled: Canceled
+	at new DM (file:///c:/Users/RodrigoMassardo/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:29:112213)
+	at $5.U (file:///c:/Users/RodrigoMassardo/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:29:116823)
+	at s.<computed>.n.charCodeAt.s.<computed> (file:///c:/Users/RodrigoMassardo/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:29:114317)
+	at Ob.resolveProxy (file:///c:/Users/RodrigoMassardo/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:117:70320)
+	at Object.resolveProxy (file:///c:/Users/RodrigoMassardo/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:173:19581)
+	at useProxySettings (c:\Users\RodrigoMassardo\AppData\Local\Programs\Microsoft VS Code\resources\app\node_modules\@vscode\proxy-agent\out\index.js:182:16)
+	at c:\Users\RodrigoMassardo\AppData\Local\Programs\Microsoft VS Code\resources\app\node_modules\@vscode\proxy-agent\out\index.js:119:13
+	at c:\Users\RodrigoMassardo\AppData\Local\Programs\Microsoft VS Code\resources\app\node_modules\@vscode\proxy-agent\out\index.js:707:13 
+2025-08-24 20:45:58.164 [info] Extension host with pid 39544 exiting with code 0

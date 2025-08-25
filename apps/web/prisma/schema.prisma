@@ -18,6 +18,7 @@ enum DealerStatus {
 enum UserRole {
   ADMIN
   DEALER
+  EJECUTIVO_CUENTAS
 }
 
 enum UserStatus {

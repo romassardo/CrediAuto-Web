@@ -1,8 +1,9 @@
 import Image from "next/image";
 import { Metadata } from "next";
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Star, Zap, Shield, Building, FileText, Users, Calculator, Car, Bike } from "lucide-react"
+import { CheckCircle, Star, Zap, Shield, Building, FileText, Users, Calculator, Car, Bike, LogIn } from "lucide-react"
 import logoCrediexpress from "../../public/crediexpress-logo.png";
+import { LoginModal } from "@/components/LoginModal";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://crediexpressauto.vercel.app'),
@@ -53,6 +54,12 @@ export default function Home() {
             <nav className="hidden md:flex items-center space-x-6" role="navigation" aria-label="Navegación principal">
               <a href="#beneficios" className="text-gray-600 hover:text-brand-primary-600 font-medium transition-colors">Beneficios</a>
               <a href="#como-acceder" className="text-gray-600 hover:text-brand-primary-600 font-medium transition-colors">Cómo funciona</a>
+              <LoginModal>
+                <Button variant="outline" className="border-2 border-brand-primary-600 text-brand-primary-600 hover:bg-brand-primary-600 hover:text-white transition-all">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Portal Concesionarios
+                </Button>
+              </LoginModal>
               <Button className="bg-brand-primary-600 hover:bg-brand-primary-700 transition-colors">Contacto</Button>
             </nav>
           </div>

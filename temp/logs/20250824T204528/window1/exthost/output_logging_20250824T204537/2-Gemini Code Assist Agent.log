@@ -1,0 +1,6 @@
+Starting background process...
+(node:39464) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `Code --trace-deprecation ...` to show where the warning was created)
+[INFO] 2025-08-24 20:45:43.858 PM -- [CoreAgent] Agent Server started on http://localhost:59313
+[INFO] 2025-08-24 20:45:43.859 PM -- [CoreAgent] Agent Card: http://localhost:59313/.well-known/agent.json
+[INFO] 2025-08-24 20:45:43.859 PM -- [CoreAgent] Press Ctrl+C to stop the server
