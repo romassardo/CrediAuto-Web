@@ -17,7 +17,7 @@ export default async function middleware(req: NextRequest) {
   const isPortalRoute = portalRoutes.some(route => path.startsWith(route))
 
   // Obtener token de las cookies
-  const token = req.cookies.get('auth-token')?.value
+  const token = req.cookies.get('access_token')?.value
 
   // Si no hay token y es ruta protegida, redirigir a login
   if (isProtectedRoute && !token) {
@@ -31,7 +31,7 @@ export default async function middleware(req: NextRequest) {
       const { payload } = await jwtVerify(token, secret)
       
       const userRole = payload.role as string
-      const userId = payload.userId as string
+      const userId = payload.userId as number
 
       // Verificar permisos específicos por ruta
       if (isAdminRoute && userRole !== 'ADMIN') {
@@ -53,7 +53,7 @@ export default async function middleware(req: NextRequest) {
 
       // Agregar headers con información del usuario para las páginas
       const response = NextResponse.next()
-      response.headers.set('x-user-id', userId)
+      response.headers.set('x-user-id', userId.toString())
       response.headers.set('x-user-role', userRole)
       
       return response
@@ -62,7 +62,7 @@ export default async function middleware(req: NextRequest) {
       // Token inválido, eliminar cookie y redirigir
       console.error('Invalid token:', error)
       const response = NextResponse.redirect(new URL('/', req.url))
-      response.cookies.delete('auth-token')
+      response.cookies.delete('access_token')
       return response
     }
   }

@@ -219,12 +219,12 @@ export async function POST(request: NextRequest) {
       path: '/'
     };
 
-    response.cookies.set('accessToken', accessToken, {
+    response.cookies.set('access_token', accessToken, {
       ...cookieOptions,
       maxAge: 15 * 60 // 15 minutos
     });
 
-    response.cookies.set('refreshToken', refreshToken, {
+    response.cookies.set('refresh_token', refreshToken, {
       ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 // 7 días
     });

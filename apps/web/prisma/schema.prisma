@@ -28,6 +28,14 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum LoanApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 // Modelo dealers
 model Dealer {
   id                 Int           @id @default(autoincrement())
@@ -51,6 +59,7 @@ model Dealer {
   // Relaciones
   approvedByUser     User?         @relation("DealerApprovedByUser", fields: [approvedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   users              User[]
+  loanApplications   LoanApplication[]
 
   @@index([status], name: "idx_dealers_status")
   @@index([approvedByUserId], name: "idx_dealers_approvedByUserId")
@@ -80,6 +89,8 @@ model User {
   refreshTokens         RefreshToken[]
   passwordResetTokens   PasswordResetToken[]
   auditLogs             AuditLog[]            @relation("AuditActor")
+  submittedLoanApplications LoanApplication[] @relation("LoanSubmittedBy")
+  reviewedLoanApplications  LoanApplication[] @relation("LoanReviewedBy")
 
   @@index([dealerId], name: "idx_users_dealerId")
   @@index([status], name: "idx_users_status")
@@ -143,5 +154,56 @@ model PasswordResetToken {
   @@index([userId], name: "idx_prt_user")
   @@index([expiresAt], name: "idx_prt_expiresAt")
   @@map("password_reset_tokens")
+}
+
+// Modelo loan_applications
+model LoanApplication {
+  id                    Int                   @id @default(autoincrement())
+  publicId              String                @unique @db.Char(36)
+  
+  // Datos del cliente
+  clientFirstName       String                @db.VarChar(120)
+  clientLastName        String                @db.VarChar(120)
+  clientDni             String                @db.VarChar(20)
+  clientEmail           String                @db.VarChar(255)
+  clientPhone           String                @db.VarChar(50)
+  clientAddress         String?               @db.VarChar(255)
+  clientCity            String?               @db.VarChar(120)
+  clientProvince        String?               @db.VarChar(120)
+  
+  // Parámetros de cálculo (inputs de calculadora)
+  vehiclePrice          Decimal               @db.Decimal(12,2)
+  downPayment           Decimal               @db.Decimal(12,2)
+  loanTerm              Int                   // meses
+  interestRate          Decimal               @db.Decimal(5,4) // ej: 0.1250 = 12.50%
+  
+  // Resultados calculados (outputs de calculadora)
+  loanAmount            Decimal               @db.Decimal(12,2) // monto que recibe
+  monthlyPayment        Decimal               @db.Decimal(10,2) // cuota mensual
+  totalAmount           Decimal               @db.Decimal(12,2) // total a pagar
+  cft                   Decimal               @db.Decimal(5,4)  // CFT calculado
+  
+  // Estado y seguimiento
+  status                LoanApplicationStatus @default(PENDING)
+  submittedAt           DateTime              @default(now())
+  reviewedAt            DateTime?
+  reviewedByUserId      Int?
+  rejectionReason       String?               @db.Text
+  
+  // Relaciones
+  dealerId              Int
+  submittedByUserId     Int
+  reviewedByUser        User?                 @relation("LoanReviewedBy", fields: [reviewedByUserId], references: [id])
+  dealer                Dealer                @relation(fields: [dealerId], references: [id])
+  submittedByUser       User                  @relation("LoanSubmittedBy", fields: [submittedByUserId], references: [id])
+  
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  
+  @@index([dealerId, status], name: "idx_loan_dealer_status")
+  @@index([submittedByUserId], name: "idx_loan_submitted_by")
+  @@index([reviewedByUserId], name: "idx_loan_reviewed_by")
+  @@index([submittedAt], name: "idx_loan_submitted_at")
+  @@map("loan_applications")
 }
  
