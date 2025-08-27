@@ -15,9 +15,10 @@ export default async function middleware(req: NextRequest) {
   const isPublicRoute = publicRoutes.some(route => path === route) || path === '/'
   const isAdminRoute = adminRoutes.some(route => path.startsWith(route))
   const isPortalRoute = portalRoutes.some(route => path.startsWith(route))
+  const isApiRoute = path.startsWith('/api')
 
-  // Obtener token de las cookies
-  const token = req.cookies.get('access_token')?.value
+  // Obtener token de las cookies (probar access_token y refresh_token)
+  const token = req.cookies.get('access_token')?.value || req.cookies.get('refresh_token')?.value
 
   // Si no hay token y es ruta protegida, redirigir a login
   if (isProtectedRoute && !token) {
@@ -33,7 +34,27 @@ export default async function middleware(req: NextRequest) {
       const userRole = payload.role as string
       const userId = payload.userId as number
 
-      // Verificar permisos específicos por ruta
+      // Para API routes, solo verificar autenticación y agregar headers (como request headers)
+      if (isApiRoute) {
+        console.log('🔍 Middleware ejecutándose para API route:', path, { userId, userRole, dealerId: payload.dealerId })
+        const requestHeaders = new Headers(req.headers)
+        requestHeaders.set('x-user-id', userId.toString())
+        requestHeaders.set('x-user-role', userRole)
+
+        // Agregar dealerId si está disponible en el payload
+        if (payload.dealerId) {
+          requestHeaders.set('x-user-dealer-id', payload.dealerId.toString())
+        }
+
+        const response = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        })
+        return response
+      }
+
+      // Verificar permisos específicos por ruta (solo para páginas, no API)
       if (isAdminRoute && userRole !== 'ADMIN') {
         return NextResponse.redirect(new URL('/', req.url))
       }
@@ -51,20 +72,41 @@ export default async function middleware(req: NextRequest) {
         }
       }
 
-      // Agregar headers con información del usuario para las páginas
-      const response = NextResponse.next()
-      response.headers.set('x-user-id', userId.toString())
-      response.headers.set('x-user-role', userRole)
-      
+      // Agregar headers con información del usuario para las páginas (como request headers)
+      const requestHeaders = new Headers(req.headers)
+      requestHeaders.set('x-user-id', userId.toString())
+      requestHeaders.set('x-user-role', userRole)
+
+      if (payload.dealerId) {
+        requestHeaders.set('x-user-dealer-id', payload.dealerId.toString())
+      }
+
+      const response = NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      })
       return response
 
     } catch (error) {
-      // Token inválido, eliminar cookie y redirigir
+      // Token inválido
       console.error('Invalid token:', error)
+      
+      // Para API routes, devolver 401 en lugar de redirigir
+      if (isApiRoute) {
+        return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
+      }
+      
+      // Para páginas, eliminar cookie y redirigir
       const response = NextResponse.redirect(new URL('/', req.url))
       response.cookies.delete('access_token')
       return response
     }
+  }
+
+  // Si no hay token y es API route protegida, devolver 401
+  if (isApiRoute && (path.startsWith('/api/admin') || path.startsWith('/api/loan-applications') || path.startsWith('/api/dealer'))) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
   return NextResponse.next()
@@ -74,12 +116,9 @@ export default async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Ejecutar en todas las rutas excepto:
-     * - api (rutas de API)
-     * - _next/static (archivos estáticos)
-     * - _next/image (optimización de imágenes)
-     * - favicon.ico, sitemap.xml, robots.txt (archivos de metadata)
+     * Ejecutar en todas las rutas incluyendo API routes para agregar headers de usuario
      */
-    '/((?!api|_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt).*)',
+    '/api/:path*'
   ],
 }

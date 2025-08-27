@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { User, Briefcase, Car, Upload, Heart, FileText, CheckCircle, ArrowRight, ArrowLeft, Calculator } from 'lucide-react';
+import FileUpload from '@/components/ui/FileUpload';
 import { type Result } from '@/lib/calculator/loan-calculator';
 
 interface LoanApplicationStepsProps {
   calculationResult?: Result | null;
   calculationData?: any;
   onSubmit: (data: any) => void;
+  isSubmitting?: boolean;
 }
 
 interface FormData {
@@ -46,7 +48,7 @@ interface FormData {
   version: string;
   
   // Documentación
-  documentos: FileList | null;
+  documentos: File[];
 }
 
 const steps = [
@@ -82,9 +84,10 @@ const steps = [
   }
 ];
 
-export default function LoanApplicationSteps({ calculationResult, calculationData, onSubmit }: LoanApplicationStepsProps) {
+export default function LoanApplicationSteps({ calculationResult, calculationData, onSubmit, isSubmitting = false }: LoanApplicationStepsProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const { register, handleSubmit, watch, formState: { errors }, trigger } = useForm<FormData>();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const { register, handleSubmit, watch, formState: { errors }, trigger, getValues } = useForm<FormData>();
   
   const tieneConyugue = watch('tieneConyugue');
   const relacionLaboral = watch('relacionLaboral');
@@ -122,12 +125,20 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
     }
   };
 
-  const onFormSubmit = (data: FormData) => {
-    onSubmit({
-      ...data,
-      calculationResult,
-      calculationData
-    });
+  const handleFinalSubmit = handleSubmit((formData) => {
+    // Guard adicional: si no hay cálculo, simplemente cerrar el modal y no enviar
+    if (!calculationResult) {
+      setShowConfirmation(false);
+      return;
+    }
+    // Llama a onSubmit (que es handleLoanSubmit en el hook) con los datos del formulario.
+    // El hook se encargará de mapear y añadir los datos de cálculo.
+    onSubmit(formData);
+    setShowConfirmation(false);
+  });
+
+  const handleSubmitClick = () => {
+    setShowConfirmation(true);
   };
 
   return (
@@ -240,7 +251,7 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
       )}
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit(onFormSubmit)} className="p-8">
+      <div className="p-8">
         {/* Step 0: Datos Personales */}
         {currentStep === 0 && (
           <div className="space-y-6">
@@ -637,27 +648,19 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Adjuntar Documentos *
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-brand-primary-600 transition-colors">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  {...register('documentos', { required: 'Debe adjuntar al menos un documento' })}
-                  className="hidden"
-                  id="documentos"
-                />
-                <label htmlFor="documentos" className="cursor-pointer">
-                  <span className="text-brand-primary-600 font-medium hover:text-brand-primary-700">
-                    Haga clic para seleccionar archivos
-                  </span>
-                  <span className="text-gray-500"> o arrastre y suelte aquí</span>
-                </label>
-                <p className="text-xs text-gray-500 mt-2">
-                  Formatos permitidos: PDF, JPG, PNG (máximo 10MB por archivo)
-                </p>
-              </div>
-              {errors.documentos && <p className="text-red-500 text-sm mt-1">{errors.documentos.message}</p>}
+              <FileUpload
+                onFilesChange={(files) => {
+                  // Actualizar el valor en react-hook-form
+                  register('documentos').onChange({
+                    target: { value: files, name: 'documentos' }
+                  });
+                }}
+                accept=".pdf,.jpg,.jpeg,.png"
+                multiple={true}
+                maxSize={10}
+                maxFiles={10}
+                error={errors.documentos?.message}
+              />
             </div>
 
             {calculationResult && (
@@ -691,7 +694,7 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
           <button
             type="button"
             onClick={prevStep}
-            disabled={currentStep === 0}
+            disabled={currentStep === 0 || isSubmitting}
             className="flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -702,22 +705,65 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
             <button
               type="button"
               onClick={nextStep}
-              className="flex items-center gap-2 bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 hover:from-brand-primary-700 hover:to-brand-primary-800 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl"
+              disabled={isSubmitting || (currentStep === 1 && !calculationResult)}
+              className="flex items-center gap-2 bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 hover:from-brand-primary-700 hover:to-brand-primary-800 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Siguiente
+              {isSubmitting ? 'Enviando...' : (currentStep === 1 && !calculationResult ? 'Complete el Cálculo Primero' : 'Siguiente')}
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button
-              type="submit"
-              className="flex items-center gap-2 bg-gradient-to-r from-brand-accent-500 to-yellow-500 hover:from-yellow-500 hover:to-brand-accent-500 text-gray-900 px-6 py-3 rounded-lg font-bold transition-all shadow-lg hover:shadow-xl"
+              type="button"
+              onClick={handleSubmitClick}
+              disabled={!calculationResult || isSubmitting}
+              className="flex items-center gap-2 bg-gradient-to-r from-brand-accent-500 to-yellow-500 hover:from-yellow-500 hover:to-brand-accent-500 text-gray-900 px-6 py-3 rounded-lg font-bold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <CheckCircle className="w-4 h-4" />
-              Enviar Solicitud
+              {isSubmitting ? 'Enviando...' : (calculationResult ? 'Enviar Solicitud' : 'Complete el Cálculo Primero')}
             </button>
           )}
         </div>
-      </form>
+      </div>
+
+      {/* Modal de Confirmación */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-brand-accent-500 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-gray-900" />
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                ¿Confirmar Envío de Solicitud?
+              </h3>
+              
+              <p className="text-gray-600 mb-6">
+                Una vez enviada, la solicitud será procesada por nuestro equipo. 
+                Asegúrate de haber cargado todos los documentos requeridos.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmation(false)}
+                  className="flex-1 px-4 py-3 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg font-medium transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFinalSubmit}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 hover:from-brand-primary-700 hover:to-brand-primary-800 text-white px-4 py-3 rounded-lg font-bold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Enviando...' : 'Confirmar Envío'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { User, Briefcase, Car, Upload, Heart, FileText, X } from 'lucide-react';
 import { type Result } from '@/lib/calculator/loan-calculator';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 interface LoanApplicationData {
   // Datos Personales
@@ -81,12 +82,25 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
   const watchTieneConyuge = watch('tieneConyuge');
   const watchRelacionLaboral = watch('relacionLaboral');
   const watchEsNuevo = watch('esNuevo');
+  type ModalType = 'success' | 'error' | 'warning' | 'info';
+  const [modalState, setModalState] = useState<{ isOpen: boolean; title: string; message: string; type: ModalType }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
+  const showModal = (title: string, message: string, type: ModalType = 'info') => {
+    setModalState({ isOpen: true, title, message, type });
+  };
+  const closeModal = () => setModalState((prev) => ({ ...prev, isOpen: false }));
 
-  // Sincronizar datos de la calculadora
-  if (calculationResult) {
-    setValue('valorTotal', calculationResult.totales.desembolsoBruto);
-    setValue('saldoFinanciar', calculationResult.totales.desembolsoBruto);
-  }
+  // Sincronizar datos de la calculadora en efecto para evitar setValue durante el render
+  useEffect(() => {
+    if (!calculationResult) return;
+    const desembolso = calculationResult.totales.desembolsoBruto;
+    setValue('valorTotal', desembolso, { shouldDirty: true });
+    setValue('saldoFinanciar', desembolso, { shouldDirty: true });
+  }, [calculationResult, setValue]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = Array.from(event.target.files || []);
@@ -98,13 +112,17 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
   };
 
   const onFormSubmit = (data: LoanApplicationData) => {
+    if (!calculationResult) {
+      showModal('⚠️ Falta el Cálculo', 'Debe realizar y seleccionar un cálculo de préstamo antes de enviar la solicitud.', 'warning');
+      return;
+    }
     const formData = {
       ...data,
       documentos: files,
     };
     onSubmit?.(data);
     console.log('Datos del formulario:', formData);
-    alert('Solicitud enviada correctamente. Será procesada por nuestro equipo.');
+    showModal('✅ Solicitud enviada', 'Será procesada por nuestro equipo.', 'success');
   };
 
   return (
@@ -296,7 +314,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
                   <label className="block text-xs font-medium text-gray-700 mb-1">Ingresos Mensuales *</label>
                   <input
                     type="number"
-                    {...register('conyugeIngresos', { required: watchTieneConyuge ? 'Requerido' : false })}
+                    {...register('conyugeIngresos', { required: watchTieneConyuge ? 'Requerido' : false, valueAsNumber: true })}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-brand-primary-600"
                     placeholder="500000"
                   />
@@ -371,7 +389,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
               <label className="block text-xs font-medium text-gray-700 mb-1">Ingresos Mensuales *</label>
               <input
                 type="number"
-                {...register('ingresosMensuales', { required: 'Requerido' })}
+                {...register('ingresosMensuales', { required: 'Requerido', valueAsNumber: true })}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all"
                 placeholder="1000000"
                 step="1000"
@@ -423,7 +441,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    {...register('esNuevo')}
+                    {...register('esNuevo', { setValueAs: (v) => v === 'true' })}
                     value="true"
                     className="w-3 h-3 text-brand-primary-600 border-gray-300 focus:ring-brand-primary-600"
                   />
@@ -432,7 +450,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    {...register('esNuevo')}
+                    {...register('esNuevo', { setValueAs: (v) => v === 'true' })}
                     value="false"
                     className="w-3 h-3 text-brand-primary-600 border-gray-300 focus:ring-brand-primary-600"
                   />
@@ -446,7 +464,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
                 <label className="block text-xs font-medium text-gray-700 mb-1">Año Vehículo *</label>
                 <input
                   type="number"
-                  {...register('anoVehiculo', { required: !watchEsNuevo ? 'Requerido' : false })}
+                  {...register('anoVehiculo', { required: !watchEsNuevo ? 'Requerido' : false, valueAsNumber: true })}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all"
                   placeholder="2020"
                   min="1990"
@@ -459,7 +477,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
               <label className="block text-xs font-medium text-gray-700 mb-1">Valor Total *</label>
               <input
                 type="number"
-                {...register('valorTotal', { required: 'Requerido' })}
+                {...register('valorTotal', { required: 'Requerido', valueAsNumber: true })}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all"
                 placeholder="5000000"
                 step="10000"
@@ -470,7 +488,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
               <label className="block text-xs font-medium text-gray-700 mb-1">Saldo a Financiar *</label>
               <input
                 type="number"
-                {...register('saldoFinanciar', { required: 'Requerido' })}
+                {...register('saldoFinanciar', { required: 'Requerido', valueAsNumber: true })}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all"
                 placeholder="5000000"
                 step="10000"
@@ -480,7 +498,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Cantidad de Cuotas *</label>
               <select
-                {...register('cantidadCuotas', { required: 'Requerido' })}
+                {...register('cantidadCuotas', { required: 'Requerido', setValueAs: (v) => parseInt(v, 10) })}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all"
               >
                 {CUOTAS_DISPONIBLES.map(cuotas => (
@@ -536,7 +554,7 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
         <div className="pt-4 border-t border-gray-200">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !calculationResult}
             className="w-full bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 hover:from-brand-primary-700 hover:to-brand-primary-800 disabled:from-gray-300 disabled:to-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl disabled:shadow-none transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
@@ -553,6 +571,13 @@ export default function LoanApplicationFormComplete({ calculationResult, onSubmi
           </button>
         </div>
       </form>
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+      />
     </div>
   );
 }

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
+import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 const prisma = new PrismaClient();
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
 // Esquema para crear ejecutivo de cuentas
 const createUserSchema = z.object({
@@ -16,13 +18,14 @@ const createUserSchema = z.object({
 
 // Función para verificar autorización del dealer
 async function verifyDealerAuth(request: NextRequest) {
-  const accessToken = request.cookies.get('accessToken')?.value;
+  const accessToken = request.cookies.get('access_token')?.value;
   if (!accessToken) {
     return { error: 'No autorizado', status: 401 };
   }
 
   try {
-    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET!) as any;
+    const { payload } = await jwtVerify(accessToken, JWT_SECRET);
+    const decoded = payload as any;
     
     const user = await prisma.user.findUnique({
       where: { 
@@ -148,6 +151,7 @@ export async function POST(request: NextRequest) {
     // Crear usuario ejecutivo
     const newUser = await prisma.user.create({
       data: {
+        publicId: uuidv4(),
         email,
         firstName,
         lastName,
@@ -156,7 +160,6 @@ export async function POST(request: NextRequest) {
         status: 'INVITED',
         passwordHash,
         dealerId: dealer.id,
-        invitedAt: new Date(),
       }
     });
 

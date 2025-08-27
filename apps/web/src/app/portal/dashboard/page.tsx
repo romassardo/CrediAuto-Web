@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Users, Calculator, FileText, Settings, User, Mail, Phone, Calendar, Eye, Trash2, Building, AlertCircle } from 'lucide-react';
+import { Calculator, FileText, Users, Plus, LogOut, TrendingUp, DollarSign, Clock, CheckCircle, User, Building, AlertCircle, Mail, Phone, Calendar, Eye, Settings } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import LoanCalculator from '@/components/calculator/LoanCalculator';
 import LoanApplicationSteps from '@/components/forms/LoanApplicationSteps';
-import { useAuth } from '@/hooks/useAuth';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import OverviewTabContent from '@/components/portal/OverviewTabContent';
 import { type Result } from '@/lib/calculator/loan-calculator';
 
-interface User {
+interface UserData {
   publicId: string;
   email: string;
   firstName: string;
@@ -18,9 +20,32 @@ interface User {
   lastLoginAt?: string;
 }
 
-export default function PortalDashboard() {
+export default function DashboardPage() {
   const { user, loading: authLoading, canManageTeam, canAccessFullDashboard, isExecutive } = useAuth();
   
+  // Estados locales del dashboard
+  const [activeTab, setActiveTab] = useState('main');
+  const [calculationResult, setCalculationResult] = useState<Result | null>(null);
+  const [calculationData, setCalculationData] = useState<any>(null);
+  const [isSubmittingLoan, setIsSubmittingLoan] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [newUser, setNewUser] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+  });
+  
+  // Estados del modal
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info'
+  });
+
   // Ejecutar las funciones para obtener valores booleanos
   const canManageTeamValue = canManageTeam();
   const canAccessFullDashboardValue = canAccessFullDashboard();
@@ -36,12 +61,6 @@ export default function PortalDashboard() {
       console.log('🔍 Debug - isExecutive:', isExecutiveValue);
     }
   }, [user, canManageTeamValue, canAccessFullDashboardValue, isExecutiveValue]);
-  const [activeTab, setActiveTab] = useState('main');
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showCreateUser, setShowCreateUser] = useState(false);
-  const [calculationResult, setCalculationResult] = useState<Result | null>(null);
-  const [calculationData, setCalculationData] = useState<any>(null);
 
   // Función para manejar cuando se completa el cálculo y se quiere solicitar préstamo
   const handleCalculationComplete = (data: any) => {
@@ -52,12 +71,6 @@ export default function PortalDashboard() {
       formElement.scrollIntoView({ behavior: 'smooth' });
     }
   };
-  const [newUser, setNewUser] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    phone: '',
-  });
 
   // Redirigir a login si no está autenticado
   useEffect(() => {
@@ -78,7 +91,7 @@ export default function PortalDashboard() {
     
     setLoading(true);
     try {
-      const response = await fetch('/api/dealer/users');
+      const response = await fetch('/api/dealer/users', { credentials: 'include' });
       const data = await response.json();
       
       if (data.success) {
@@ -101,49 +114,157 @@ export default function PortalDashboard() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(newUser),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        alert('Ejecutivo de cuentas creado exitosamente');
-        setNewUser({ email: '', firstName: '', lastName: '', phone: '' });
+        showModal(
+          '✅ Ejecutivo Creado',
+          `El usuario ${newUser.email} ha sido creado y recibirá un correo para establecer su contraseña.`,
+          'success'
+        );
+        setNewUser({ firstName: '', lastName: '', email: '', phone: '' });
         setShowCreateUser(false);
         fetchUsers();
       } else {
-        alert(data.error || 'Error al crear usuario');
+        showModal('❌ Error al Crear', data.error || 'No se pudo crear el ejecutivo. Verifique los datos.', 'error');
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      alert('Error de conexión');
+      showModal('❌ Error de Conexión', 'No se pudo conectar con el servidor para crear el usuario.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLoanSubmit = (data: any) => {
-    console.log('📋 Datos de solicitud completos:', {
-      datosPersonales: {
-        nombre: data.nombre,
-        apellido: data.apellido,
-        cuil: data.cuil,
-        email: data.email,
-        telefono: data.telefono
-      },
-      calculosPrestamo: data.calculationData,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Simulación de envío exitoso
-    alert(`✅ Solicitud enviada correctamente!\n\n` +
+  const showModal = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setModalState({ isOpen: true, title, message, type });
+  };
+
+  const closeModal = () => {
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+    window.location.href = '/';
+  };
+
+  const handleLoanSubmit = async (data: any) => {
+    setIsSubmittingLoan(true);
+    try {
+      console.log('📋 Enviando solicitud de préstamo:', data);
+      
+      // Validación: debe existir un cálculo previo
+      if (!calculationData) {
+        showModal(
+          '⚠️ Falta el Cálculo',
+          'Debe realizar y seleccionar un cálculo de préstamo antes de enviar la solicitud.',
+          'warning'
+        );
+        return;
+      }
+
+      // Preparar datos para la API usando los campos planos del formulario y el cálculo del estado local
+      const requestData = {
+        personalData: {
+          nombre: data.nombre || '',
+          apellido: data.apellido || '',
+          cuil: data.cuil || '',
+          email: data.email || '',
+          telefono: data.telefono || '',
+          fechaNacimiento: data.fechaNacimiento,
+          domicilio: data.domicilio,
+          ciudad: data.localidad, // el formulario usa 'localidad'
+          provincia: data.provincia,
+          codigoPostal: data.codigoPostal,
+          estadoCivil: data.estadoCivil,
+        },
+        spouseData: data.tieneConyugue && data.nombreConyugue ? {
+          nombreConyuge: data.nombreConyugue,
+          apellidoConyuge: data.apellidoConyugue,
+          cuilConyuge: data.cuilConyugue,
+        } : undefined,
+        employmentData: data.relacionLaboral ? {
+          tipoEmpleo: data.relacionLaboral,
+          tipoEmpleoOtro: data.otraRelacionLaboral,
+          nombreEmpresa: data.empresa,
+          telefonoEmpresa: data.telefonoEmpresa,
+          experienciaLaboral: data.antiguedad,
+        } : undefined,
+        vehicleData: data.condicionVehiculo ? {
+          condicionVehiculo: data.condicionVehiculo,
+          marca: data.marca,
+          modelo: data.modelo,
+          anio: data.anio ? Number(data.anio) : undefined,
+          version: data.version,
+        } : undefined,
+        calculationData: {
+          vehiclePrice: calculationData.vehiclePrice,
+          loanAmount: calculationData.loanAmount,
+          loanTermMonths: calculationData.loanTerm, // mapeo a la API
+          monthlyPayment: calculationData.monthlyPayment,
+          totalAmount: calculationData.totalAmount,
+          interestRate: calculationData.interestRate,
+          cftAnnual: calculationData.cft,
+        },
+        documents: data.documentos || [],
+      };
+
+      // Enviar a la API usando credentials: include para manejo automático de cookies
+      const response = await fetch('/api/loan-applications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Envía automáticamente las cookies HttpOnly
+        body: JSON.stringify(requestData)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Mostrar modal de éxito
+        showModal(
+          '✅ Solicitud Enviada Correctamente',
+          `Su solicitud de préstamo ha sido guardada exitosamente.\n\n` +
           `Cliente: ${data.nombre} ${data.apellido}\n` +
-          `Monto: $${data.calculationData?.vehiclePrice?.toLocaleString('es-AR')}\n` +
-          `Cuota: $${data.calculationData?.monthlyPayment?.toLocaleString('es-AR')}\n\n` +
-          `La solicitud será procesada por nuestro equipo de análisis crediticio.`);
-    
-    // Limpiar datos de cálculo después del envío
-    setCalculationData(null);
+          `Monto: $${calculationData.vehiclePrice?.toLocaleString('es-AR')}\n` +
+          `Cuota: $${calculationData.monthlyPayment?.toLocaleString('es-AR')}\n` +
+          `ID: ${result.applicationId}\n\n` +
+          `La solicitud será procesada por nuestro equipo de análisis crediticio.`,
+          'success'
+        );
+        
+        // Limpiar datos de cálculo después del envío exitoso
+        setCalculationData(null);
+      } else {
+        showModal(
+          '❌ Error al Enviar Solicitud',
+          `No se pudo guardar la solicitud: ${result.error || 'Error desconocido'}`,
+          'error'
+        );
+      }
+    } catch (error) {
+      console.error('Error enviando solicitud:', error);
+      showModal(
+        '❌ Error de Conexión',
+        'No se pudo conectar con el servidor. Verifique su conexión e intente nuevamente.',
+        'error'
+      );
+    } finally {
+      setIsSubmittingLoan(false);
+    }
   };
 
   useEffect(() => {
@@ -194,7 +315,7 @@ export default function PortalDashboard() {
     { id: 'main', label: 'Calculadora y Solicitud', icon: Calculator },
     ...(canAccessFullDashboardValue ? [
       { id: 'team', label: 'Gestión de Equipo', icon: Users },
-      { id: 'overview', label: 'Resumen', icon: Eye },
+      { id: 'overview', label: 'Resumen', icon: TrendingUp },
     ] : [])
   ];
 
@@ -204,35 +325,67 @@ export default function PortalDashboard() {
       <div className="absolute top-20 right-20 w-32 h-32 bg-brand-primary-600/10 rounded-full blur-xl animate-pulse"></div>
       <div className="absolute bottom-20 left-20 w-24 h-24 bg-brand-accent-500/10 rounded-full blur-xl animate-bounce"></div>
       
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b border-gray-100 relative z-10">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Header rediseñado según guía UI/UX */}
+      <header className="bg-gradient-to-r from-brand-primary-600 via-brand-primary-700 to-brand-primary-800 shadow-2xl relative overflow-hidden">
+        {/* Elementos decorativos */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand-accent-500/20 rounded-full translate-y-16 -translate-x-16"></div>
+        <div className="absolute top-1/2 right-1/4 w-6 h-6 bg-brand-accent-500 rounded-full opacity-60 animate-pulse"></div>
+        <div className="absolute bottom-4 right-12 w-4 h-4 bg-white/40 rounded-full animate-pulse delay-300"></div>
+        
+        <div className="max-w-[1600px] mx-auto px-6 sm:px-8 relative z-10">
           <div className="flex justify-between items-center py-8">
-            <div className="space-y-2">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-accent-500/10 border border-brand-accent-500/20">
-                <span className="text-sm font-medium text-brand-primary-600">
+            <div className="space-y-3">
+              {/* Badge con gradiente */}
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-brand-accent-500/20 to-yellow-400/20 border border-brand-accent-500/30 backdrop-blur-sm">
+                <div className="w-2 h-2 bg-brand-accent-500 rounded-full mr-2 animate-pulse"></div>
+                <span className="text-sm font-bold text-white drop-shadow-sm">
                   {isExecutiveValue ? '👤 Ejecutivo de Cuentas' : '🏢 Portal Concesionario'}
                 </span>
               </div>
-              <h1 className="text-4xl font-bold text-gray-900">
-                {isExecutiveValue ? 'Portal Ejecutivo' : 'Dashboard Concesionario'}
-              </h1>
-              <p className="text-xl text-gray-600">
+              
+              {/* Título principal */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                  <Building className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-lg">
+                  {isExecutiveValue ? 'Portal Ejecutivo' : 'Dashboard Concesionario'}
+                </h1>
+              </div>
+              
+              {/* Subtítulo */}
+              <p className="text-brand-primary-100 text-lg drop-shadow-sm max-w-2xl">
                 {isExecutiveValue ? 'Calculadora y solicitudes de crédito' : 'Gestiona tu equipo y solicitudes'}
               </p>
             </div>
+            
+            {/* Área de usuario y logout */}
             <div className="flex items-center space-x-4">
-              <div className="bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-brand-primary-600/25 flex items-center gap-3">
-                <Building className="w-5 h-5" />
+              {/* Info del usuario */}
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
                 <div className="text-right">
                   <div className="font-semibold">{user.firstName} {user.lastName}</div>
                   <div className="text-xs text-brand-primary-100">{user.role === 'EJECUTIVO_CUENTAS' ? 'Ejecutivo' : 'Dealer'}</div>
                 </div>
               </div>
+              
+              {/* Botón de logout */}
+              <button
+                onClick={handleLogout}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:scale-105"
+                title="Cerrar Sesión"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="font-medium">Salir</span>
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
         {/* Navegación por pestañas */}
@@ -264,16 +417,9 @@ export default function PortalDashboard() {
                 ))}
               </nav>
               
-              {/* Indicador de permisos para ejecutivos */}
-              {isExecutiveValue && (
-                <div className="mt-3 flex items-center gap-2 text-white/70 text-xs">
-                  <AlertCircle className="w-3 h-3" />
-                  <span>Acceso limitado: Solo calculadora y solicitudes</span>
-                </div>
-              )}
             </div>
           </div>
-
+          
           {/* Contenido de las pestañas */}
           <div className="p-8">
             {activeTab === 'main' && (
@@ -300,6 +446,7 @@ export default function PortalDashboard() {
                       calculationResult={calculationResult}
                       calculationData={calculationData}
                       onSubmit={handleLoanSubmit}
+                      isSubmitting={isSubmittingLoan}
                     />
                   </div>
                 </div>
@@ -318,8 +465,8 @@ export default function PortalDashboard() {
                       <div className="flex items-center gap-3 p-4 bg-white/60 rounded-xl border border-blue-200">
                         <Calculator className="w-5 h-5 text-blue-600" />
                         <div>
-                          <p className="font-semibold text-blue-900">Calculadora en Tiempo Real</p>
-                          <p className="text-sm text-blue-700">Los cálculos se actualizan automáticamente</p>
+                          <p className="font-semibold text-blue-900">Cálculo Preciso</p>
+                          <p className="text-sm text-blue-700">CFT y cuotas calculadas automáticamente</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-4 bg-white/60 rounded-xl border border-blue-200">
@@ -477,13 +624,19 @@ export default function PortalDashboard() {
               </div>
             )}
 
-            {activeTab === 'overview' && canAccessFullDashboardValue && (
+            {activeTab === 'overview' && (
+              <OverviewTabContent 
+                refreshTrigger={calculationData ? 1 : 0}
+              />
+            )}
+
+            {activeTab === 'stats' && canAccessFullDashboardValue && (
               <div className="space-y-8">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-brand-primary-600 rounded-full flex items-center justify-center shadow-sm">
                     <Eye className="w-4 h-4 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Resumen del Dashboard</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Estadísticas del Dashboard</h2>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -575,6 +728,15 @@ export default function PortalDashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Modal de Confirmación */}
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+      />
     </div>
   );
 }

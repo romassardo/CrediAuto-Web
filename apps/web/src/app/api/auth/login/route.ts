@@ -56,7 +56,31 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = validationResult.data;
 
-    // Buscar usuario en la base de datos
+    // Buscar usuario en la base de datos - TEMPORALMENTE SIN FILTRO deletedAt
+    console.log('🔍 Buscando usuario con email:', email);
+    
+    // Primero buscar SIN filtro deletedAt para ver si existe
+    const userWithDeleted = await prisma.user.findFirst({
+      where: { email },
+      include: {
+        dealer: {
+          select: {
+            id: true,
+            publicId: true,
+            tradeName: true,
+            status: true
+          }
+        }
+      }
+    });
+    
+    console.log('🔍 Usuario encontrado (con deleted):', userWithDeleted ? {
+      id: userWithDeleted.id,
+      email: userWithDeleted.email,
+      deletedAt: userWithDeleted.deletedAt,
+      status: userWithDeleted.status
+    } : 'NO ENCONTRADO');
+    
     const user = await prisma.user.findUnique({
       where: { 
         email,
@@ -76,14 +100,25 @@ export async function POST(request: NextRequest) {
 
     // Verificar si el usuario existe
     if (!user) {
+      console.log('🔍 Usuario no encontrado para email:', email);
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
         { status: 401 }
       );
     }
 
+    console.log('🔍 Usuario encontrado:', { 
+      id: user.id, 
+      email: user.email, 
+      role: user.role, 
+      status: user.status,
+      hasPassword: !!user.passwordHash,
+      passwordHashLength: user.passwordHash?.length 
+    });
+
     // Verificar si el usuario tiene contraseña configurada
     if (!user.passwordHash) {
+      console.log('❌ Usuario sin contraseña configurada');
       return NextResponse.json(
         { error: 'Usuario no tiene contraseña configurada' },
         { status: 401 }
@@ -91,8 +126,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar contraseña
+    console.log('🔍 Verificando contraseña para usuario:', user.email);
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    console.log('🔍 Resultado validación contraseña:', isPasswordValid);
+    
     if (!isPasswordValid) {
+      console.log('❌ Contraseña inválida para usuario:', user.email);
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
         { status: 401 }
@@ -146,11 +185,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generar tokens
+    // Generar tokens - Para DEALER y EJECUTIVO_CUENTAS, usar dealerId del concesionario
+    let dealerIdForToken: number | undefined = undefined;
+    if (user.role === 'DEALER' || user.role === 'EJECUTIVO_CUENTAS') {
+      dealerIdForToken = user.dealerId || undefined;
+    }
+    
     const { accessToken, refreshToken } = generateTokens(
       user.id,
       user.role,
-      user.dealerId || undefined
+      dealerIdForToken
     );
 
     // Guardar refresh token en la base de datos

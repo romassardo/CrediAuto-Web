@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calculator, TrendingUp, DollarSign, Calendar, Percent } from 'lucide-react';
+import { Calculator, TrendingUp, DollarSign, Calendar, Percent, CheckCircle } from 'lucide-react';
 import { calcular, type Inputs, type Result } from '@/lib/calculator/loan-calculator';
 
 interface LoanCalculatorProps {
@@ -23,20 +23,34 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
     seguroAutoMensual: 0,
   });
 
-  const [result, setResult] = useState<Result | null>(null);
+  const [results, setResults] = useState<{[key: number]: Result}>({});
+  const [selectedTerm, setSelectedTerm] = useState<number>(24);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const availableTerms = [6, 12, 24, 48];
 
   useEffect(() => {
     try {
-      const calculationResult = calcular(inputs);
-      setResult(calculationResult);
-      onCalculationChange?.(calculationResult);
+      // Calcular para todos los plazos disponibles
+      const newResults: {[key: number]: Result} = {};
+      
+      availableTerms.forEach(term => {
+        const inputsForTerm = { ...inputs, plazoMeses: term };
+        newResults[term] = calcular(inputsForTerm);
+      });
+      
+      setResults(newResults);
+      
+      // Notificar el resultado del plazo seleccionado
+      if (newResults[selectedTerm]) {
+        onCalculationChange?.(newResults[selectedTerm]);
+      }
     } catch (error) {
       console.error('Error en cálculo:', error);
-      setResult(null);
+      setResults({});
       onCalculationChange?.(null);
     }
-  }, [inputs, onCalculationChange]);
+  }, [inputs, selectedTerm, onCalculationChange]);
 
   const updateInput = (field: keyof Inputs, value: any) => {
     setInputs(prev => ({ ...prev, [field]: value }));
@@ -108,23 +122,6 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Plazo en Meses *
-              </label>
-              <select
-                value={inputs.plazoMeses}
-                onChange={(e) => updateInput('plazoMeses', Number(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 shadow-sm"
-              >
-                <option value={6}>6 meses</option>
-                <option value={12}>12 meses</option>
-                <option value={24}>24 meses</option>
-                <option value={36}>36 meses</option>
-                <option value={48}>48 meses</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tipo de Tasa *
               </label>
               <select
@@ -171,238 +168,102 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
           </div>
         </div>
 
-        {/* Configuración avanzada */}
-        <div className="space-y-6">
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-2 text-brand-primary-600 hover:text-brand-primary-700 font-medium transition-colors"
-          >
-            <Percent className="w-4 h-4" />
-            {showAdvanced ? 'Ocultar' : 'Mostrar'} configuración avanzada
-          </button>
-
-          {showAdvanced && (
-            <div className="bg-gray-50 rounded-xl p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Gastos de Otorgamiento (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={(inputs.gastosOtorgamientoPct || 0) * 100}
-                    onChange={(e) => updateInput('gastosOtorgamientoPct', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900"
-                    placeholder="3"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Impuesto de Sellos (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={(inputs.sellosPct || 0) * 100}
-                    onChange={(e) => updateInput('sellosPct', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900"
-                    placeholder="1.2"
-                    min="0"
-                    max="5"
-                    step="0.1"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Gastos Fijos Iniciales ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={inputs.gastosFijosIniciales || 0}
-                    onChange={(e) => updateInput('gastosFijosIniciales', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900"
-                    placeholder="0"
-                    min="0"
-                    step="1000"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Seguro Auto Mensual ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={inputs.seguroAutoMensual || 0}
-                    onChange={(e) => updateInput('seguroAutoMensual', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900"
-                    placeholder="0"
-                    min="0"
-                    step="1000"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Resultados */}
-        {result && (
+        {/* Resultados por Plazo */}
+        {Object.keys(results).length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
               <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-sm">
                 <TrendingUp className="w-4 h-4 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Resultados del Cálculo</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Resultados por Plazo</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Cuota Mensual - Destacada */}
-              <div className="bg-gradient-to-br from-brand-primary-600 to-brand-primary-700 rounded-2xl p-8 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-12 translate-x-12"></div>
-                <div className="relative">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-white" />
+              {availableTerms.map((term) => {
+                const result = results[term];
+                if (!result) return null;
+                
+                return (
+                  <div key={term} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-2xl font-bold text-gray-900">{term} meses</h4>
+                        <p className="text-sm text-gray-600">
+                          {term === 6 ? 'Pago rápido' : term === 12 ? 'Equilibrado' : term === 24 ? 'Recomendado' : 'Cuotas bajas'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-600">CFT Anual</div>
+                        <div className="text-lg font-bold text-brand-accent-500">
+                          {(result.totales.cftEfectivoAnual * 100).toFixed(1)}%
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm text-brand-primary-100">Cuota Mensual</div>
-                      <div className="text-xs text-brand-primary-200">Durante {result.rows.length} meses</div>
-                    </div>
-                  </div>
-                  <div className="text-4xl font-bold mb-2">${Math.round(result.rows[0]?.cuotaTotal || 0).toLocaleString('es-AR')}</div>
-                  <div className="text-sm text-brand-primary-200">
-                    Incluye capital, intereses e IVA
-                  </div>
-                </div>
-              </div>
 
-              {/* CFT Anual */}
-              <div className="bg-gradient-to-br from-brand-accent-500 to-yellow-500 rounded-2xl p-8 text-gray-900 relative overflow-hidden">
-                <div className="absolute bottom-0 left-0 w-20 h-20 bg-black/5 rounded-full translate-y-10 -translate-x-10"></div>
-                <div className="relative">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-black/10 rounded-xl flex items-center justify-center">
-                      <Percent className="w-5 h-5 text-gray-900" />
+                    {/* Cuota destacada */}
+                    <div className="bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 rounded-xl p-4 text-white mb-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm text-brand-primary-100">Cuota mensual</div>
+                          <div className="text-2xl font-bold">
+                            ${Math.round(result.rows[0]?.cuotaTotal || 0).toLocaleString('es-AR')}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-brand-primary-100">Total a pagar</div>
+                          <div className="text-lg font-semibold">
+                            ${Math.round(result.totales.sumaCuotas).toLocaleString('es-AR')}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm text-gray-800 font-medium">CFT Anual</div>
-                      <div className="text-xs text-gray-700">Costo Financiero Total</div>
-                    </div>
-                  </div>
-                  <div className="text-4xl font-bold mb-2">{(result.totales.cftEfectivoAnual * 100).toFixed(1)}%</div>
-                  <div className="text-sm text-gray-700">
-                    Incluye todos los costos
-                  </div>
-                </div>
-              </div>
 
-              {/* Monto que Recibís */}
-              <div className="bg-white border-2 border-green-200 rounded-2xl p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-full -translate-y-16 translate-x-16"></div>
-                <div className="relative">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                      <DollarSign className="w-5 h-5 text-green-600" />
+                    {/* Detalles */}
+                    <div className="space-y-2 text-sm mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Monto que recibís:</span>
+                        <span className="font-semibold text-green-600">
+                          ${Math.round(result.totales.desembolsoNeto).toLocaleString('es-AR')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Costos iniciales:</span>
+                        <span className="font-semibold text-gray-900">
+                          ${Math.round(result.totales.costosIniciales).toLocaleString('es-AR')}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm text-green-800 font-medium">Monto que Recibís</div>
-                      <div className="text-xs text-green-600">Después de gastos</div>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-bold text-green-800 mb-2">
-                    ${Math.round(result.totales.desembolsoNeto).toLocaleString('es-AR')}
-                  </div>
-                  <div className="text-sm text-green-600">
-                    De ${Math.round(result.totales.desembolsoBruto).toLocaleString('es-AR')} solicitados
-                  </div>
-                </div>
-              </div>
 
-              {/* Total a Pagar */}
-              <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 relative overflow-hidden">
-                <div className="absolute bottom-0 left-0 w-28 h-28 bg-gray-50 rounded-full translate-y-14 -translate-x-14"></div>
-                <div className="relative">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5 text-gray-600" />
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-800 font-medium">Total a Pagar</div>
-                      <div className="text-xs text-gray-600">Suma de todas las cuotas</div>
-                    </div>
+                    {/* Botón de solicitud */}
+                    <button
+                      onClick={() => {
+                        if (onCalculationComplete) {
+                          const calculationData = {
+                            vehiclePrice: inputs.monto,
+                            downPayment: 0,
+                            loanTerm: term,
+                            interestRate: inputs.tasa.valor,
+                            loanAmount: result.totales.desembolsoNeto,
+                            monthlyPayment: result.rows[0]?.cuotaTotal || 0,
+                            totalAmount: result.totales.sumaCuotas,
+                            cft: result.totales.cftEfectivoAnual
+                          };
+                          onCalculationComplete(calculationData);
+                        }
+                      }}
+                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      Solicitar en {term} meses
+                    </button>
                   </div>
-                  <div className="text-3xl font-bold text-gray-800 mb-2">
-                    ${Math.round(result.totales.sumaCuotas).toLocaleString('es-AR')}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    En {result.rows.length} cuotas mensuales
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="w-5 h-5 text-blue-600" />
-                <h4 className="font-semibold text-blue-900">Detalle de Costos</h4>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-blue-700">Monto Bruto:</span>
-                  <span className="font-semibold text-blue-900 ml-2">{formatCurrency(result.totales.desembolsoBruto)}</span>
-                </div>
-                <div>
-                  <span className="text-blue-700">Costos Iniciales:</span>
-                  <span className="font-semibold text-blue-900 ml-2">{formatCurrency(result.totales.costosIniciales)}</span>
-                </div>
-                <div>
-                  <span className="text-blue-700">CFT Mensual:</span>
-                  <span className="font-semibold text-blue-900 ml-2">{formatPercent(result.totales.cftMensual)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Botón para solicitar préstamo */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-              <div className="text-center">
-                <h4 className="text-lg font-semibold text-green-900 mb-2">¿Te convencen estos números?</h4>
-                <p className="text-green-700 mb-4">Solicita tu préstamo con estos valores calculados</p>
-                <button
-                  onClick={() => {
-                    if (onCalculationComplete) {
-                      const calculationData = {
-                        // Parámetros de entrada
-                        vehiclePrice: inputs.monto,
-                        downPayment: 0, // Por ahora sin anticipo
-                        loanTerm: inputs.plazoMeses,
-                        interestRate: inputs.tasa.valor,
-                        
-                        // Resultados calculados
-                        loanAmount: result.totales.desembolsoNeto,
-                        monthlyPayment: result.rows[0]?.cuotaTotal || 0,
-                        totalAmount: result.totales.sumaCuotas,
-                        cft: result.totales.cftEfectivoAnual
-                      };
-                      
-                      // Llamar al callback para pasar los datos al formulario
-                      onCalculationComplete(calculationData);
-                    }
-                  }}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2 mx-auto"
-                >
-                  <DollarSign className="w-5 h-5" />
-                  Solicitar con estos valores
-                </button>
-              </div>
+                );
+              })}
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

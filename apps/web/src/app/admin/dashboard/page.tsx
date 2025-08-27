@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Check, X, Eye, Clock, Building2, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 interface Dealer {
   id: string;
@@ -31,10 +32,21 @@ export default function AdminDashboard() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('PENDING_APPROVAL');
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+  type ModalType = 'success' | 'error' | 'warning' | 'info';
+  const [modalState, setModalState] = useState<{ isOpen: boolean; title: string; message: string; type: ModalType }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
+  const showModal = (title: string, message: string, type: ModalType = 'info') => {
+    setModalState({ isOpen: true, title, message, type });
+  };
+  const closeModal = () => setModalState((prev) => ({ ...prev, isOpen: false }));
 
   const fetchDealers = async (status: string = 'PENDING_APPROVAL') => {
     try {
-      const response = await fetch(`/api/admin/dealers?status=${status}`);
+      const response = await fetch(`/api/admin/dealers?status=${status}`, { credentials: 'include' });
       const data = await response.json();
       
       if (data.success) {
@@ -53,6 +65,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch('/api/admin/dealers', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -68,13 +81,13 @@ export default function AdminDashboard() {
       if (data.success) {
         // Actualizar la lista
         await fetchDealers(selectedStatus);
-        alert(data.message);
+        showModal('✅ Operación exitosa', data.message || 'Acción realizada correctamente.', 'success');
       } else {
-        alert(data.error || 'Error al procesar solicitud');
+        showModal('❌ Error', data.error || 'Error al procesar solicitud', 'error');
       }
     } catch (error) {
       console.error('Error processing dealer:', error);
-      alert('Error de conexión');
+      showModal('❌ Error de Conexión', 'No se pudo conectar con el servidor. Intenta nuevamente.', 'error');
     } finally {
       setProcessingId(null);
     }
@@ -326,6 +339,14 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+      
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+      />
     </div>
   );
 }

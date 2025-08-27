@@ -37,11 +37,20 @@ export function useAuth() {
           console.log('🔍 useAuth - Datos recibidos del API:', userData);
           console.log('🔍 useAuth - Usuario:', userData.user);
           console.log('🔍 useAuth - Rol del usuario:', userData.user?.role);
-          setAuthState({
-            user: userData.user,
-            loading: false,
-            error: null,
-          });
+
+          if (userData.success && userData.user) {
+            setAuthState({
+              user: userData.user,
+              loading: false,
+              error: null,
+            });
+          } else {
+            setAuthState({
+              user: null,
+              loading: false,
+              error: 'Datos de usuario inválidos',
+            });
+          }
         } else {
           setAuthState({
             user: null,
