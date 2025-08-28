@@ -6,18 +6,22 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('access_token')?.value;
+    // 1) Preferir headers inyectados por el middleware (funciona incluso si access_token expiró y se usó refresh_token)
+    const headerUserId = request.headers.get('x-user-id');
+    let userId: number | null = headerUserId ? Number(headerUserId) : null;
 
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Token no encontrado' },
-        { status: 401 }
-      );
+    // 2) Fallback: verificar cookie access_token si no llegaron headers (p.ej., en tests directos)
+    if (!userId) {
+      const token = request.cookies.get('access_token')?.value;
+      if (!token) {
+        return NextResponse.json(
+          { error: 'Token no encontrado' },
+          { status: 401 }
+        );
+      }
+      const { payload } = await jwtVerify(token, JWT_SECRET);
+      userId = (payload.userId as number) ?? null;
     }
-
-    // Verificar el token JWT
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const userId = payload.userId as number;
 
     if (!userId) {
       return NextResponse.json(

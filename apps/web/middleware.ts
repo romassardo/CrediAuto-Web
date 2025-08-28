@@ -7,6 +7,10 @@ const publicRoutes = ['/login', '/signup', '/']
 const adminRoutes = ['/admin']
 const portalRoutes = ['/portal']
 
+// Claves para verificar tokens
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '')
+const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '')
+
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname
   
@@ -17,91 +21,113 @@ export default async function middleware(req: NextRequest) {
   const isPortalRoute = portalRoutes.some(route => path.startsWith(route))
   const isApiRoute = path.startsWith('/api')
 
-  // Obtener token de las cookies (probar access_token y refresh_token)
-  const token = req.cookies.get('access_token')?.value || req.cookies.get('refresh_token')?.value
+  // Obtener tokens de las cookies (access y refresh por separado)
+  const accessToken = req.cookies.get('access_token')?.value
+  const refreshToken = req.cookies.get('refresh_token')?.value
 
   // Si no hay token y es ruta protegida, redirigir a login
-  if (isProtectedRoute && !token) {
+  if (isProtectedRoute && !accessToken && !refreshToken) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  // Si hay token, verificar su validez y permisos
-  if (token) {
-    try {
-      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
-      const { payload } = await jwtVerify(token, secret)
-      
-      const userRole = payload.role as string
-      const userId = payload.userId as number
+  // Si hay token, verificar su validez y permisos (fallback a refresh si access expiró)
+  if (accessToken || refreshToken) {
+    let payload: any | null = null
+    let tokenType: 'access' | 'refresh' | null = null
 
-      // Para API routes, solo verificar autenticación y agregar headers (como request headers)
-      if (isApiRoute) {
-        console.log('🔍 Middleware ejecutándose para API route:', path, { userId, userRole, dealerId: payload.dealerId })
-        const requestHeaders = new Headers(req.headers)
-        requestHeaders.set('x-user-id', userId.toString())
-        requestHeaders.set('x-user-role', userRole)
-
-        // Agregar dealerId si está disponible en el payload
-        if (payload.dealerId) {
-          requestHeaders.set('x-user-dealer-id', payload.dealerId.toString())
-        }
-
-        const response = NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        })
-        return response
-      }
-
-      // Verificar permisos específicos por ruta (solo para páginas, no API)
-      if (isAdminRoute && userRole !== 'ADMIN') {
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-
-      if (isPortalRoute && !['DEALER', 'EJECUTIVO_CUENTAS'].includes(userRole)) {
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-
-      // Si está autenticado y trata de acceder a rutas públicas, redirigir al dashboard apropiado
-      if (isPublicRoute && path === '/') {
-        if (userRole === 'ADMIN') {
-          return NextResponse.redirect(new URL('/admin/dashboard', req.url))
-        } else if (['DEALER', 'EJECUTIVO_CUENTAS'].includes(userRole)) {
-          return NextResponse.redirect(new URL('/portal/dashboard', req.url))
+    // Intentar validar access_token primero
+    if (accessToken) {
+      try {
+        const result = await jwtVerify(accessToken, JWT_SECRET)
+        payload = result.payload
+        tokenType = 'access'
+      } catch (err) {
+        // Si el access token no es válido o expiró, probar con refresh_token
+        if (refreshToken) {
+          try {
+            const result = await jwtVerify(refreshToken, JWT_REFRESH_SECRET)
+            payload = result.payload
+            tokenType = 'refresh'
+          } catch (err2) {
+            // ambos tokens inválidos
+          }
         }
       }
-
-      // Agregar headers con información del usuario para las páginas (como request headers)
-      const requestHeaders = new Headers(req.headers)
-      requestHeaders.set('x-user-id', userId.toString())
-      requestHeaders.set('x-user-role', userRole)
-
-      if (payload.dealerId) {
-        requestHeaders.set('x-user-dealer-id', payload.dealerId.toString())
+    } else if (refreshToken) {
+      try {
+        const result = await jwtVerify(refreshToken, JWT_REFRESH_SECRET)
+        payload = result.payload
+        tokenType = 'refresh'
+      } catch (err) {
+        // refresh inválido
       }
+    }
 
-      const response = NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      })
-      return response
-
-    } catch (error) {
-      // Token inválido
-      console.error('Invalid token:', error)
-      
-      // Para API routes, devolver 401 en lugar de redirigir
+    if (!payload) {
+      // Tokens presentes pero inválidos
       if (isApiRoute) {
-        return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
       }
-      
-      // Para páginas, eliminar cookie y redirigir
       const response = NextResponse.redirect(new URL('/', req.url))
       response.cookies.delete('access_token')
       return response
     }
+
+    const userRole = payload.role as string
+    const userId = payload.userId as number
+
+    // Para API routes: solo verificar autenticación. Importante: no modificar el request en métodos con body (POST/PATCH/PUT/DELETE)
+    // porque puede perderse el stream del body y causar "TypeError: Failed to fetch" en el cliente.
+    if (isApiRoute) {
+      const method = req.method
+      if (method === 'GET' || method === 'HEAD') {
+        console.log('🔍 Middleware API:', path, { userId, userRole, dealerId: (payload as any).dealerId, tokenType, method })
+        const requestHeaders = new Headers(req.headers)
+        requestHeaders.set('x-user-id', userId.toString())
+        requestHeaders.set('x-user-role', userRole)
+        if ((payload as any).dealerId) {
+          requestHeaders.set('x-user-dealer-id', String((payload as any).dealerId))
+        }
+        return NextResponse.next({
+          request: { headers: requestHeaders },
+        })
+      }
+      // Para métodos con body, dejamos pasar sin alterar request para preservar el body
+      return NextResponse.next()
+    }
+
+    // Verificar permisos específicos por ruta (solo para páginas, no API)
+    if (isAdminRoute && userRole !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+
+    if (isPortalRoute && !['DEALER', 'EJECUTIVO_CUENTAS'].includes(userRole)) {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+
+    // Si está autenticado y trata de acceder a rutas públicas, redirigir al dashboard apropiado
+    if (isPublicRoute && path === '/') {
+      if (userRole === 'ADMIN') {
+        return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+      } else if (['DEALER', 'EJECUTIVO_CUENTAS'].includes(userRole)) {
+        return NextResponse.redirect(new URL('/portal/dashboard', req.url))
+      }
+    }
+
+    const method2 = req.method
+    if (method2 === 'GET' || method2 === 'HEAD') {
+      const requestHeaders = new Headers(req.headers)
+      requestHeaders.set('x-user-id', userId.toString())
+      requestHeaders.set('x-user-role', userRole)
+      if ((payload as any).dealerId) {
+        requestHeaders.set('x-user-dealer-id', String((payload as any).dealerId))
+      }
+      return NextResponse.next({
+        request: { headers: requestHeaders },
+      })
+    }
+    // Para métodos con body fuera de /api, no alteramos el request para no interferir con el stream del body
+    return NextResponse.next()
   }
 
   // Si no hay token y es API route protegida, devolver 401

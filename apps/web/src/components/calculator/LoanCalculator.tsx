@@ -166,6 +166,45 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
               </select>
             </div>
           </div>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((s) => !s)}
+              className="text-sm font-medium text-brand-primary-700 hover:text-brand-primary-800 underline"
+            >
+              {showAdvanced ? 'Ocultar configuración avanzada' : 'Mostrar configuración avanzada'}
+            </button>
+          </div>
+
+          {showAdvanced && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Configuración avanzada</h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gastos de Otorgamiento (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={(inputs.gastosOtorgamientoPct ?? 0) * 100}
+                    onChange={(e) => updateInput('gastosOtorgamientoPct', Number(e.target.value) / 100)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
+                    placeholder="3"
+                    min="0"
+                    max="20"
+                    step="0.1"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
+                La cuota se calcula con tasa mensual que <strong>incluye IVA</strong> y se <strong>redondea a entero</strong>. Conversión TNA→TEM: 365/30. El CFT anual se obtiene sobre el desembolso neto (descontando <strong>solo</strong> gastos de otorgamiento <em>netos de IVA</em>) y se anualiza con 365/30.
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Resultados por Plazo */}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, X, Eye, Clock, Building2, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { Check, X, Clock, Building2, Mail, Phone, MapPin, Calendar } from 'lucide-react';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 interface Dealer {
@@ -31,7 +31,6 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('PENDING_APPROVAL');
-  const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
   type ModalType = 'success' | 'error' | 'warning' | 'info';
   const [modalState, setModalState] = useState<{ isOpen: boolean; title: string; message: string; type: ModalType }>({
     isOpen: false,
@@ -300,14 +299,6 @@ export default function AdminDashboard() {
 
                       {selectedStatus === 'PENDING_APPROVAL' && (
                         <div className="flex items-center gap-3 ml-6">
-                          <button
-                            onClick={() => setSelectedDealer(dealer)}
-                            className="p-3 text-gray-600 hover:text-brand-primary-600 hover:bg-brand-primary-50 rounded-xl transition-all transform hover:scale-110"
-                            title="Ver detalles"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                          
                           <button
                             onClick={() => handleApproveReject(dealer.id, 'approve')}
                             disabled={processingId === dealer.id}

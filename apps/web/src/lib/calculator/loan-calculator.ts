@@ -1,19 +1,19 @@
 // loan-calculator.ts
 export type RateInput =
-  | { tipo: 'TNA'; valor: number; capitalizaciones?: number } // ej. 12 (mensual)
+  | { tipo: 'TNA'; valor: number; capitalizaciones?: number }
   | { tipo: 'TEA'; valor: number }
-  | { tipo: 'MENSUAL'; valor: number }; // ya efectiva mensual
+  | { tipo: 'MENSUAL'; valor: number }; // efectiva mensual (sin IVA)
 
 export type Inputs = {
-  monto: number;              // P
-  plazoMeses: number;         // n
-  tasa: RateInput;            // TNA/TEA/MENSUAL en decimales (0.60 = 60%)
-  ivaInteres: number;         // 0 | 0.105 | 0.21
-  gastosOtorgamientoPct?: number; // ej. 0.03
-  gastosFijosIniciales?: number;  // ej. registrales/prenda fijos
-  sellosPct?: number;             // ej. 0.012 (12‰)
-  svsPctMensual?: number;         // % sobre saldo/mes (opcional)
-  seguroAutoMensual?: number;     // monto fijo/mes (opcional)
+  monto: number;                  // Capital P
+  plazoMeses: number;             // n
+  tasa: RateInput;                // TNA/TEA/MENSUAL en decimales (sin IVA)
+  ivaInteres: number;             // 0 | 0.105 | 0.21
+  gastosOtorgamientoPct?: number; // % sobre monto P (se usa NETO de IVA para desembolso)
+  gastosFijosIniciales?: number;  // (No considerados para CFT empresarial)
+  sellosPct?: number;             // (No considerados para CFT empresarial)
+  svsPctMensual?: number;         // % sobre saldo/mes (opcional, fuera de CFT empresarial)
+  seguroAutoMensual?: number;     // monto fijo/mes (opcional, fuera de CFT empresarial)
 };
 
 export type Row = {
@@ -32,23 +32,26 @@ export type Result = {
   rows: Row[];
   totales: {
     desembolsoBruto: number;
-    costosIniciales: number;
-    desembolsoNeto: number;
-    sumaCuotas: number;
-    cftMensual: number;
-    cftEfectivoAnual: number;
+    costosIniciales: number;      // Gastos de otorgamiento NETOS de IVA
+    desembolsoNeto: number;       // P - costosIniciales
+    sumaCuotas: number;           // Suma de cuotas (incluye extras si se configuraran)
+    cftMensual: number;           // Con IVA
+    cftEfectivoAnual: number;     // Con IVA, anualización 365/30
   };
 };
 
-function toMensual(tasa: RateInput): number {
+// Conversión a tasa efectiva mensual SIN IVA según documentación empresarial
+// TNA -> TEM: (TNA/365)*30
+// TEA -> TEM: (1+TEA)^(30/365)-1
+function toMensualSinIVA(tasa: RateInput): number {
   if (tasa.tipo === 'MENSUAL') return tasa.valor;
-  if (tasa.tipo === 'TEA') return Math.pow(1 + tasa.valor, 1 / 12) - 1;
-  const caps = tasa.capitalizaciones ?? 12;
-  return tasa.valor / caps;
+  if (tasa.tipo === 'TEA') return Math.pow(1 + tasa.valor, 30 / 365) - 1;
+  // Ignoramos capitalizaciones: la empresa usa 365/30 para TNA
+  return (tasa.valor / 365) * 30;
 }
 
 function cuotaFrances(P: number, i: number, n: number): number {
-  return P * i / (1 - Math.pow(1 + i, -n));
+  return (P * i) / (1 - Math.pow(1 + i, -n));
 }
 
 function irr(cashflows: number[], guess = 0.02): number {
@@ -75,61 +78,83 @@ export function calcular(inputs: Inputs): Result {
     tasa,
     ivaInteres,
     gastosOtorgamientoPct = 0,
+    // Los siguientes no se consideran para CFT empresarial
     gastosFijosIniciales = 0,
     sellosPct = 0,
     svsPctMensual = 0,
     seguroAutoMensual = 0,
   } = inputs;
 
-  const i = toMensual(tasa);
-  const cuotaBase = cuotaFrances(P, i, n);
+  const ivaFactor = 1 + ivaInteres;
 
-  const costosIniciales =
-    P * (gastosOtorgamientoPct + sellosPct) + gastosFijosIniciales;
-  const desembolsoNeto = P - costosIniciales;
+  // Tasa efectiva mensual SIN IVA según estándar empresarial
+  const iSinIVA = toMensualSinIVA(tasa);
+  // Tasa mensual CON IVA para fórmula de cuota fija
+  const iConIVA = iSinIVA * ivaFactor;
 
+  // Cuota fija (con IVA incluido en la tasa), redondeada a entero
+  const cuotaConIVA = Math.round(cuotaFrances(P, iConIVA, n));
+
+  // Gastos de otorgamiento NETOS de IVA para desembolso
+  const gastosTot = P * (gastosOtorgamientoPct || 0);     // con IVA
+  const gastosNetos = gastosTot / ivaFactor;               // neto de IVA
+  const desembolsoNeto = P - gastosNetos;
+  const costosIniciales = gastosNetos;                     // mostrado como neto
+
+  // Cuadro de amortización usando tasa CON IVA y cuota fija entera
   let saldo = P;
   const rows: Row[] = [];
-  const cashflows: number[] = [desembolsoNeto];
+
+  // Flujos para CFT (no considerar extras mensuales)
+  const cashflows: number[] = [round(desembolsoNeto, 2)];
 
   for (let t = 1; t <= n; t++) {
-    const interes = saldo * i;
-    const amortizacion = cuotaBase - interes;
+    const interesConIVA = saldo * iConIVA;
+    const amortizacion = cuotaConIVA - interesConIVA;
 
-    const iva = interes * ivaInteres;
-    const svs = saldo * svsPctMensual;
-    const otros = seguroAutoMensual; // u otros cargos mensuales fijos
-    const cuotaTotal = cuotaBase + iva + svs + otros;
+    // Separación de IVA sobre interés
+    const interesNeto = interesConIVA / ivaFactor;
+    const ivaInteresMonto = interesConIVA - interesNeto;
+
+    // Extras (opcionales, fuera del CFT empresarial)
+    const svs = saldo * (svsPctMensual || 0);
+    const otros = seguroAutoMensual || 0;
+    const cuotaTotal = cuotaConIVA + svs + otros;
 
     saldo -= amortizacion;
 
     rows.push({
       periodo: t,
-      cuotaBase: round(cuotaBase),
-      interes: round(interes),
+      cuotaBase: round(cuotaConIVA),
+      interes: round(interesNeto),
       amortizacion: round(amortizacion),
-      ivaInteres: round(iva),
+      ivaInteres: round(ivaInteresMonto),
       svs: round(svs),
       otros: round(otros),
       cuotaTotal: round(cuotaTotal),
       saldo: round(Math.max(0, saldo)),
     });
 
-    cashflows.push(-cuotaTotal);
+    cashflows.push(-cuotaConIVA);
   }
 
-  const tirMensual = irr(cashflows);
-  const cftEA = Math.pow(1 + tirMensual, 12) - 1;
+  // CFT mensual (con IVA) por IRR de flujos: [desembolso neto, -cuota fija, ...]
+  const cftMensualConIVA = irr(cashflows);
+  const cftMensualNeto = cftMensualConIVA / ivaFactor;
+
+  // Anualización 365/30 según documentación
+  const cftEaNeto = Math.pow(1 + cftMensualNeto, 365 / 30) - 1;
+  const cftEaTot = cftEaNeto * ivaFactor;
 
   return {
     rows,
     totales: {
-      desembolsoBruto: P,
-      costosIniciales: round(costosIniciales),
+      desembolsoBruto: round(P),
+      costosIniciales: round(costosIniciales), // neto de IVA
       desembolsoNeto: round(desembolsoNeto),
       sumaCuotas: round(rows.reduce((a, r) => a + r.cuotaTotal, 0)),
-      cftMensual: round(tirMensual),
-      cftEfectivoAnual: round(cftEA),
+      cftMensual: round(cftMensualConIVA),
+      cftEfectivoAnual: round(cftEaTot),
     },
   };
 }

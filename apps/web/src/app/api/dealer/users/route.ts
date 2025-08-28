@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { headers, cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { jwtVerify } from 'jose';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-
-const prisma = new PrismaClient();
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
 // Esquema para crear ejecutivo de cuentas
@@ -18,35 +17,96 @@ const createUserSchema = z.object({
 
 // Función para verificar autorización del dealer
 async function verifyDealerAuth(request: NextRequest) {
-  const accessToken = request.cookies.get('access_token')?.value;
-  if (!accessToken) {
-    return { error: 'No autorizado', status: 401 };
-  }
-
   try {
-    const { payload } = await jwtVerify(accessToken, JWT_SECRET);
-    const decoded = payload as any;
-    
-    const user = await prisma.user.findUnique({
-      where: { 
-        id: decoded.userId,
-        deletedAt: null 
-      },
-      include: {
-        dealer: true
+    // 1) Intentar con headers inyectados por el middleware (preferir request.headers)
+    const reqHeaders = request.headers;
+    const headersList = await headers();
+    let userId = reqHeaders.get('x-user-id') || headersList.get('x-user-id');
+    let role = reqHeaders.get('x-user-role') || headersList.get('x-user-role');
+    let dealerIdHeader = reqHeaders.get('x-user-dealer-id') || headersList.get('x-user-dealer-id');
+    console.log('🔐 verifyDealerAuth - Step1 headers', {
+      path: request.nextUrl.pathname,
+      method: request.method,
+      xUserId: userId,
+      xUserRole: role,
+      xUserDealerId: dealerIdHeader,
+    });
+
+    // 2) Si faltan datos, intentar con Authorization: Bearer <token>
+    if (!userId || !role) {
+      const authHeader = headersList.get('authorization') || request.headers.get('authorization');
+      const bearer = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+      if (bearer) {
+        try {
+          const { payload } = await jwtVerify(bearer, JWT_SECRET);
+          userId = (payload as any).userId ? String((payload as any).userId) : userId;
+          role = (payload as any).role ? String((payload as any).role) : role;
+          dealerIdHeader = (payload as any).dealerId ? String((payload as any).dealerId) : dealerIdHeader;
+        } catch {
+          // ignorar, seguimos con fallback a cookies
+        }
       }
+      if (userId || role) {
+        console.log('🔐 verifyDealerAuth - Step2 bearer resolved', { userId, role, dealerIdHeader });
+      } else {
+        console.log('🔐 verifyDealerAuth - Step2 bearer missing/invalid');
+      }
+    }
+
+    // 3) Fallback a cookies si aún falta info
+    if (!userId || !role) {
+      try {
+        const cookieStore = await cookies();
+        const accessToken = cookieStore.get('access_token')?.value;
+        if (accessToken) {
+          const { payload } = await jwtVerify(accessToken, JWT_SECRET);
+          userId = (payload as any).userId ? String((payload as any).userId) : userId;
+          role = (payload as any).role ? String((payload as any).role) : role;
+          dealerIdHeader = (payload as any).dealerId ? String((payload as any).dealerId) : dealerIdHeader;
+        }
+      } catch {
+        // ignorar error de verificación; responderemos 401 abajo si falta identidad
+      }
+    }
+
+    console.log('🔐 verifyDealerAuth - Step3 cookies resolved', { userId, role, dealerIdHeader });
+
+    if (!userId) {
+      console.log('🔐 verifyDealerAuth - No userId after headers/bearer/cookies');
+      return { error: 'No autorizado', status: 401 };
+    }
+
+    // 4) Verificar usuario y rol en BD (aceptar id numérico o publicId)
+    const parsedId = Number(userId);
+    const whereClause = Number.isFinite(parsedId) && parsedId > 0
+      ? { id: parsedId, deletedAt: null as Date | null }
+      : { publicId: String(userId), deletedAt: null as Date | null };
+
+    const user = await prisma.user.findFirst({
+      where: whereClause as any,
+      include: { dealer: true },
+    });
+
+    console.log('🔐 verifyDealerAuth - DB user', {
+      userId,
+      found: !!user,
+      roleDb: user?.role,
+      dealerStatus: user?.dealer?.status,
     });
 
     if (!user || user.role !== 'DEALER') {
+      console.log('🔐 verifyDealerAuth - Forbidden: user missing or not DEALER', { userExists: !!user, roleDb: user?.role });
       return { error: 'No autorizado', status: 403 };
     }
 
     if (!user.dealer || user.dealer.status !== 'APPROVED') {
+      console.log('🔐 verifyDealerAuth - Forbidden: dealer not approved', { hasDealer: !!user.dealer, dealerStatus: user.dealer?.status });
       return { error: 'Concesionario no aprobado', status: 403 };
     }
 
     return { user, dealer: user.dealer };
   } catch (error) {
+    console.error('🔐 verifyDealerAuth - Error verifying token', error);
     return { error: 'Token inválido', status: 401 };
   }
 }
@@ -96,8 +156,6 @@ export async function GET(request: NextRequest) {
       { error: 'Error interno del servidor' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -130,7 +188,7 @@ export async function POST(request: NextRequest) {
     const { email, firstName, lastName, phone } = validation.data;
 
     // Verificar si el email ya existe
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findFirst({
       where: { 
         email,
         deletedAt: null 
@@ -206,7 +264,5 @@ export async function POST(request: NextRequest) {
       { error: 'Error interno del servidor' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
