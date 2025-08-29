@@ -28,7 +28,7 @@ const UpdateInterestRateRangeSchema = z.object({
 // GET - Obtener un rango de tasas específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación de admin
@@ -40,7 +40,8 @@ export async function GET(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     if (isNaN(id)) {
       return NextResponse.json(
         { success: false, error: 'ID inválido' },
@@ -132,7 +133,7 @@ export async function GET(
 // PATCH - Actualizar un rango de tasas
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación de admin
@@ -144,7 +145,8 @@ export async function PATCH(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     if (isNaN(id)) {
       return NextResponse.json(
         { success: false, error: 'ID inválido' },
@@ -337,7 +339,7 @@ export async function PATCH(
 // DELETE - Eliminar un rango de tasas
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación de admin
@@ -349,7 +351,8 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     if (isNaN(id)) {
       return NextResponse.json(
         { success: false, error: 'ID inválido' },
