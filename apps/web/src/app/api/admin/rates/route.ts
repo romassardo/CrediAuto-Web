@@ -122,6 +122,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // En este punto, authResult.user está garantizado por el guard clause de arriba
+    // Extraemos el userId para evitar que TypeScript pierda el narrowing dentro de callbacks/closures
+    const createdByUserId = authResult.user.userId;
+
     const body = await request.json();
     
     // Validar datos de entrada
@@ -167,7 +171,7 @@ export async function POST(request: NextRequest) {
         INSERT INTO interest_rate_ranges
           (name, description, yearFrom, yearTo, interestRate, isActive, priority, createdByUserId, createdAt, updatedAt)
         VALUES
-          (${data.name}, ${data.description ?? null}, ${data.yearFrom}, ${data.yearTo}, ${data.interestRate}, ${data.isActive ? 1 : 0}, ${data.priority}, ${authResult.user.userId}, NOW(), NOW())
+          (${data.name}, ${data.description ?? null}, ${data.yearFrom}, ${data.yearTo}, ${data.interestRate}, ${data.isActive ? 1 : 0}, ${data.priority}, ${createdByUserId}, NOW(), NOW())
       `;
 
       const insertedIdRows = await tx.$queryRaw<Array<{ id: number }>>`SELECT LAST_INSERT_ID() AS id`;
