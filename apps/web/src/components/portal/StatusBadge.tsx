@@ -23,9 +23,11 @@ interface StatusBadgeProps {
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status, type }) => {
   const config = statusConfig[type];
-  const statusInfo = config[status as keyof typeof config] || { 
-    label: status, 
-    styles: 'bg-gray-100 text-gray-800 border-gray-200' 
+  // Evitar "never" por intersección de claves usando un índice seguro
+  const map = config as Record<string, { label: string; styles: string }>
+  const statusInfo = map[status] ?? {
+    label: status,
+    styles: 'bg-gray-100 text-gray-800 border-gray-200'
   };
 
   return (

@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
             city: validatedData.ciudad,
             userEmail: validatedData.email,
           },
-          ip: request.headers.get('x-forwarded-for') || request.ip || 'unknown',
+          ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         },
       });
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Star, Zap, Shield, Building, FileText, Users, Calculator, Car, Bike } from "lucide-react"
-import LoginModal from "@/components/LoginModal"
+import { LoginModal } from "@/components/LoginModal"
 import Image from "next/image";
 import Link from "next/link";
 

@@ -11,10 +11,18 @@ import Link from "next/link";
 interface LoginModalProps {
   children?: React.ReactNode;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function LoginModal({ children, defaultOpen = false }: LoginModalProps) {
-  const [isOpen, setIsOpen] = useState(!!defaultOpen);
+export function LoginModal({ children, defaultOpen = false, open, onOpenChange }: LoginModalProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(!!defaultOpen);
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const actualOpen = isControlled ? open : uncontrolledOpen;
+  const handleOpenChange = (v: boolean) => {
+    onOpenChange?.(v);
+    if (!isControlled) setUncontrolledOpen(v);
+  };
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +84,7 @@ export function LoginModal({ children, defaultOpen = false }: LoginModalProps) {
         window.location.href = '/portal/dashboard';
       }
       
-      setIsOpen(false);
+      handleOpenChange(false);
     } catch (error) {
       console.error("Login error:", error);
       setError('Error de conexión. Intenta nuevamente.');
@@ -88,7 +96,7 @@ export function LoginModal({ children, defaultOpen = false }: LoginModalProps) {
   const isFormValid = formData.email.trim() && formData.password.trim();
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={actualOpen} onOpenChange={handleOpenChange}>
       {children ? (
         <DialogTrigger asChild>
           {children}
@@ -215,7 +223,7 @@ export function LoginModal({ children, defaultOpen = false }: LoginModalProps) {
                   <Link 
                     href="/portal/registro-concesionario" 
                     className="text-brand-primary-600 hover:text-brand-primary-700 hover:underline font-medium transition-colors"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => handleOpenChange(false)}
                   >
                     Registrate aquí
                   </Link>

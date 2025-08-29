@@ -92,8 +92,7 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: {
         passwordHash: newPasswordHash,
-        status: user.status === 'INVITED' ? 'ACTIVE' : user.status, // Activar si era invitado
-        passwordChangedAt: new Date(),
+        status: user.status === 'INVITED' ? 'ACTIVE' : user.status // Activar si era invitado
       }
     });
 

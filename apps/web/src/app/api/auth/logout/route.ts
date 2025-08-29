@@ -21,9 +21,10 @@ export async function POST(request: NextRequest) {
           userIdFromToken = decoded.userId;
 
           // Buscar tokens vigentes del usuario y comparar hash
+          const uid = decoded.userId as number;
           const candidates = await prisma.refreshToken.findMany({
             where: {
-              userId: userIdFromToken,
+              userId: uid,
               revokedAt: null,
               expiresAt: { gt: new Date() },
             },
