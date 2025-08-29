@@ -100,7 +100,7 @@ export default function KPIsPage() {
     { month: 'Feb', applications: 1120, approved: 756 },
     { month: 'Mar', applications: 1050, approved: 714 },
     { month: 'Apr', applications: 1180, approved: 826 },
-    { month: 'May', applications: 1247, applications: 851 }
+    { month: 'May', applications: 1247, approved: 851 }
   ];
 
   const getChangeIcon = (changeType: string) => {
