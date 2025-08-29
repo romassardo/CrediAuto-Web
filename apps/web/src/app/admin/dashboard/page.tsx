@@ -1,110 +1,200 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Check, X, Clock, Building2, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Building2, Search, Eye, Check, X, Clock, User, Mail, Calendar, FileText } from 'lucide-react';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import AdminNavigation from '@/components/admin/AdminNavigation';
 
 interface Dealer {
   id: string;
   legalName: string;
   tradeName: string;
-  rut: string;
+  cuit: string;
   email: string;
   phone: string;
-  address: string;
-  city: string;
-  region: string;
-  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+  addressStreet: string;
+  addressCity: string;
+  addressProvince: string;
+  status: string;
   createdAt: string;
-  owner: {
-    publicId: string;
-    email: string;
+  owner?: {
     firstName: string;
     lastName: string;
+    email: string;
+    createdAt: string;
+  };
+  users?: Array<{
+    publicId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    role: string;
     status: string;
     createdAt: string;
-  } | null;
+  }>;
 }
 
-export default function AdminDashboard() {
+export default function AdminDealers() {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string>('PENDING_APPROVAL');
-  type ModalType = 'success' | 'error' | 'warning' | 'info';
-  const [modalState, setModalState] = useState<{ isOpen: boolean; title: string; message: string; type: ModalType }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    type: 'info',
-  });
-  const showModal = (title: string, message: string, type: ModalType = 'info') => {
+  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+  }>({ isOpen: false, title: "", message: "", type: "info" });
+
+  const showModal = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = "info") => {
     setModalState({ isOpen: true, title, message, type });
   };
+
   const closeModal = () => setModalState((prev) => ({ ...prev, isOpen: false }));
 
-  const fetchDealers = async (status: string = 'PENDING_APPROVAL') => {
+  // Función para obtener token de cookies
+  const getTokenFromCookies = (): string | null => {
+    if (typeof document === 'undefined') return null;
+    
+    // Intentar obtener desde localStorage primero
     try {
-      const response = await fetch(`/api/admin/dealers?status=${status}`, { credentials: 'include' });
-      const data = await response.json();
+      const token = localStorage.getItem('access_token');
+      if (token) return token;
+    } catch (e) {
+      console.warn('No se pudo acceder a localStorage:', e);
+    }
+    
+    // Fallback a cookies (aunque sean httpOnly, intentamos)
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'access_token') {
+        return decodeURIComponent(value);
+      }
+    }
+    
+    return null;
+  };
+
+  const fetchDealers = async () => {
+    try {
+      setLoading(true);
+      const token = getTokenFromCookies();
       
+      if (!token) {
+        showModal('Error de Autenticación', 'No se encontró token de acceso', 'error');
+        return;
+      }
+
+      const response = await fetch(`/api/admin/dealers?status=${selectedStatus}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
       if (data.success) {
         setDealers(data.dealers);
+      } else {
+        showModal('Error', data.error || 'Error al cargar concesionarios', 'error');
       }
     } catch (error) {
       console.error('Error fetching dealers:', error);
+      showModal('Error de Conexión', 'No se pudo conectar con el servidor', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApproveReject = async (dealerId: string, action: 'approve' | 'reject', reason?: string) => {
-    setProcessingId(dealerId);
-    
+  useEffect(() => {
+    fetchDealers();
+  }, [selectedStatus]);
+
+  const handleApproveReject = async (dealerId: string, action: 'approve' | 'reject') => {
     try {
+      setProcessingId(dealerId);
+      const token = getTokenFromCookies();
+      
+      if (!token) {
+        showModal('Error de Autenticación', 'No se encontró token de acceso', 'error');
+        return;
+      }
+
       const response = await fetch('/api/admin/dealers', {
         method: 'POST',
-        credentials: 'include',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           dealerId,
           action,
-          reason,
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
-      
       if (data.success) {
-        // Actualizar la lista
-        await fetchDealers(selectedStatus);
-        showModal('✅ Operación exitosa', data.message || 'Acción realizada correctamente.', 'success');
+        await fetchDealers();
+        showModal(
+          '✅ Operación exitosa',
+          action === 'approve' ? 'Concesionario aprobado correctamente' : 'Concesionario rechazado',
+          'success'
+        );
       } else {
-        showModal('❌ Error', data.error || 'Error al procesar solicitud', 'error');
+        showModal('Error', data.error || 'Error al procesar solicitud', 'error');
       }
     } catch (error) {
       console.error('Error processing dealer:', error);
-      showModal('❌ Error de Conexión', 'No se pudo conectar con el servidor. Intenta nuevamente.', 'error');
+      showModal('Error de Conexión', 'No se pudo conectar con el servidor', 'error');
     } finally {
       setProcessingId(null);
     }
   };
 
-  useEffect(() => {
-    fetchDealers(selectedStatus);
-  }, [selectedStatus]);
+  const filteredDealers = useMemo(() => {
+    let filtered = dealers;
+
+    if (selectedStatus !== 'ALL') {
+      filtered = filtered.filter(dealer => dealer.status === selectedStatus);
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(dealer =>
+        dealer.tradeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        dealer.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        dealer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (dealer.cuit && dealer.cuit.includes(searchTerm))
+      );
+    }
+
+    return filtered;
+  }, [dealers, selectedStatus, searchTerm]);
+
+  const pendingCount = dealers.filter(dealer => dealer.status === 'PENDING_APPROVAL').length;
 
   const getStatusBadge = (status: string) => {
-    const styles = {
+    const styles: Record<string, string> = {
       PENDING_APPROVAL: 'bg-yellow-100 text-yellow-800 border-yellow-200',
       APPROVED: 'bg-green-100 text-green-800 border-green-200',
       REJECTED: 'bg-red-100 text-red-800 border-red-200',
       SUSPENDED: 'bg-gray-100 text-gray-800 border-gray-200',
     };
 
-    const labels = {
+    const labels: Record<string, string> = {
       PENDING_APPROVAL: 'Pendiente',
       APPROVED: 'Aprobado',
       REJECTED: 'Rechazado',
@@ -118,214 +208,169 @@ export default function AdminDashboard() {
     );
   };
 
+  const getSelectedLabel = () => {
+    switch (selectedStatus) {
+      case 'ALL':
+        return 'Todos los estados';
+      case 'PENDING_APPROVAL':
+        return 'Pendientes';
+      case 'APPROVED':
+        return 'Aprobados';
+      case 'REJECTED':
+        return 'Rechazados';
+      case 'SUSPENDED':
+        return 'Suspendidos';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-blue-50 relative overflow-hidden">
-      {/* Elementos decorativos de fondo */}
-      <div className="absolute top-20 right-20 w-32 h-32 bg-brand-primary-600/10 rounded-full blur-xl animate-pulse"></div>
-      <div className="absolute bottom-20 left-20 w-24 h-24 bg-brand-accent-500/10 rounded-full blur-xl animate-bounce"></div>
-      
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b border-gray-100 relative z-10">
-        <div className="container mx-auto px-6 sm:px-8">
-          <div className="flex justify-between items-center py-8">
-            <div className="space-y-2">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-primary-600/10 border border-brand-primary-600/20">
-                <span className="text-sm font-medium text-brand-primary-600">🏢 Panel Administrativo</span>
-              </div>
-              <h1 className="text-4xl font-bold text-gray-900">Dashboard Administrativo</h1>
-              <p className="text-xl text-gray-600">Gestión de concesionarios y solicitudes</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-brand-primary-600/25 flex items-center gap-3">
-                <Building2 className="w-5 h-5" />
-                <span className="font-semibold">Admin Panel</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdminNavigation
+        title="Gestión de Concesionarios"
+        subtitle="Administra y supervisa concesionarios"
+        stats={{
+          count: dealers.length,
+          label: getSelectedLabel()
+        }}
+      />
 
-      <div className="container mx-auto px-6 sm:px-8 py-12 relative">
-        {/* Filtros */}
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100/50 p-8 mb-8 relative overflow-hidden">
-          {/* Elementos decorativos del header */}
-          <div className="absolute top-0 right-0 w-24 h-24 bg-brand-primary-600/5 rounded-full -translate-y-12 translate-x-12"></div>
-          <div className="absolute bottom-0 left-0 w-16 h-16 bg-brand-accent-500/10 rounded-full translate-y-8 -translate-x-8"></div>
-          
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 bg-brand-primary-600 rounded-full flex items-center justify-center shadow-sm">
-                <Building2 className="w-4 h-4 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Filtrar Concesionarios</h2>
-            </div>
-            
-            <div className="flex flex-wrap gap-3">
-              {[
-                { value: 'PENDING_APPROVAL', label: 'Pendientes', count: dealers.length },
-                { value: 'APPROVED', label: 'Aprobados', count: 0 },
-                { value: 'REJECTED', label: 'Rechazados', count: 0 },
-                { value: 'SUSPENDED', label: 'Suspendidos', count: 0 },
-              ].map((filter) => (
+      <div className="container mx-auto px-6 sm:px-8 py-6 relative">
+        {/* Filtros y búsqueda compactos */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-wrap gap-2">
+              {(['ALL', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED'] as const).map((status) => (
                 <button
-                  key={filter.value}
-                  onClick={() => setSelectedStatus(filter.value)}
-                  className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-sm ${
-                    selectedStatus === filter.value
-                      ? 'bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 text-white shadow-lg shadow-brand-primary-600/25'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md'
+                  key={status}
+                  onClick={() => setSelectedStatus(status)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                    selectedStatus === status
+                      ? 'bg-brand-primary-600 text-white border-brand-primary-700 shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
                   }`}
                 >
-                  {filter.label}
-                  {selectedStatus === filter.value && (
-                    <span className="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs font-bold">
-                      {dealers.length}
-                    </span>
-                  )}
+                  {status === 'ALL' && 'Todos'}
+                  {status === 'PENDING_APPROVAL' && 'Pendientes'}
+                  {status === 'APPROVED' && 'Aprobados'}
+                  {status === 'REJECTED' && 'Rechazados'}
+                  {status === 'SUSPENDED' && 'Suspendidos'}
                 </button>
               ))}
             </div>
+            <div className="flex items-center gap-2 w-full lg:w-80 bg-white border-2 border-gray-300 rounded-lg px-3 py-2 shadow-sm">
+              <Search className="w-4 h-4 text-gray-500" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar por nombre, email o CUIT..."
+                className="flex-1 outline-none text-sm text-gray-900 placeholder-gray-500"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Lista de Concesionarios */}
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100/50 relative overflow-hidden">
-          <div className="bg-gradient-to-r from-brand-primary-600 via-brand-primary-700 to-brand-primary-800 px-8 py-6 relative overflow-hidden">
-            {/* Elementos decorativos del header */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-accent-500/20 rounded-full translate-y-12 -translate-x-12"></div>
-            
-            <div className="relative">
-              <h2 className="text-2xl font-bold text-white">
-                Concesionarios {selectedStatus === 'PENDING_APPROVAL' ? 'Pendientes de Aprobación' : ''}
-              </h2>
-              <p className="text-brand-primary-100 mt-1">Gestiona las solicitudes de registro</p>
-            </div>
-          </div>
-
+        {/* Tabla de Concesionarios */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 overflow-hidden">
           {loading ? (
-            <div className="p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-primary-600/20 border-t-brand-primary-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600 font-medium">Cargando concesionarios...</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary-600"></div>
+              <span className="ml-2 text-gray-600">Cargando...</span>
             </div>
-          ) : dealers.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Building2 className="w-10 h-10 text-gray-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay concesionarios</h3>
-              <p className="text-gray-500">No se encontraron concesionarios en este estado</p>
+          ) : filteredDealers.length === 0 ? (
+            <div className="text-center py-12">
+              <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No hay concesionarios</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {searchTerm ? 'No se encontraron resultados para tu búsqueda' : 'No hay concesionarios en este estado'}
+              </p>
             </div>
           ) : (
-            <div className="p-8">
-              <div className="space-y-6">
-                {dealers.map((dealer) => (
-                  <div key={dealer.id} className="bg-gradient-to-r from-gray-50 to-white p-6 rounded-xl border border-gray-200 hover:shadow-lg hover:border-brand-primary-200 transition-all transform hover:scale-[1.01]">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-brand-primary-600 to-brand-primary-700 rounded-xl flex items-center justify-center shadow-lg">
-                            <Building2 className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900">{dealer.tradeName}</h3>
-                            {getStatusBadge(dealer.status)}
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
-                            <Building2 className="w-5 h-5 text-brand-primary-600" />
-                            <div>
-                              <p className="font-medium text-gray-900">{dealer.legalName}</p>
-                              <p className="text-gray-500 text-xs">Razón Social</p>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Concesionario
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fecha
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredDealers.map((dealer) => (
+                    <tr key={dealer.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-lg bg-brand-primary-600 flex items-center justify-center">
+                              <Building2 className="h-5 w-5 text-white" />
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
-                            <Mail className="w-5 h-5 text-brand-primary-600" />
-                            <div>
-                              <p className="font-medium text-gray-900">{dealer.email}</p>
-                              <p className="text-gray-500 text-xs">Email</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
-                            <Phone className="w-5 h-5 text-brand-primary-600" />
-                            <div>
-                              <p className="font-medium text-gray-900">{dealer.phone}</p>
-                              <p className="text-gray-500 text-xs">Teléfono</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
-                            <MapPin className="w-5 h-5 text-brand-primary-600" />
-                            <div>
-                              <p className="font-medium text-gray-900">{dealer.address}, {dealer.city}</p>
-                              <p className="text-gray-500 text-xs">Dirección</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
-                            <Calendar className="w-5 h-5 text-brand-primary-600" />
-                            <div>
-                              <p className="font-medium text-gray-900">{new Date(dealer.createdAt).toLocaleDateString()}</p>
-                              <p className="text-gray-500 text-xs">Fecha de registro</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
-                            <div className="w-5 h-5 bg-brand-accent-500 rounded-full flex items-center justify-center">
-                              <span className="text-xs font-bold text-gray-900">#</span>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{dealer.rut}</p>
-                              <p className="text-gray-500 text-xs">RUT</p>
-                            </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{dealer.tradeName}</div>
+                            <div className="text-sm text-gray-500">{dealer.legalName}</div>
+                            <div className="text-xs text-gray-400">CUIT: {dealer.cuit}</div>
                           </div>
                         </div>
-
-                        {dealer.owner && (
-                          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">{dealer.owner.firstName[0]}</span>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-blue-900">
-                                  {dealer.owner.firstName} {dealer.owner.lastName}
-                                </p>
-                                <p className="text-blue-700 text-sm">{dealer.owner.email}</p>
-                              </div>
-                            </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(dealer.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(dealer.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => {
+                            setSelectedDealer(dealer);
+                            setIsModalOpen(true);
+                          }}
+                          className="text-brand-primary-600 hover:text-brand-primary-900 mr-3"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {selectedStatus === 'PENDING_APPROVAL' && (
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              onClick={() => handleApproveReject(dealer.id, 'approve')}
+                              disabled={processingId === dealer.id}
+                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                            >
+                              {processingId === dealer.id ? (
+                                <Clock className="w-3 h-3 animate-spin mr-1" />
+                              ) : (
+                                <Check className="w-3 h-3 mr-1" />
+                              )}
+                              Aprobar
+                            </button>
+                            <button
+                              onClick={() => handleApproveReject(dealer.id, 'reject')}
+                              disabled={processingId === dealer.id}
+                              className="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                            >
+                              {processingId === dealer.id ? (
+                                <Clock className="w-3 h-3 animate-spin mr-1" />
+                              ) : (
+                                <X className="w-3 h-3 mr-1" />
+                              )}
+                              Rechazar
+                            </button>
                           </div>
                         )}
-                      </div>
-
-                      {selectedStatus === 'PENDING_APPROVAL' && (
-                        <div className="flex items-center gap-3 ml-6">
-                          <button
-                            onClick={() => handleApproveReject(dealer.id, 'approve')}
-                            disabled={processingId === dealer.id}
-                            className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg shadow-green-600/25 disabled:opacity-50 disabled:transform-none"
-                          >
-                            {processingId === dealer.id ? (
-                              <Clock className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Check className="w-4 h-4" />
-                            )}
-                            Aprobar
-                          </button>
-                          
-                          <button
-                            onClick={() => handleApproveReject(dealer.id, 'reject', 'No cumple requisitos')}
-                            disabled={processingId === dealer.id}
-                            className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg shadow-red-600/25 disabled:opacity-50 disabled:transform-none"
-                          >
-                            <X className="w-4 h-4" />
-                            Rechazar
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -338,6 +383,219 @@ export default function AdminDashboard() {
         message={modalState.message}
         type={modalState.type}
       />
+
+      {/* Modal de detalles del concesionario */}
+      {isModalOpen && selectedDealer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header del modal */}
+            <div className="bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 px-6 py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">{selectedDealer.tradeName}</h3>
+                    <p className="text-brand-primary-100 text-sm">{selectedDealer.legalName}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="p-6 space-y-6">
+              {/* Información básica */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-brand-primary-600" />
+                    Información del Concesionario
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Nombre Comercial</label>
+                      <p className="text-sm text-gray-900">{selectedDealer.tradeName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Razón Social</label>
+                      <p className="text-sm text-gray-900">{selectedDealer.legalName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">CUIT</label>
+                      <p className="text-sm text-gray-900">{selectedDealer.cuit}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Estado</label>
+                      <div className="mt-1">{getStatusBadge(selectedDealer.status)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-brand-primary-600" />
+                    Información de Contacto
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Email</label>
+                      <p className="text-sm text-gray-900">{selectedDealer.email}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Teléfono</label>
+                      <p className="text-sm text-gray-900">{selectedDealer.phone}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Dirección</label>
+                      <p className="text-sm text-gray-900">{selectedDealer.addressStreet}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Ubicación</label>
+                      <p className="text-sm text-gray-900">{selectedDealer.addressCity}, {selectedDealer.addressProvince}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información del responsable */}
+              {selectedDealer.owner && (
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                    <User className="w-5 h-5 text-brand-primary-600" />
+                    Responsable Principal
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Nombre Completo</label>
+                      <p className="text-sm text-gray-900">
+                        {selectedDealer.owner.firstName} {selectedDealer.owner.lastName}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Email</label>
+                      <p className="text-sm text-gray-900">{selectedDealer.owner.email}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Fecha de Registro</label>
+                      <p className="text-sm text-gray-900">
+                        {new Date(selectedDealer.owner.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Ejecutivos de cuenta */}
+              {selectedDealer.users && selectedDealer.users.length > 0 && (
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                    <User className="w-5 h-5 text-brand-primary-600" />
+                    Ejecutivos de Cuenta ({selectedDealer.users.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedDealer.users.map((user) => (
+                      <div key={user.publicId} className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            user.role === 'DEALER' 
+                              ? 'bg-amber-500' 
+                              : 'bg-brand-primary-600'
+                          }`}>
+                            <User className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">
+                              {user.firstName} {user.lastName}
+                            </p>
+                            <p className="text-xs text-gray-400 mb-2">
+                              {user.role === 'DEALER' ? 'Responsable' : user.role} • {new Date(user.createdAt).toLocaleDateString()}
+                            </p>
+                            
+                            {/* Información de contacto */}
+                            <dl className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <dt className="text-xs font-medium text-gray-500">Email:</dt>
+                                <dd className="text-xs text-gray-900 truncate">
+                                  <a href={`mailto:${user.email}`} className="text-brand-primary-600 hover:text-brand-primary-800 underline">
+                                    {user.email}
+                                  </a>
+                                </dd>
+                              </div>
+                              {user.phone && (
+                                <div className="flex items-center gap-2">
+                                  <dt className="text-xs font-medium text-gray-500">Teléfono:</dt>
+                                  <dd className="text-xs text-gray-900">
+                                    <a href={`tel:${user.phone}`} className="text-brand-primary-600 hover:text-brand-primary-800 underline">
+                                      {user.phone}
+                                    </a>
+                                  </dd>
+                                </div>
+                              )}
+                            </dl>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Información adicional */}
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-brand-primary-600" />
+                  Información Adicional
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Fecha de Solicitud</label>
+                    <p className="text-sm text-gray-900">
+                      {new Date(selectedDealer.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer con acciones */}
+            {selectedDealer.status === 'PENDING_APPROVAL' && (
+              <div className="border-t bg-gray-50 px-6 py-4 rounded-b-xl">
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      handleApproveReject(selectedDealer.id, 'reject');
+                      setIsModalOpen(false);
+                    }}
+                    disabled={processingId === selectedDealer.id}
+                    className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Rechazar
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleApproveReject(selectedDealer.id, 'approve');
+                      setIsModalOpen(false);
+                    }}
+                    disabled={processingId === selectedDealer.id}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Aprobar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

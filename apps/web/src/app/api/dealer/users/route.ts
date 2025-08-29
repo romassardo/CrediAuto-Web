@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { jwtVerify } from 'jose';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
+import { debugAuth, errorLog } from '@/lib/logger';
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
 // Esquema para crear ejecutivo de cuentas
@@ -24,7 +25,7 @@ async function verifyDealerAuth(request: NextRequest) {
     let userId = reqHeaders.get('x-user-id') || headersList.get('x-user-id');
     let role = reqHeaders.get('x-user-role') || headersList.get('x-user-role');
     let dealerIdHeader = reqHeaders.get('x-user-dealer-id') || headersList.get('x-user-dealer-id');
-    console.log('🔐 verifyDealerAuth - Step1 headers', {
+    debugAuth('🔐 verifyDealerAuth - Step1 headers', {
       path: request.nextUrl.pathname,
       method: request.method,
       xUserId: userId,
@@ -47,9 +48,9 @@ async function verifyDealerAuth(request: NextRequest) {
         }
       }
       if (userId || role) {
-        console.log('🔐 verifyDealerAuth - Step2 bearer resolved', { userId, role, dealerIdHeader });
+        debugAuth('🔐 verifyDealerAuth - Step2 bearer resolved', { userId, role, dealerIdHeader });
       } else {
-        console.log('🔐 verifyDealerAuth - Step2 bearer missing/invalid');
+        debugAuth('🔐 verifyDealerAuth - Step2 bearer missing/invalid');
       }
     }
 
@@ -69,10 +70,10 @@ async function verifyDealerAuth(request: NextRequest) {
       }
     }
 
-    console.log('🔐 verifyDealerAuth - Step3 cookies resolved', { userId, role, dealerIdHeader });
+    debugAuth('🔐 verifyDealerAuth - Step3 cookies resolved', { userId, role, dealerIdHeader });
 
     if (!userId) {
-      console.log('🔐 verifyDealerAuth - No userId after headers/bearer/cookies');
+      debugAuth('🔐 verifyDealerAuth - No userId after headers/bearer/cookies');
       return { error: 'No autorizado', status: 401 };
     }
 
@@ -87,7 +88,7 @@ async function verifyDealerAuth(request: NextRequest) {
       include: { dealer: true },
     });
 
-    console.log('🔐 verifyDealerAuth - DB user', {
+    debugAuth('🔐 verifyDealerAuth - DB user', {
       userId,
       found: !!user,
       roleDb: user?.role,
@@ -95,18 +96,18 @@ async function verifyDealerAuth(request: NextRequest) {
     });
 
     if (!user || user.role !== 'DEALER') {
-      console.log('🔐 verifyDealerAuth - Forbidden: user missing or not DEALER', { userExists: !!user, roleDb: user?.role });
+      debugAuth('🔐 verifyDealerAuth - Forbidden: user missing or not DEALER', { userExists: !!user, roleDb: user?.role });
       return { error: 'No autorizado', status: 403 };
     }
 
     if (!user.dealer || user.dealer.status !== 'APPROVED') {
-      console.log('🔐 verifyDealerAuth - Forbidden: dealer not approved', { hasDealer: !!user.dealer, dealerStatus: user.dealer?.status });
+      debugAuth('🔐 verifyDealerAuth - Forbidden: dealer not approved', { hasDealer: !!user.dealer, dealerStatus: user.dealer?.status });
       return { error: 'Concesionario no aprobado', status: 403 };
     }
 
     return { user, dealer: user.dealer };
   } catch (error) {
-    console.error('🔐 verifyDealerAuth - Error verifying token', error);
+    errorLog('🔐 verifyDealerAuth - Error verifying token', error);
     return { error: 'Token inválido', status: 401 };
   }
 }
@@ -151,7 +152,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching users:', error);
+    errorLog('Error fetching users:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -238,7 +239,7 @@ export async function POST(request: NextRequest) {
     });
 
     // TODO: Enviar email con credenciales al ejecutivo
-    console.log(`Credenciales para ejecutivo ${email}:`, {
+    debugAuth(`Credenciales para ejecutivo ${email}:`, {
       email,
       password: tempPassword,
       loginUrl: `${process.env.NEXTAUTH_URL}/login`
@@ -259,7 +260,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error creating user:', error);
+    errorLog('Error creating user:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

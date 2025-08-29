@@ -1,6 +1,14 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization: avoid constructing Resend at module load time
+// so GET routes that import this module don't throw when RESEND_API_KEY is missing.
+let resendClient: Resend | null = null;
+const getResend = (): Resend | null => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  if (!resendClient) resendClient = new Resend(apiKey);
+  return resendClient;
+};
 
 interface SendCredentialsEmailParams {
   to: string;
@@ -18,7 +26,15 @@ export async function sendDealerCredentials({
   loginUrl
 }: SendCredentialsEmailParams) {
   try {
-    const { data, error } = await resend.emails.send({
+    const client = getResend();
+    if (!client) {
+      // No API key configured: skip sending gracefully
+      // and let the caller decide what to do.
+      console.warn('Resend API key not configured. Skipping email send.');
+      return { success: false, error: new Error('RESEND_API_KEY not configured') } as const;
+    }
+
+    const { data, error } = await client.emails.send({
       from: 'CrediAuto <noreply@crediauto.cl>',
       to: [to],
       subject: '¡Bienvenido a CrediAuto! - Credenciales de acceso',
@@ -103,7 +119,7 @@ export async function sendDealerCredentials({
             <!-- Footer -->
             <div style="background-color: #f8fafc; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                © 2024 CrediAuto. Todos los derechos reservados.
+                &copy; 2024 CrediAuto. Todos los derechos reservados.
               </p>
             </div>
           </div>

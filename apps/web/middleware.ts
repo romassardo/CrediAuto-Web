@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
+import { debugAuth } from '@/lib/logger'
 
 // Rutas protegidas y públicas
 const protectedRoutes = ['/admin', '/portal']
@@ -81,7 +82,7 @@ export default async function middleware(req: NextRequest) {
     if (isApiRoute) {
       const method = req.method
       if (method === 'GET' || method === 'HEAD') {
-        console.log('🔍 Middleware API:', path, { userId, userRole, dealerId: (payload as any).dealerId, tokenType, method })
+        debugAuth('🔍 Middleware API:', path, { userId, userRole, dealerId: (payload as any).dealerId, tokenType, method })
         const requestHeaders = new Headers(req.headers)
         requestHeaders.set('x-user-id', userId.toString())
         requestHeaders.set('x-user-role', userRole)

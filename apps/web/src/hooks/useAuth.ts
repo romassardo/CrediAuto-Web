@@ -82,12 +82,12 @@ export function useAuth() {
   const isExecutive = () => hasRole('EJECUTIVO_CUENTAS');
   const isAdmin = () => hasRole('ADMIN');
   const canManageTeam = () => {
-    const result = hasRole(['DEALER', 'ADMIN']);
+    const result = hasRole('DEALER');
     console.log('🔍 canManageTeam - Usuario:', authState.user?.role, 'Resultado:', result);
     return result;
   };
   const canAccessFullDashboard = () => {
-    const result = hasRole(['DEALER', 'ADMIN']);
+    const result = hasRole('DEALER');
     console.log('🔍 canAccessFullDashboard - Usuario:', authState.user?.role, 'Resultado:', result);
     return result;
   };

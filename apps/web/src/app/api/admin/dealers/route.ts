@@ -6,6 +6,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 import { sendDealerCredentials } from '@/lib/email';
 import { v4 as uuidv4 } from 'uuid';
+import { debugAuth, errorLog } from '@/lib/logger';
 
 // Claves para verificar tokens según su tipo
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
@@ -13,7 +14,7 @@ const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECR
 
 // Esquema para obtener dealers pendientes
 const getDealersSchema = z.object({
-  status: z.enum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED']).optional(),
+  status: z.enum(['ALL', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED']).optional(),
 });
 
 // Esquema para aprobar/rechazar dealer
@@ -27,8 +28,16 @@ const updateDealerStatusSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     // Autorización: solo ADMIN
-    const headersList = await headers();
-    let userRole = headersList.get('x-user-role');
+    // 1) Intentar primero desde request.headers (inyectados por middleware en GET/HEAD)
+    let userRole = request.headers.get('x-user-role');
+
+    // 2) Fallback a next/headers() en caso de que no venga desde request (entornos edge)
+    if (!userRole) {
+      const headersList = await headers();
+      userRole = headersList.get('x-user-role');
+    }
+
+    debugAuth('🔐 GET /api/admin/dealers -> Step1 headers role:', userRole);
 
     if (userRole !== 'ADMIN') {
       try {
@@ -46,7 +55,7 @@ export async function GET(request: NextRequest) {
           if (pRole) userRole = String(pRole);
         }
       } catch (err) {
-        console.error('❌ Error verificando JWT (GET admin/dealers):', err);
+        errorLog('❌ Error verificando JWT (GET admin/dealers):', err);
       }
     }
 
@@ -59,56 +68,76 @@ export async function GET(request: NextRequest) {
 
     const validation = getDealersSchema.safeParse({ status });
     if (!validation.success) {
+      debugAuth('❗ GET /api/admin/dealers -> parámetros inválidos:', validation.error.flatten());
+      return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 });
+    }
+
+    debugAuth('📥 GET /api/admin/dealers -> consultando dealers con status:', validation.data.status);
+    let dealers: any[] = [];
+    try {
+      const whereClause: any = {
+        deletedAt: null,
+      };
+      
+      // Solo agregar filtro de status si no es 'ALL'
+      if (validation.data.status && validation.data.status !== 'ALL') {
+        whereClause.status = validation.data.status;
+      }
+      
+      dealers = await prisma.dealer.findMany({
+        where: whereClause,
+        include: {
+          users: {
+            select: {
+              publicId: true,
+              email: true,
+              phone: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              status: true,
+              createdAt: true,
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+    } catch (e: any) {
+      errorLog('💥 Prisma error en dealer.findMany:', {
+        code: e?.code,
+        meta: e?.meta,
+        message: e?.message
+      });
       return NextResponse.json(
-        { error: 'Parámetros inválidos' },
-        { status: 400 }
+        { error: 'Error consultando concesionarios' },
+        { status: 500 }
       );
     }
 
-    const dealers = await prisma.dealer.findMany({
-      where: {
-        status: validation.data.status as any,
-        deletedAt: null,
-      },
-      include: {
-        users: {
-          where: { role: 'DEALER' },
-          select: {
-            publicId: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            status: true,
-            createdAt: true,
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-
+    debugAuth('📤 GET /api/admin/dealers -> dealers encontrados:', dealers.length);
     return NextResponse.json({
       success: true,
       dealers: dealers.map(dealer => ({
         id: dealer.publicId,
         legalName: dealer.legalName || '',
         tradeName: dealer.tradeName || '',
-        // El frontend espera 'rut'; mapeamos desde 'cuit' en el schema
-        rut: dealer.cuit || '',
+        cuit: dealer.cuit || '',
         email: dealer.email || '',
         phone: dealer.phone || '',
-        address: dealer.addressStreet || '',
-        city: dealer.addressCity || '',
-        region: dealer.addressProvince || '',
+        addressStreet: dealer.addressStreet || '',
+        addressCity: dealer.addressCity || '',
+        addressProvince: dealer.addressProvince || '',
         status: dealer.status,
         createdAt: dealer.createdAt,
-        owner: dealer.users[0] || null,
+        owner: dealer.users.find((user: any) => user.role === 'DEALER') || null,
+        users: dealer.users || [],
       }))
     });
 
   } catch (error) {
-    console.error('Error fetching dealers:', error);
+    errorLog('💥 Error fetching dealers (GET /api/admin/dealers):', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

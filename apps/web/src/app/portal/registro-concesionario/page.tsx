@@ -15,6 +15,8 @@ export default function RegistroConcesionario() {
     
     // Datos del concesionario
     nombreComercial: "",
+    cuit: "",
+    direccion: "",
     ciudad: "",
     provincia: "",
     
@@ -41,11 +43,25 @@ export default function RegistroConcesionario() {
     setIsSubmitting(true);
     
     try {
-      // Simular envío con validación
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setShowSuccess(true);
+      const response = await fetch('/api/dealers/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShowSuccess(true);
+      } else {
+        console.error('Error en el registro:', data.error);
+        alert(data.error || 'Error al procesar la solicitud');
+      }
     } catch (error) {
       console.error('Error al enviar formulario:', error);
+      alert('Error de conexión. Por favor, intenta nuevamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,6 +73,8 @@ export default function RegistroConcesionario() {
     formData.email.trim() && 
     formData.telefono.trim() && 
     formData.nombreComercial.trim() && 
+    formData.cuit.trim() && 
+    formData.direccion.trim() && 
     formData.ciudad.trim() && 
     formData.provincia.trim() && 
     formData.aceptaTerminos
@@ -310,6 +328,39 @@ export default function RegistroConcesionario() {
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
                       placeholder="Ej: AutoCenter San Martín"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="cuit" className="block text-sm font-medium text-gray-700 mb-2">
+                      CUIT *
+                    </label>
+                    <input
+                      type="text"
+                      id="cuit"
+                      name="cuit"
+                      value={formData.cuit}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
+                      placeholder="20123456789"
+                      maxLength={11}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-2">
+                      Dirección *
+                    </label>
+                    <input
+                      type="text"
+                      id="direccion"
+                      name="direccion"
+                      value={formData.direccion}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
+                      placeholder="Av. San Martín 1234"
                       required
                     />
                   </div>

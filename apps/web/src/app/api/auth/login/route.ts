@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { debugAuth, errorLog } from '@/lib/logger';
 
 // Esquema de validación para el login
 const loginSchema = z.object({
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     const { email, password } = validationResult.data;
 
     // Buscar usuario en la base de datos - TEMPORALMENTE SIN FILTRO deletedAt
-    console.log('🔍 Buscando usuario con email:', email);
+    debugAuth('🔍 Buscando usuario con email:', email);
     
     // Primero buscar SIN filtro deletedAt para ver si existe
     const userWithDeleted = await prisma.user.findFirst({
@@ -74,17 +75,18 @@ export async function POST(request: NextRequest) {
       }
     });
     
-    console.log('🔍 Usuario encontrado (con deleted):', userWithDeleted ? {
+    debugAuth('🔍 Usuario encontrado (con deleted):', userWithDeleted ? {
       id: userWithDeleted.id,
       email: userWithDeleted.email,
       deletedAt: userWithDeleted.deletedAt,
       status: userWithDeleted.status
     } : 'NO ENCONTRADO');
-    
-    const user = await prisma.user.findUnique({
-      where: { 
+
+    // Buscar SOLO usuarios no eliminados
+    const user = await prisma.user.findFirst({
+      where: {
         email,
-        deletedAt: null // Solo usuarios no eliminados
+        deletedAt: null,
       },
       include: {
         dealer: {
@@ -92,22 +94,22 @@ export async function POST(request: NextRequest) {
             id: true,
             publicId: true,
             tradeName: true,
-            status: true
-          }
-        }
-      }
+            status: true,
+          },
+        },
+      },
     });
 
     // Verificar si el usuario existe
     if (!user) {
-      console.log('🔍 Usuario no encontrado para email:', email);
+      debugAuth('🔍 Usuario no encontrado para email:', email);
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
         { status: 401 }
       );
     }
 
-    console.log('🔍 Usuario encontrado:', { 
+    debugAuth('🔍 Usuario encontrado:', { 
       id: user.id, 
       email: user.email, 
       role: user.role, 
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar si el usuario tiene contraseña configurada
     if (!user.passwordHash) {
-      console.log('❌ Usuario sin contraseña configurada');
+      debugAuth('❌ Usuario sin contraseña configurada');
       return NextResponse.json(
         { error: 'Usuario no tiene contraseña configurada' },
         { status: 401 }
@@ -126,12 +128,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar contraseña
-    console.log('🔍 Verificando contraseña para usuario:', user.email);
+    debugAuth('🔍 Verificando contraseña para usuario:', user.email);
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    console.log('🔍 Resultado validación contraseña:', isPasswordValid);
+    debugAuth('🔍 Resultado validación contraseña:', isPasswordValid);
     
     if (!isPasswordValid) {
-      console.log('❌ Contraseña inválida para usuario:', user.email);
+      debugAuth('❌ Contraseña inválida para usuario:', user.email);
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
         { status: 401 }
@@ -239,7 +241,9 @@ export async function POST(request: NextRequest) {
     // Preparar respuesta
     const response = NextResponse.json({
       success: true,
+      message: 'Login exitoso',
       mustChangePassword,
+      token: accessToken, // Incluir token en la respuesta para localStorage
       user: {
         id: user.publicId,
         email: user.email,
@@ -274,13 +278,12 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-
-  } catch (error) {
-    console.error('Login error:', error);
-    
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
+} catch (error) {
+  errorLog('Login error:', error);
+  
+  return NextResponse.json(
+    { error: 'Error interno del servidor' },
+    { status: 500 }
+  );
+}
 }

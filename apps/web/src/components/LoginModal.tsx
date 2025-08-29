@@ -9,11 +9,12 @@ import { LogIn, Building, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 
 interface LoginModalProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  defaultOpen?: boolean;
 }
 
-export function LoginModal({ children }: LoginModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function LoginModal({ children, defaultOpen = false }: LoginModalProps) {
+  const [isOpen, setIsOpen] = useState(!!defaultOpen);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +58,11 @@ export function LoginModal({ children }: LoginModalProps) {
       // Login exitoso
       console.log('Login successful:', data.user);
       
+      // Guardar token en localStorage para acceso desde JavaScript
+      if (data.token) {
+        localStorage.setItem('access_token', data.token);
+      }
+      
       // Verificar si debe cambiar contraseña
       if (data.mustChangePassword) {
         window.location.href = '/change-password';
@@ -65,7 +71,7 @@ export function LoginModal({ children }: LoginModalProps) {
       
       // Redireccionar según el rol
       if (data.user.role === 'ADMIN') {
-        window.location.href = '/admin/dashboard';
+        window.location.href = '/admin/loans';
       } else if (data.user.role === 'DEALER' || data.user.role === 'EJECUTIVO_CUENTAS') {
         window.location.href = '/portal/dashboard';
       }
@@ -83,9 +89,11 @@ export function LoginModal({ children }: LoginModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      {children ? (
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none">
         <DialogTitle className="sr-only">Portal Concesionarios - Iniciar Sesión</DialogTitle>
         <DialogDescription className="sr-only">
