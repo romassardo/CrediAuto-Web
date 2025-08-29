@@ -23,11 +23,53 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
     seguroAutoMensual: 0,
   });
 
+  const [vehicleYear, setVehicleYear] = useState<number>(new Date().getFullYear());
+  const [loadingRate, setLoadingRate] = useState(false);
+  const [rateError, setRateError] = useState<string>('');
+  const [rateInfo, setRateInfo] = useState<string>('');
   const [results, setResults] = useState<{[key: number]: Result}>({});
   const [selectedTerm, setSelectedTerm] = useState<number>(24);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const availableTerms = [6, 12, 24, 48];
+
+  // Función para obtener la tasa según el año del vehículo
+  const fetchRateByYear = async (year: number) => {
+    setLoadingRate(true);
+    setRateError('');
+    setRateInfo('');
+    
+    try {
+      const response = await fetch(`/api/rates/by-year?year=${year}`);
+      const json = await response.json();
+      
+      if (json?.success && json?.data?.interestRate != null) {
+        // Actualizar la tasa en los inputs
+        const { interestRate, rateRange } = json.data;
+        updateTasa('valor', Number(interestRate));
+        const yFrom = rateRange?.yearFrom ?? '';
+        const yTo = rateRange?.yearTo ?? '';
+        setRateInfo(`Tasa aplicada: ${(Number(interestRate) * 100).toFixed(1)}% ${yFrom && yTo ? `para vehículos ${yFrom}-${yTo}` : ''}`);
+      } else {
+        setRateError(json?.error || 'No se encontró una tasa para este año');
+        // Mantener tasa por defecto
+        updateTasa('valor', 0.60); // 60% por defecto
+      }
+    } catch (error) {
+      console.error('Error al obtener tasa:', error);
+      setRateError('Error al obtener la tasa. Se usará la tasa por defecto.');
+      updateTasa('valor', 0.60); // 60% por defecto
+    } finally {
+      setLoadingRate(false);
+    }
+  };
+
+  // Efecto para obtener tasa cuando cambia el año
+  useEffect(() => {
+    if (vehicleYear >= 1990 && vehicleYear <= new Date().getFullYear() + 1) {
+      fetchRateByYear(vehicleYear);
+    }
+  }, [vehicleYear]);
 
   useEffect(() => {
     try {
@@ -122,6 +164,39 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Año del Vehículo *
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={vehicleYear}
+                  onChange={(e) => setVehicleYear(Number(e.target.value))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
+                  placeholder={new Date().getFullYear().toString()}
+                  min="1990"
+                  max={new Date().getFullYear() + 1}
+                />
+                {loadingRate && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-primary-600"></div>
+                  </div>
+                )}
+              </div>
+              {rateInfo && (
+                <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  {rateInfo}
+                </p>
+              )}
+              {rateError && (
+                <p className="text-sm text-red-600 mt-1">
+                  {rateError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tipo de Tasa *
               </label>
               <select
@@ -137,18 +212,23 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Valor de la Tasa (%) *
+                Tasa de Interés (%) - Solo Lectura
               </label>
-              <input
-                type="number"
-                value={inputs.tasa.valor * 100}
-                onChange={(e) => updateTasa('valor', Number(e.target.value) / 100)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
-                placeholder="60"
-                min="1"
-                max="200"
-                step="0.1"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  value={inputs.tasa.valor * 100}
+                  readOnly
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed shadow-sm"
+                  placeholder="60"
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Percent className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                La tasa se asigna automáticamente según el año del vehículo
+              </p>
             </div>
 
             <div>
@@ -280,6 +360,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
                         if (onCalculationComplete) {
                           const calculationData = {
                             vehiclePrice: inputs.monto,
+                            vehicleYear: vehicleYear,
                             downPayment: 0,
                             loanTerm: term,
                             interestRate: inputs.tasa.valor,

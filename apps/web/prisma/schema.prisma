@@ -92,6 +92,7 @@ model User {
   submittedLoanApplications LoanApplication[] @relation("LoanSubmittedBy")
   reviewedLoanApplications  LoanApplication[] @relation("LoanReviewedBy")
   executiveLoanApplications LoanApplication[] @relation("LoanExecutive")
+  createdRateRanges     InterestRateRange[]  @relation("RateRangeCreatedBy")
 
   @@index([dealerId], name: "idx_users_dealerId")
   @@index([status], name: "idx_users_status")
@@ -169,6 +170,29 @@ enum MaritalStatus {
 enum VehicleCondition {
   nuevo
   usado
+}
+
+// Modelo para rangos de tasas por años del vehículo
+model InterestRateRange {
+  id                    Int       @id @default(autoincrement())
+  name                  String    @db.VarChar(100)        // Ej: "Vehículos 2005-2015"
+  description           String?   @db.VarChar(255)        // Descripción del rango
+  yearFrom              Int                               // Año desde (inclusive)
+  yearTo                Int                               // Año hasta (inclusive)
+  interestRate          Decimal   @db.Decimal(5,4)        // Tasa de interés anual (ej: 0.4500 = 45%)
+  isActive              Boolean   @default(true)          // Si el rango está activo
+  priority              Int       @default(0)             // Prioridad para casos de solapamiento
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  createdByUserId       Int?
+  
+  // Relación con el usuario que creó/modificó
+  createdByUser         User?     @relation("RateRangeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  
+  @@index([yearFrom, yearTo], name: "idx_rate_range_years")
+  @@index([isActive], name: "idx_rate_range_active")
+  @@index([priority], name: "idx_rate_range_priority")
+  @@map("interest_rate_ranges")
 }
 
 // Modelo loan_applications
