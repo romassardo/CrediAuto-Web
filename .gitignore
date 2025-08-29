@@ -35,3 +35,10 @@ yarn-error.log*
 
 # Generated
 apps/web/src/generated/prisma
+
+# Local uploads and backups
+apps/web/public/uploads/
+apps/web/crediauto_backup*.sql
+temp/
+apps/web/test-api.js
+apps/web/test-prisma.js
