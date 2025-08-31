@@ -7,17 +7,6 @@ export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    // Optimizaciones para MySQL en producción
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-    // Configuración de conexiones para MySQL
-    ...(process.env.NODE_ENV === 'production' && {
-      // En producción, usar pool de conexiones optimizado
-      datasourceUrl: process.env.DATABASE_URL,
-    }),
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
