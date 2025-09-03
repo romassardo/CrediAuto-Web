@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let whereCondition: any = {};
+    const whereCondition: any = {};
 
     // Filtrar según el rol del usuario
     if (user.role === 'EJECUTIVO_CUENTAS') {

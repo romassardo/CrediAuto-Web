@@ -53,7 +53,7 @@ export default function RatesPage() {
   // Función para obtener token desde cookies
   const getTokenFromCookies = () => {
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'access_token') {
         return value;

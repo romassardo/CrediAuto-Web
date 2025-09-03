@@ -30,7 +30,7 @@ function sanitizeFileName(name: string) {
 
 async function ensureAuth() {
   const hdrs = await headers()
-  let userId = hdrs.get('x-user-id')
+  const userId = hdrs.get('x-user-id')
   if (userId) return { userId }
   try {
     const cookieStore = await cookies()

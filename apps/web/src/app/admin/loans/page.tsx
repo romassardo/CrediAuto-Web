@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import AdminNavigation from "@/components/admin/AdminNavigation";
-import Link from "next/link";
-import { Check, X, Search, Calendar, Clock, Eye, FileText, User, Building, DollarSign, Filter, Car, Heart, Download, ExternalLink, Briefcase, MapPin } from "lucide-react";
+import { Check, X, Search, Calendar, Clock, Eye, FileText, User, Building, DollarSign, Car, Heart, Download, ExternalLink, Briefcase, MapPin } from "lucide-react";
 
 // Tipos alineados con /api/admin/loan-applications (GET)
 interface AdminLoanApplication {
@@ -93,7 +92,7 @@ export default function AdminLoansPage() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [selectedApp, setSelectedApp] = useState<AdminLoanApplication | null>(null);
-  const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
+
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const [modalState, setModalState] = useState<{
@@ -134,7 +133,6 @@ export default function AdminLoansPage() {
   };
 
   const handleOpenDetailsModal = async (app: AdminLoanApplication) => {
-    setLoadingDetails(true);
     setIsModalOpen(true);
     
     try {
@@ -160,8 +158,6 @@ export default function AdminLoansPage() {
       console.error('Error al obtener detalles:', error);
       showModal('Error', 'No se pudieron cargar los detalles de la solicitud', 'error');
       setSelectedApp(app); // Fallback a datos básicos
-    } finally {
-      setLoadingDetails(false);
     }
   };
 
@@ -170,30 +166,23 @@ export default function AdminLoansPage() {
     setSelectedApp(null);
   };
 
-  const selectedLabel = useMemo(() => {
-    const map: Record<string, string> = {
-      PENDING: "Pendientes",
-      UNDER_REVIEW: "En revisión",
-      APPROVED: "Aprobadas",
-      REJECTED: "Rechazadas",
-      CANCELLED: "Canceladas",
-    };
-    return map[statusFilter] ?? statusFilter;
-  }, [statusFilter]);
-
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
         page: String(page),
         limit: String(limit),
       });
-      if (statusFilter) params.set("status", statusFilter);
+      if (statusFilter && statusFilter !== "ALL") params.set("status", statusFilter);
       if (searchTerm.trim()) params.set("search", searchTerm.trim());
 
-      const response = await fetch(`/api/admin/loan-applications?${params.toString()}` , {
+      const token = getTokenFromCookies();
+      const response = await fetch(`/api/admin/loan-applications?${params.toString()}`, {
         credentials: "include",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
       });
 
       const contentType = response.headers.get("content-type") || "";
@@ -249,17 +238,27 @@ export default function AdminLoansPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, page, searchTerm, limit]);
 
-  const updateStatus = async (applicationPublicId: string, nextStatus: "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED") => {
+  // Ejecuta la carga cada vez que cambien filtros/paginación
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  const updateStatus = async (
+    applicationPublicId: string,
+    nextStatus: "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED"
+  ) => {
     setProcessingId(applicationPublicId);
     try {
+      const token = getTokenFromCookies();
       const response = await fetch("/api/admin/loan-applications", {
         method: "PATCH",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({ applicationId: applicationPublicId, status: nextStatus }),
       });
@@ -285,7 +284,10 @@ export default function AdminLoansPage() {
 
       if (!contentType.includes("application/json")) {
         const text = await response.text();
-        console.error("Non-JSON response for PATCH /api/admin/loan-applications:", text.slice(0, 300));
+        console.error(
+          "Non-JSON response for PATCH /api/admin/loan-applications:",
+          text.slice(0, 300)
+        );
         showModal("❌ Respuesta inválida", "El servidor devolvió un contenido no-JSON.", "error");
         return;
       }
@@ -293,23 +295,23 @@ export default function AdminLoansPage() {
       const data = await response.json();
       if (data?.success) {
         await fetchApplications();
-        showModal("✅ Operación exitosa", data.message || "Solicitud actualizada correctamente.", "success");
+        showModal(
+          "✅ Operación exitosa",
+          data.message || "Solicitud actualizada correctamente.",
+          "success"
+        );
       } else {
-        showModal("❌ Error", data?.error || "Error al actualizar solicitud", "error");
+        showModal("❌ Error", data?.error || "No se pudo actualizar la solicitud.", "error");
       }
     } catch (error) {
-      console.error("Error updating application:", error);
-      showModal("❌ Error de Conexión", "No se pudo conectar con el servidor. Intenta nuevamente.", "error");
+      console.error("Error updating status:", error);
+      showModal("❌ Error", "No se pudo actualizar la solicitud.", "error");
     } finally {
       setProcessingId(null);
     }
   };
 
-  useEffect(() => {
-    fetchApplications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, page, searchTerm]);
-  const getStatusBadge = (status: AdminLoanApplication["status"]) => {
+  const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
       UNDER_REVIEW: "bg-blue-100 text-blue-800 border-blue-200",
@@ -325,8 +327,12 @@ export default function AdminLoansPage() {
       CANCELLED: "Cancelada",
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status]}`}>
-        {labels[status]}
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+          styles[status] || ""
+        }`}
+      >
+        {labels[status] || status}
       </span>
     );
   };

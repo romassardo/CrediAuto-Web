@@ -1,4 +1,5 @@
 import { LoginModal } from "@/components/LoginModal";
+import Link from "next/link";
 
 export const metadata = {
   title: "Iniciar sesión | CrediAuto",
@@ -15,7 +16,7 @@ export default function LoginPage() {
       <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
         <div className="pointer-events-auto bg-white/70 backdrop-blur-md rounded-xl px-6 py-4 shadow hidden sm:block">
           <p className="text-sm text-gray-600">
-            Cierra el modal para volver o <a href="/" className="text-brand-primary-700 underline">ir al inicio</a>.
+            Cierra el modal para volver o <Link href="/" className="text-brand-primary-700 underline">ir al inicio</Link>.
           </p>
         </div>
       </div>

@@ -1,0 +1,4 @@
+﻿# Ignorar scripts utilitarios Node y pruebas ad-hoc (no forman parte del bundle de producción)
+check-*.js
+test-*.js
+scripts/**/*.js

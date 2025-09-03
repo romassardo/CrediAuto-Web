@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NODE_ENV === 'production' ? 'https://crediexpress-auto.com' : 'http://localhost:3000'),
+  metadataBase: new URL(process.env.APP_URL ?? (process.env.NODE_ENV === 'production' ? 'https://crediexpress-auto.com' : 'http://localhost:3000')),
   title: 'Créditos Prendarios Inteligentes | Crediexpress Auto',
   description: 'Financiá tu auto o moto con las mejores condiciones del mercado. Tasas competitivas, aprobación rápida y transparencia total. +500 concesionarios aliados.',
   keywords: 'créditos prendarios, financiación auto, préstamos moto, créditos vehiculares, concesionarios Argentina',

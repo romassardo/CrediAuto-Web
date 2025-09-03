@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Eye, User, RefreshCw, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import StatusBadge from './StatusBadge';
@@ -107,8 +107,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
       document.removeEventListener('keydown', handleEsc);
     };
   }, []);
-
-  const fetchApplications = async (opts?: { abortSignal?: AbortSignal }) => {
+  const fetchApplications = useCallback(async (opts?: { abortSignal?: AbortSignal }) => {
     try {
       setLoading(true);
       setError(null);
@@ -143,9 +142,9 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, search, page, pageSize]);
 
-  const fetchSuggestions = async (opts?: { abortSignal?: AbortSignal }) => {
+  const fetchSuggestions = useCallback(async (opts?: { abortSignal?: AbortSignal }) => {
     try {
       const q = search.trim();
       if (!q) {
@@ -171,7 +170,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     } catch {
       // Silenciar errores en sugerencias
     }
-  };
+  }, [status, search]);
 
   // Inicializar estado desde la URL una sola vez
   useEffect(() => {
@@ -209,7 +208,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     const ac = new AbortController();
     fetchApplications({ abortSignal: ac.signal });
     return () => ac.abort();
-  }, [refreshTrigger, status, page, pageSize, initialized]);
+  }, [refreshTrigger, initialized, fetchApplications]);
 
   // Debounce de búsqueda + sugerencias
   useEffect(() => {
@@ -225,7 +224,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
       ac.abort();
       clearTimeout(t);
     };
-  }, [search, initialized]);
+  }, [search, initialized, fetchApplications, fetchSuggestions]);
 
   const handleRefresh = () => {
     fetchApplications();
@@ -323,6 +322,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
                 <li
                   key={s.publicId}
                   role="option"
+                  aria-selected={false}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     handleSelectSuggestion(s);

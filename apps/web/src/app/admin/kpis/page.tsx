@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 import { TrendingUp, TrendingDown, DollarSign, Users, FileText, Clock, Target, BarChart3, PieChart, Activity } from 'lucide-react';
 
@@ -23,7 +23,7 @@ interface ChartData {
 
 export default function KPIsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   const kpiData: KPIData[] = [
     {

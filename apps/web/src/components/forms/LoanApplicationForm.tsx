@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { User, Briefcase, Car, Upload, Heart, FileText } from 'lucide-react';
+import { User, Heart, FileText } from 'lucide-react';
 import { type Result } from '@/lib/calculator/loan-calculator';
 
 interface LoanApplicationData {
@@ -69,7 +69,7 @@ const RELACIONES_LABORALES = [
 const CUOTAS_DISPONIBLES = [6, 12, 24, 36, 48];
 
 export default function LoanApplicationForm({ calculationResult, onSubmit }: LoanApplicationFormProps) {
-  const [files, setFiles] = useState<File[]>([]);
+  const [files] = useState<File[]>([]);
   const { register, handleSubmit, watch, formState: { errors, isSubmitting }, setValue } = useForm<LoanApplicationData>({
     defaultValues: {
       tieneConyuge: false,
@@ -80,23 +80,12 @@ export default function LoanApplicationForm({ calculationResult, onSubmit }: Loa
   });
 
   const watchTieneConyuge = watch('tieneConyuge');
-  const watchRelacionLaboral = watch('relacionLaboral');
-  const watchEsNuevo = watch('esNuevo');
 
   // Sincronizar datos de la calculadora
   if (calculationResult) {
     setValue('valorTotal', calculationResult.totales.desembolsoBruto);
     setValue('saldoFinanciar', calculationResult.totales.desembolsoBruto);
   }
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newFiles = Array.from(event.target.files || []);
-    setFiles(prev => [...prev, ...newFiles]);
-  };
-
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
 
   const onFormSubmit = (data: LoanApplicationData) => {
     const formData = {

@@ -79,8 +79,6 @@ export function calcular(inputs: Inputs): Result {
     ivaInteres,
     gastosOtorgamientoPct = 0,
     // Los siguientes no se consideran para CFT empresarial
-    gastosFijosIniciales = 0,
-    sellosPct = 0,
     svsPctMensual = 0,
     seguroAutoMensual = 0,
   } = inputs;

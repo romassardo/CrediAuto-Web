@@ -1,128 +1,120 @@
-# 🚀 Guía de Deploy a Producción - CrediAuto
+# 🚀 Guía de Deploy a Producción - CrediAuto (sin Vercel)
+
+Esta guía describe un despliegue estándar en tu propio servidor (o VPS) usando PM2 y, opcionalmente, Nginx como reverse proxy.
 
 ## 📋 Checklist Pre-Deploy
 
-### 1. Base de Datos en Producción
+### 1) Base de Datos en Producción (MySQL)
 
-**Opción A: PlanetScale (Recomendada)**
-```bash
-# 1. Crear cuenta en planetscale.com
-# 2. Crear base de datos: crediauto-prod
-# 3. Obtener connection string desde dashboard
-# 4. Configurar en Vercel Environment Variables
+Elige una opción y obtén tu `DATABASE_URL`:
+
+- PlanetScale (MySQL serverless)
+- Railway (MySQL gestionado)
+- MySQL en tu propio servidor (Docker o nativo)
+
+Ejemplo de `DATABASE_URL` con SSL:
+
+```
+mysql://username:password@host:3306/crediauto?sslaccept=strict
 ```
 
-**Opción B: Railway**
-```bash
-# 1. Crear cuenta en railway.app
-# 2. Deploy MySQL database
-# 3. Obtener connection string
-# 4. Configurar en Vercel
-```
+### 2) Variables de Entorno (servidor)
 
-### 2. Variables de Entorno en Vercel
-
-En Vercel Dashboard → Project → Settings → Environment Variables:
+Crea un archivo `.env` junto a `apps/web` (o usar variables del sistema) con:
 
 ```env
-# Base de datos (usar connection string real)
-DATABASE_URL="mysql://username:password@host/crediauto-prod?sslaccept=strict"
-
-# JWT Secrets (ejecutar: node scripts/generate-secrets.js)
-JWT_SECRET="[64-character-hex-string]"
-JWT_REFRESH_SECRET="[64-character-hex-string]"
-
-# App configuration
-APP_URL="https://tu-dominio.vercel.app"
+DATABASE_URL="mysql://username:password@host/crediauto?sslaccept=strict"
+JWT_SECRET="<64-hex>"
+JWT_REFRESH_SECRET="<64-hex>"
+APP_URL="https://tu-dominio.com"  # usado por metadataBase para URLs absolutas
 NODE_ENV="production"
 
-# Email service (opcional por ahora)
-RESEND_API_KEY="[cuando-configures-email]"
+# Opcional: Email
+RESEND_API_KEY="<tu-resend-api-key>"
 ```
 
-### 3. Migraciones de Base de Datos
+Sugerencia: genera secretos seguros con el script incluido:
 
 ```bash
-# Generar secretos para producción
-node scripts/generate-secrets.js
-
-# Aplicar migraciones (después de configurar DATABASE_URL)
-npx prisma migrate deploy
-
-# Generar cliente Prisma
-npx prisma generate
-
-# Insertar datos de prueba (opcional)
-npx prisma db seed
+node apps/web/scripts/generate-secrets.js
 ```
 
-### 4. Configuración de Build en Vercel
+### 3) Preparar build y Prisma
 
-Asegúrate que `package.json` tenga:
-```json
-{
-  "scripts": {
-    "build": "next build --turbopack",
-    "postinstall": "prisma generate"
+```bash
+npm install
+npx prisma generate --workspace=web
+DATABASE_URL="<prod-url>" npx prisma migrate deploy --workspace=web
+npm run build --workspace=web
+```
+
+## 🚀 Despliegue con PM2
+
+Instala PM2 en el servidor y arranca la app:
+
+```bash
+npm i -g pm2
+pm2 start "npm run start --workspace=web" --name crediauto-web
+pm2 save
+pm2 status
+```
+
+Logs y mantenimiento:
+
+```bash
+pm2 logs crediauto-web --lines 100
+pm2 restart crediauto-web
+pm2 stop crediauto-web && pm2 delete crediauto-web
+```
+
+## 🌐 (Opcional) Nginx como Reverse Proxy
+
+Archivo `/etc/nginx/sites-available/crediauto`:
+
+```nginx
+server {
+  listen 80;
+  server_name tu-dominio.com;
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
   }
 }
 ```
 
-### 5. Deploy Steps
-
-1. **Configurar base de datos** (PlanetScale/Railway)
-2. **Generar secretos JWT** con el script
-3. **Configurar variables de entorno** en Vercel
-4. **Push código** a repositorio
-5. **Deploy automático** en Vercel
-6. **Ejecutar migraciones** desde terminal local
-7. **Probar funcionalidad** completa
-
-## 🔧 Comandos Útiles
+Habilitar el sitio y recargar:
 
 ```bash
-# Generar secretos seguros
-node scripts/generate-secrets.js
-
-# Aplicar migraciones en producción
-DATABASE_URL="[prod-url]" npx prisma migrate deploy
-
-# Ver estado de la base de datos
-DATABASE_URL="[prod-url]" npx prisma studio
-
-# Reset completo (solo desarrollo)
-npx prisma migrate reset
+sudo ln -s /etc/nginx/sites-available/crediauto /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-## ⚠️ Consideraciones Importantes
+Importante: Ajusta `APP_URL` a `https://tu-dominio.com` para que las URLs de metadata sean absolutas correctas.
 
-1. **Secretos JWT**: Nunca uses los mismos secretos de desarrollo en producción
-2. **Base de datos**: Asegúrate que la conexión sea SSL/TLS
-3. **Variables de entorno**: Configúralas ANTES del deploy
-4. **Migraciones**: Ejecuta siempre después del primer deploy
-5. **Datos de prueba**: Inserta usuarios admin y dealer para testing
+## ✅ Post-Deploy Check
 
-## 🎯 Resultado Esperado
-
-Después del deploy tendrás:
-- ✅ Aplicación funcionando en Vercel
-- ✅ Base de datos MySQL en la nube
-- ✅ Sistema de autenticación JWT
-- ✅ Dashboard completo con calculadora
-- ✅ Formulario de solicitudes por steps
-- ✅ Gestión de usuarios y permisos
+- `curl https://tu-dominio.com/api/health` debe responder `{ ok: true, db: true }`
+- Revisar OG/Twitter cards con meta tags correctas (revisar el `<head>`)
+- Validar login y flujos principales
 
 ## 🆘 Troubleshooting
 
-**Error de conexión a BD:**
-- Verificar DATABASE_URL en variables de entorno
-- Comprobar que la base de datos esté activa
-- Revisar configuración SSL/TLS
+**Conexión a BD:**
+- Verifica `DATABASE_URL` y que el servidor de MySQL acepte conexiones remotas y SSL si aplica.
 
-**Error de JWT:**
-- Verificar que JWT_SECRET esté configurado
-- Generar nuevos secretos si es necesario
+**Errores JWT:**
+- Regenera secretos (`generate-secrets.js`). Revisa variables cargadas en el proceso PM2.
 
-**Error de build:**
-- Verificar que `prisma generate` se ejecute en postinstall
-- Comprobar que todas las dependencias estén instaladas
+**Build/arranque:**
+- Asegúrate de ejecutar `prisma generate` y `migrate deploy` antes de `next start`.
+- Comprueba versiones de Node compatibles (LTS reciente).
+
+**Nginx 502/404:**
+- Revisa que PM2 esté corriendo en puerto 3000 y que el proxy_pass apunte a 127.0.0.1:3000.

@@ -18,6 +18,12 @@ interface AuthState {
   error: string | null;
 }
 
+// Respuesta esperada del endpoint /api/auth/me
+interface ApiMeResponse {
+  success: boolean;
+  user?: User;
+}
+
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -33,7 +39,7 @@ export function useAuth() {
         });
 
         if (response.ok) {
-          const userData = await response.json();
+          const userData: ApiMeResponse = await response.json();
           console.log('🔍 useAuth - Datos recibidos del API:', userData);
           console.log('🔍 useAuth - Usuario:', userData.user);
           console.log('🔍 useAuth - Rol del usuario:', userData.user?.role);
@@ -58,7 +64,7 @@ export function useAuth() {
             error: 'No autenticado',
           });
         }
-      } catch (error) {
+      } catch {
         setAuthState({
           user: null,
           loading: false,

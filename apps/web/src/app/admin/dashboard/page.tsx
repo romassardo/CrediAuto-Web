@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Building2, Search, Eye, Check, X, Clock, User, Mail, Calendar, FileText } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Building2, Search, Eye, Check, X, Clock, User, Mail, Calendar } from 'lucide-react';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 
@@ -51,14 +51,14 @@ export default function AdminDealers() {
     type: 'success' | 'error' | 'warning' | 'info';
   }>({ isOpen: false, title: "", message: "", type: "info" });
 
-  const showModal = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = "info") => {
+  const showModal = useCallback((title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = "info") => {
     setModalState({ isOpen: true, title, message, type });
-  };
+  }, []);
 
   const closeModal = () => setModalState((prev) => ({ ...prev, isOpen: false }));
 
   // Función para obtener token de cookies
-  const getTokenFromCookies = (): string | null => {
+  const getTokenFromCookies = useCallback((): string | null => {
     if (typeof document === 'undefined') return null;
     
     // Intentar obtener desde localStorage primero
@@ -79,9 +79,9 @@ export default function AdminDealers() {
     }
     
     return null;
-  };
+  }, []);
 
-  const fetchDealers = async () => {
+  const fetchDealers = useCallback(async () => {
     try {
       setLoading(true);
       const token = getTokenFromCookies();
@@ -114,11 +114,11 @@ export default function AdminDealers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedStatus, getTokenFromCookies, showModal]);
 
   useEffect(() => {
     fetchDealers();
-  }, [selectedStatus]);
+  }, [fetchDealers]);
 
   const handleApproveReject = async (dealerId: string, action: 'approve' | 'reject') => {
     try {
@@ -184,7 +184,7 @@ export default function AdminDealers() {
     return filtered;
   }, [dealers, selectedStatus, searchTerm]);
 
-  const pendingCount = dealers.filter(dealer => dealer.status === 'PENDING_APPROVAL').length;
+  
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {

@@ -42,14 +42,14 @@ export default async function middleware(req: NextRequest) {
         const result = await jwtVerify(accessToken, JWT_SECRET)
         payload = result.payload
         tokenType = 'access'
-      } catch (err) {
+      } catch {
         // Si el access token no es válido o expiró, probar con refresh_token
         if (refreshToken) {
           try {
             const result = await jwtVerify(refreshToken, JWT_REFRESH_SECRET)
             payload = result.payload
             tokenType = 'refresh'
-          } catch (err2) {
+          } catch {
             // ambos tokens inválidos
           }
         }
@@ -59,7 +59,7 @@ export default async function middleware(req: NextRequest) {
         const result = await jwtVerify(refreshToken, JWT_REFRESH_SECRET)
         payload = result.payload
         tokenType = 'refresh'
-      } catch (err) {
+      } catch {
         // refresh inválido
       }
     }

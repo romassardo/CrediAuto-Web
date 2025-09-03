@@ -1,12 +1,12 @@
 import Image from "next/image";
-import { Metadata } from "next";
+import Link from "next/link";
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Star, Zap, Shield, Building, FileText, Users, Calculator, Car, Bike, LogIn } from "lucide-react"
 import logoCrediexpress from "../../public/crediexpress-logo.png";
 import { LoginModal } from "@/components/LoginModal";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://crediexpressauto.vercel.app'),
   title: 'Créditos Prendarios Inteligentes | Crediexpress Auto',
   description: 'Financiá tu auto o moto con las mejores condiciones del mercado. Tasas competitivas, aprobación rápida y transparencia total. +500 concesionarios aliados.',
   keywords: 'créditos prendarios, financiación auto, préstamos moto, créditos vehiculares, concesionarios Argentina',
@@ -40,7 +40,7 @@ export default function Home() {
   return (
     <main className="font-sans bg-gradient-to-br from-white via-slate-50 to-blue-50 text-text min-h-screen">
       {/* Header con Logo */}
-      <header className="bg-white border-b border-gray-100" role="banner">
+      <header className="bg-white border-b border-gray-100">
         <div className="w-full px-1 py-4">
           <div className="flex items-center justify-between">
             <Image
@@ -51,7 +51,7 @@ export default function Home() {
               priority
               className="h-auto w-auto object-contain max-h-14"
             />
-            <nav className="hidden md:flex items-center space-x-6" role="navigation" aria-label="Navegación principal">
+            <nav className="hidden md:flex items-center space-x-6" aria-label="Navegación principal">
               <a href="#beneficios" className="text-gray-600 hover:text-brand-primary-600 font-medium transition-colors">Beneficios</a>
               <a href="#como-acceder" className="text-gray-600 hover:text-brand-primary-600 font-medium transition-colors">Cómo funciona</a>
               <LoginModal>
@@ -67,7 +67,7 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-white" role="main" aria-labelledby="hero-title">
+      <section className="relative overflow-hidden bg-white" aria-labelledby="hero-title">
         {/* Imagen de fondo */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-r from-white via-white/70 to-white/40 z-10"></div>
@@ -556,9 +556,9 @@ export default function Home() {
                   className="bg-brand-accent-500 hover:bg-yellow-400 text-gray-900 font-bold px-8 py-4 text-lg shadow-xl shadow-black/20 transition-all transform hover:scale-105"
                   asChild
                 >
-                  <a href="/portal/registro-concesionario">
+                  <Link href="/portal/registro-concesionario">
                     Registrá tu agencia
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -717,158 +717,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonios */}
-      <section className="bg-gradient-to-br from-slate-50 via-white to-gray-100 py-20 sm:py-28 relative overflow-hidden">
-        {/* Elementos decorativos */}
-        <div className="absolute top-20 left-16 w-24 h-24 bg-brand-primary-600/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-16 right-20 w-32 h-32 bg-brand-accent-500/10 rounded-full blur-xl"></div>
-        
-        <div className="container mx-auto px-6 sm:px-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Columna izquierda - Mockup Testimonios */}
-            <div className="relative order-2 lg:order-1">
-              <div className="relative">
-                {/* Círculo decorativo de fondo */}
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-accent-500/20 to-brand-primary-600/20 rounded-full blur-3xl transform scale-110"></div>
-                
-                {/* Mockup de testimonios */}
-                <div className="relative z-10 space-y-6">
-                  {/* Testimonio principal */}
-                  <div className="flex justify-center">
-                    <div className="bg-white rounded-3xl shadow-2xl p-6 border border-gray-200 transform hover:scale-105 transition-transform duration-300 w-96">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6">
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full overflow-hidden shadow-md">
-                              <Image
-                                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-                                alt="María González"
-                                width={48}
-                                height={48}
-                                className="object-cover w-full h-full"
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <div className="font-bold text-gray-900">María González</div>
-                              <div className="flex items-center gap-1">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-white/60 rounded-xl p-4">
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              &quot;Excelente servicio, me aprobaron el crédito en menos de 48 horas...&quot;
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs text-gray-600">Honda Civic 2023</div>
-                            <div className="text-xs bg-green-600 text-white px-2 py-1 rounded">Verificado</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Testimonios flotantes */}
-                  <div className="flex justify-start -mt-4">
-                    <div className="bg-white rounded-2xl shadow-xl p-4 border border-gray-200 transform rotate-6 hover:rotate-3 transition-transform duration-300">
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 w-48 h-32">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-                            <div className="text-xs font-semibold text-gray-800">Carlos R.</div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            ))}
-                          </div>
-                          <div className="text-xs text-gray-600">&quot;La mejor experiencia...&quot;</div>
-                          <div className="text-xs text-gray-500">Toyota Corolla</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end -mt-6">
-                    <div className="bg-white rounded-2xl shadow-xl p-4 border border-gray-200 transform -rotate-12 hover:-rotate-6 transition-transform duration-300">
-                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 w-44 h-28">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-                            <div className="text-xs font-semibold text-gray-800">Ana M.</div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            ))}
-                          </div>
-                          <div className="text-xs text-gray-600">&quot;Rápido y seguro...&quot;</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Elementos decorativos flotantes */}
-                <div className="absolute top-4 right-4 w-3 h-3 bg-brand-accent-500 rounded-full opacity-60 animate-bounce"></div>
-                <div className="absolute bottom-8 left-8 w-2 h-2 bg-brand-primary-600 rounded-full opacity-60 animate-bounce delay-300"></div>
-                <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full opacity-40 animate-bounce delay-700"></div>
-              </div>
-            </div>
-            
-            {/* Columna derecha - Contenido */}
-            <div className="space-y-8 order-1 lg:order-2">
-              <div className="space-y-6">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-primary-600/10 border border-brand-primary-600/20">
-                  <span className="text-sm font-medium text-brand-primary-600">💬 Lo que dicen nuestros clientes</span>
-                </div>
-                
-                <h2 className="text-4xl sm:text-5xl font-bold leading-tight text-gray-900">
-                  Experiencias <span className="text-brand-primary-600">reales</span> de éxito
-                </h2>
-                
-                <p className="text-xl text-gray-600 leading-relaxed">
-                  Miles de clientes ya confiaron en nosotros para financiar su vehículo. Conocé sus historias.
-                </p>
-              </div>
-              
-              {/* Estadísticas de testimonios */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg">
-                  <div className="text-3xl font-bold text-brand-primary-600 mb-2">4.9/5</div>
-                  <div className="text-sm text-gray-600">Calificación promedio</div>
-                  <div className="flex items-center gap-1 mt-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg">
-                  <div className="text-3xl font-bold text-brand-primary-600 mb-2">+5.000</div>
-                  <div className="text-sm text-gray-600">Clientes satisfechos</div>
-                  <div className="text-xs text-green-600 mt-2 font-medium">✓ Verificados</div>
-                </div>
-              </div>
-              
-              {/* CTA */}
-              <div className="pt-4">
-                <Button 
-                  size="lg" 
-                  className="bg-brand-primary-600 hover:bg-brand-primary-700 text-white font-bold px-8 py-4 text-lg shadow-lg shadow-brand-primary-600/25 transition-all"
-                >
-                  Ver Más Testimonios
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Sección de Testimonios eliminada por requerimiento: no reintroducir sin solicitud explícita */}
 
       {/* CTA Final */}
       <section className="bg-brand-primary-600 text-white py-16 sm:py-24">

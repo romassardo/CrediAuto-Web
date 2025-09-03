@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { Upload, X, FileText, Image as ImageIcon, File } from 'lucide-react';
+import Image from 'next/image';
 
 interface FileUploadProps {
   onFilesChange: (files: File[]) => void;
@@ -32,7 +33,7 @@ export default function FileUpload({
   const [uploadError, setUploadError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     // Validar tamaño
     if (file.size > maxSize * 1024 * 1024) {
       return `El archivo "${file.name}" excede el tamaño máximo de ${maxSize}MB`;
@@ -51,12 +52,12 @@ export default function FileUpload({
     }
 
     return null;
-  };
+  }, [maxSize, accept]);
 
   const processFiles = useCallback((newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
     const validFiles: FileWithPreview[] = [];
-    let errors: string[] = [];
+    const errors: string[] = [];
 
     // Validar límite de archivos
     if (files.length + fileArray.length > maxFiles) {
@@ -91,7 +92,7 @@ export default function FileUpload({
     const updatedFiles = [...files, ...validFiles];
     setFiles(updatedFiles);
     onFilesChange(updatedFiles);
-  }, [files, maxFiles, maxSize, accept, onFilesChange]);
+  }, [files, maxFiles, maxSize, accept, onFilesChange, validateFile]);
 
   const removeFile = (fileId: string) => {
     const updatedFiles = files.filter(file => {
@@ -235,9 +236,12 @@ export default function FileUpload({
                   {/* Preview o Icono */}
                   <div className="flex-shrink-0">
                     {file.preview ? (
-                      <img
-                        src={file.preview}
+                      <Image
+                        src={file.preview as string}
                         alt={file.name}
+                        width={40}
+                        height={40}
+                        unoptimized
                         className="w-10 h-10 object-cover rounded"
                       />
                     ) : (

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 // Prisma Client singleton to avoid creating multiple instances in dev with HMR
 const globalForPrisma = global as unknown as { prisma?: PrismaClient }
@@ -13,7 +13,7 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 // Función helper para transacciones optimizadas
 export async function withTransaction<T>(
-  fn: (tx: any) => Promise<T>,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
   options?: {
     maxWait?: number
     timeout?: number
@@ -30,7 +30,7 @@ export async function checkDatabaseConnection() {
   try {
     await prisma.$queryRaw`SELECT 1`
     return { connected: true, message: 'Database connection successful' }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Database connection failed:', error)
     return { connected: false, message: 'Database connection failed', error }
   }
