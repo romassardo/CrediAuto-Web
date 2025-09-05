@@ -31,6 +31,7 @@ const loanApplicationSchema = z.object({
     nombreConyuge: z.string().optional(),
     apellidoConyuge: z.string().optional(),
     cuilConyuge: z.string().optional(),
+    ingresoConyuge: z.number().optional(),
   }).optional(),
   
   // Datos laborales
@@ -156,6 +157,7 @@ export async function POST(request: Request) {
         spouseFirstName: spouseData?.nombreConyuge ?? null,
         spouseLastName: spouseData?.apellidoConyuge ?? null,
         spouseCuil: spouseData?.cuilConyuge ?? null,
+        spouseIncome: spouseData?.ingresoConyuge ?? null,
         
         // Datos Laborales
         employmentType: employmentData?.tipoEmpleo ?? null,
@@ -336,6 +338,7 @@ export async function GET(request: Request) {
           spouseFirstName: true,
           spouseLastName: true,
           spouseCuil: true,
+          spouseIncome: true,
           // Datos Laborales
           employmentType: true,
           employmentTypeOther: true,

@@ -118,6 +118,7 @@ export async function GET(request: NextRequest) {
         monthlyPayment: true,
         loanTermMonths: true,
         interestRate: true,
+        spouseIncome: true,
         status: true,
         createdAt: true,
         updatedAt: true,

@@ -291,6 +291,7 @@ export const usePortalDashboard = () => {
           nombreConyuge: formData.nombreConyugue,
           apellidoConyuge: formData.apellidoConyugue,
           cuilConyuge: formData.cuilConyugue,
+          ingresoConyuge: formData.ingresoConyugue ? Number(formData.ingresoConyugue) : undefined,
         };
       }
 

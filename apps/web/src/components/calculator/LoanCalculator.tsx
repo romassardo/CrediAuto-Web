@@ -297,89 +297,71 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
               <h3 className="text-xl font-semibold text-gray-900">Resultados por Plazo</h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {availableTerms.map((term) => {
-                const result = results[term];
-                if (!result) return null;
-                
-                return (
-                  <div key={term} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="text-2xl font-bold text-gray-900">{term} meses</h4>
-                        <p className="text-sm text-gray-600">
-                          {term === 6 ? 'Pago rápido' : term === 12 ? 'Equilibrado' : term === 24 ? 'Recomendado' : 'Cuotas bajas'}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-600">CFT Anual</div>
-                        <div className="text-lg font-bold text-brand-accent-500">
-                          {(result.totales.cftEfectivoAnual * 100).toFixed(1)}%
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Cuota destacada */}
-                    <div className="bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 rounded-xl p-4 text-white mb-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm text-brand-primary-100">Cuota mensual</div>
-                          <div className="text-2xl font-bold">
-                            ${Math.round(result.rows[0]?.cuotaTotal || 0).toLocaleString('es-AR')}
+            <div className="rounded-2xl border border-gray-200 overflow-hidden">
+              <ul className="divide-y divide-gray-200">
+                {availableTerms.map((term) => {
+                  const result = results[term];
+                  if (!result) return null;
+                  
+                  return (
+                    <li key={term} className="bg-white">
+                      <details className="group">
+                        <summary className="flex items-center justify-between w-full cursor-pointer px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary-600">
+                          <div className="flex items-baseline gap-4">
+                            <span className="text-base sm:text-lg font-semibold text-gray-900">{term} meses</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500">Cuota mensual</div>
+                            <div className="text-lg sm:text-xl font-bold text-gray-900">
+                              ${Math.round(result.rows[0]?.cuotaTotal || 0).toLocaleString('es-AR')}
+                            </div>
+                          </div>
+                        </summary>
+                        <div className="px-4 sm:px-6 pb-5">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">CFT Anual</span>
+                              <span className="font-semibold text-brand-accent-500">{(result.totales.cftEfectivoAnual * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Monto que recibís</span>
+                              <span className="font-semibold text-green-600">${Math.round(result.totales.desembolsoNeto).toLocaleString('es-AR')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Costos iniciales</span>
+                              <span className="font-semibold text-gray-900">${Math.round(result.totales.costosIniciales).toLocaleString('es-AR')}</span>
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <button
+                              onClick={() => {
+                                if (onCalculationComplete) {
+                                  const calculationData = {
+                                    vehiclePrice: inputs.monto,
+                                    vehicleYear: vehicleYear,
+                                    downPayment: 0,
+                                    loanTerm: term,
+                                    interestRate: inputs.tasa.valor,
+                                    loanAmount: result.totales.desembolsoNeto,
+                                    monthlyPayment: result.rows[0]?.cuotaTotal || 0,
+                                    totalAmount: result.totales.sumaCuotas,
+                                    cft: result.totales.cftEfectivoAnual
+                                  };
+                                  onCalculationComplete(calculationData);
+                                }
+                              }}
+                              className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                            >
+                              <DollarSign className="w-4 h-4" />
+                              Solicitar en {term} meses
+                            </button>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm text-brand-primary-100">Total a pagar</div>
-                          <div className="text-lg font-semibold">
-                            ${Math.round(result.totales.sumaCuotas).toLocaleString('es-AR')}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Detalles */}
-                    <div className="space-y-2 text-sm mb-4">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Monto que recibís:</span>
-                        <span className="font-semibold text-green-600">
-                          ${Math.round(result.totales.desembolsoNeto).toLocaleString('es-AR')}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Costos iniciales:</span>
-                        <span className="font-semibold text-gray-900">
-                          ${Math.round(result.totales.costosIniciales).toLocaleString('es-AR')}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Botón de solicitud */}
-                    <button
-                      onClick={() => {
-                        if (onCalculationComplete) {
-                          const calculationData = {
-                            vehiclePrice: inputs.monto,
-                            vehicleYear: vehicleYear,
-                            downPayment: 0,
-                            loanTerm: term,
-                            interestRate: inputs.tasa.valor,
-                            loanAmount: result.totales.desembolsoNeto,
-                            monthlyPayment: result.rows[0]?.cuotaTotal || 0,
-                            totalAmount: result.totales.sumaCuotas,
-                            cft: result.totales.cftEfectivoAnual
-                          };
-                          onCalculationComplete(calculationData);
-                        }
-                      }}
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                    >
-                      <DollarSign className="w-4 h-4" />
-                      Solicitar en {term} meses
-                    </button>
-                  </div>
-                );
-              })}
+                      </details>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </div>
         )}

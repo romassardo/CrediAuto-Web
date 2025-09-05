@@ -32,6 +32,7 @@ interface FormData {
   cuilConyugue?: string;
   nombreConyugue?: string;
   apellidoConyugue?: string;
+  ingresoConyugue?: string;
   
   // Datos Laborales
   relacionLaboral: string;
@@ -117,7 +118,7 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
   const getStepFields = (step: number): (keyof FormData)[] => {
     switch (step) {
       case 0: return ['nombre', 'apellido', 'cuil', 'fechaNacimiento', 'provincia', 'localidad', 'domicilio', 'codigoPostal', 'email', 'telefono', 'estadoCivil'];
-      case 1: return tieneConyugue ? ['cuilConyugue', 'nombreConyugue', 'apellidoConyugue'] : [];
+      case 1: return tieneConyugue ? ['cuilConyugue', 'nombreConyugue', 'apellidoConyugue', 'ingresoConyugue'] : [];
       case 2: return ['relacionLaboral', 'empresa', 'telefonoEmpresa', 'antiguedad'];
       case 3: return ['condicionVehiculo', 'marca', 'modelo', 'anio', 'version'];
       case 4: return [];
@@ -434,6 +435,21 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
                     placeholder="González"
                   />
                   {errors.apellidoConyugue && <p className="text-red-500 text-sm mt-1">{errors.apellidoConyugue.message}</p>}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ingreso Mensual del Cónyuge *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    {...register('ingresoConyugue', {
+                      required: tieneConyugue ? 'Ingreso del cónyuge es requerido' : false,
+                      validate: (v) => !tieneConyugue || (!!v && !isNaN(Number(v)) && Number(v) > 0) || 'Ingrese un monto válido',
+                    })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all text-gray-900 placeholder-gray-500"
+                    placeholder="500000"
+                  />
+                  {errors.ingresoConyugue && <p className="text-red-500 text-sm mt-1">{errors.ingresoConyugue.message}</p>}
                 </div>
               </div>
             )}

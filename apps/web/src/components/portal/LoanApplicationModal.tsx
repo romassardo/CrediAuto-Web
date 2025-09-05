@@ -18,6 +18,7 @@ interface LoanApplication {
   spouseFirstName?: string;
   spouseLastName?: string;
   spouseCuil?: string;
+  spouseIncome?: number | string;
   employmentType?: string;
   employmentTypeOther?: string;
   companyName?: string;
@@ -193,6 +194,10 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                   CUIL
                 </p>
                 <p className="font-semibold text-gray-900">{application.spouseCuil || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1">Ingreso del Cónyuge</p>
+                <p className="font-semibold text-gray-900">{formatCurrency(application.spouseIncome)}</p>
               </div>
             </div>
           </div>
