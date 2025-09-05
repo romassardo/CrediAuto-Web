@@ -34,6 +34,7 @@ enum LoanApplicationStatus {
   APPROVED
   REJECTED
   CANCELLED
+  A_RECONSIDERAR
 }
 
 // Modelo dealers
@@ -92,6 +93,7 @@ model User {
   submittedLoanApplications LoanApplication[] @relation("LoanSubmittedBy")
   reviewedLoanApplications  LoanApplication[] @relation("LoanReviewedBy")
   executiveLoanApplications LoanApplication[] @relation("LoanExecutive")
+  reconsiderationReviewedLoanApplications LoanApplication[] @relation("LoanReconsiderationReviewedBy")
   createdRateRanges     InterestRateRange[]  @relation("RateRangeCreatedBy")
 
   @@index([dealerId], name: "idx_users_dealerId")

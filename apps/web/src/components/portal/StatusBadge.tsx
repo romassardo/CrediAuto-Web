@@ -3,16 +3,17 @@ import React from 'react';
 // Define los posibles tipos de status y sus configuraciones
 const statusConfig = {
   user: {
-    ACTIVE: { label: 'Activo', styles: 'bg-green-100 text-green-800 border-green-200' },
-    INVITED: { label: 'Invitado', styles: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    SUSPENDED: { label: 'Suspendido', styles: 'bg-red-100 text-red-800 border-red-200' },
+    ACTIVE: { label: 'Activo', styles: 'bg-green-500 text-white border-green-600 shadow-sm' },
+    INVITED: { label: 'Invitado', styles: 'bg-yellow-500 text-white border-yellow-600 shadow-sm' },
+    SUSPENDED: { label: 'Suspendido', styles: 'bg-red-500 text-white border-red-600 shadow-sm' },
   },
   application: {
-    PENDING: { label: 'Pendiente', styles: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    UNDER_REVIEW: { label: 'En Revisión', styles: 'bg-blue-100 text-blue-800 border-blue-200' },
-    APPROVED: { label: 'Aprobado', styles: 'bg-green-100 text-green-800 border-green-200' },
-    REJECTED: { label: 'Rechazado', styles: 'bg-red-100 text-red-800 border-red-200' },
-    CANCELLED: { label: 'Cancelado', styles: 'bg-gray-100 text-gray-800 border-gray-200' },
+    PENDING: { label: 'Pendiente', styles: 'bg-yellow-500 text-white border-yellow-600 shadow-sm font-semibold' },
+    UNDER_REVIEW: { label: 'En Revisión', styles: 'bg-blue-500 text-white border-blue-600 shadow-sm font-semibold' },
+    APPROVED: { label: 'Aprobado', styles: 'bg-green-500 text-white border-green-600 shadow-sm font-semibold' },
+    REJECTED: { label: 'Rechazado', styles: 'bg-red-500 text-white border-red-600 shadow-sm font-semibold' },
+    CANCELLED: { label: 'Cancelado', styles: 'bg-gray-500 text-white border-gray-600 shadow-sm font-semibold' },
+    A_RECONSIDERAR: { label: 'A Reconsiderar', styles: 'bg-orange-500 text-white border-orange-600 shadow-sm font-semibold' },
   },
 };
 

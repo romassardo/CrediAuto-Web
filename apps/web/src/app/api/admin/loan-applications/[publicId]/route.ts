@@ -49,7 +49,7 @@ export async function GET(
       return NextResponse.json({ error: 'Parámetro publicId inválido.' }, { status: 400 });
     }
 
-    // 3) Buscar solicitud con todos los campos necesarios para el modal
+    // 3) Buscar solicitud con todos los campos necesarios para el modal, incluyendo datos del concesionario
     const a = await prisma.loanApplication.findUnique({
       where: { publicId },
       select: {
@@ -73,6 +73,7 @@ export async function GET(
         spouseFirstName: true,
         spouseLastName: true,
         spouseCuil: true,
+        spouseIncome: true,
 
         employmentType: true,
         employmentTypeOther: true,
@@ -102,11 +103,54 @@ export async function GET(
         reviewedAt: true,
         reviewedByUserId: true,
 
+        // Campos de reconsideración
+        reconsiderationRequested: true,
+        reconsiderationReason: true,
+        reconsiderationRequestedAt: true,
+        reconsiderationReviewedAt: true,
+        reconsiderationReviewedByUserId: true,
+        reconsiderationDocumentsMetadata: true,
+
         submissionData: true,
         calculationData: true,
 
         createdAt: true,
         updatedAt: true,
+
+        // Relaciones
+        dealer: {
+          select: {
+            id: true,
+            legalName: true,
+            tradeName: true,
+            cuit: true,
+            email: true,
+            phone: true,
+            addressStreet: true,
+            addressCity: true,
+            addressProvince: true,
+            postalCode: true,
+            status: true
+          }
+        },
+        executive: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true
+          }
+        },
+        submittedByUser: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true
+          }
+        }
       },
     });
 
@@ -136,6 +180,7 @@ export async function GET(
       spouseFirstName: a.spouseFirstName ?? undefined,
       spouseLastName: a.spouseLastName ?? undefined,
       spouseCuil: a.spouseCuil ?? undefined,
+      spouseIncome: a.spouseIncome ? Number(a.spouseIncome) : undefined,
 
       employmentType: a.employmentType ?? undefined,
       employmentTypeOther: a.employmentTypeOther ?? undefined,
@@ -168,9 +213,51 @@ export async function GET(
       submissionData: a.submissionData ?? undefined,
       calculationData: a.calculationData ?? undefined,
 
+      // Campos de reconsideración - usando any para evitar errores de tipos temporalmente
+      reconsiderationRequested: (a as any).reconsiderationRequested ?? false,
+      reconsiderationReason: (a as any).reconsiderationReason ?? undefined,
+      reconsiderationRequestedAt: (a as any).reconsiderationRequestedAt ?? undefined,
+      reconsiderationReviewedAt: (a as any).reconsiderationReviewedAt ?? undefined,
+      reconsiderationReviewedByUserId: (a as any).reconsiderationReviewedByUserId ?? undefined,
+      reconsiderationDocumentsMetadata: (a as any).reconsiderationDocumentsMetadata ?? undefined,
+
       createdAt: a.createdAt,
       updatedAt: a.updatedAt ?? undefined,
+
+      // Información del concesionario - usando any para evitar errores de tipos temporalmente
+      dealer: (a as any).dealer ? {
+        id: (a as any).dealer.id,
+        legalName: (a as any).dealer.legalName ?? undefined,
+        tradeName: (a as any).dealer.tradeName,
+        cuit: (a as any).dealer.cuit ?? undefined,
+        email: (a as any).dealer.email ?? undefined,
+        phone: (a as any).dealer.phone ?? undefined,
+        addressStreet: (a as any).dealer.addressStreet ?? undefined,
+        addressCity: (a as any).dealer.addressCity ?? undefined,
+        addressProvince: (a as any).dealer.addressProvince ?? undefined,
+        postalCode: (a as any).dealer.postalCode ?? undefined,
+        status: (a as any).dealer.status
+      } : undefined,
+
+      // Información del ejecutivo - usando any para evitar errores de tipos temporalmente
+      executive: (a as any).executive ? {
+        id: (a as any).executive.id,
+        firstName: (a as any).executive.firstName ?? undefined,
+        lastName: (a as any).executive.lastName ?? undefined,
+        email: (a as any).executive.email,
+        phone: (a as any).executive.phone ?? undefined
+      } : undefined,
+
+      // Información del usuario que envió - usando any para evitar errores de tipos temporalmente
+      submittedByUser: (a as any).submittedByUser ? {
+        id: (a as any).submittedByUser.id,
+        firstName: (a as any).submittedByUser.firstName ?? undefined,
+        lastName: (a as any).submittedByUser.lastName ?? undefined,
+        email: (a as any).submittedByUser.email,
+        role: (a as any).submittedByUser.role
+      } : undefined,
     } as const;
+
 
     return NextResponse.json({ success: true, data: detail });
   } catch (error) {

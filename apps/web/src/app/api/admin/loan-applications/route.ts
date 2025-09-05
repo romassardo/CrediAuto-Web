@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       status: z
         .union([
           z.literal('ALL'),
-          z.enum(['PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'CANCELLED'])
+          z.enum(['PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'CANCELLED', 'A_RECONSIDERAR'])
         ])
         .optional(),
       dealerId: z.coerce.number().int().positive().optional(),

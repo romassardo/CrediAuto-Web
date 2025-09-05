@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Eye, User, RefreshCw, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, User, RefreshCw, Search, X, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import StatusBadge from './StatusBadge';
 import LoanApplicationModal from './LoanApplicationModal';
+import ReconsiderModal from './ReconsiderModal';
 
 // Utilidad para obtener el token desde cookies del navegador
 function getTokenFromCookies(): string | null {
@@ -35,7 +36,7 @@ interface LoanApplication {
   vehicleModel?: string;
   vehicleYear?: number;
   vehicleCondition?: string;
-  status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'A_RECONSIDERAR';
   createdAt: string;
   dealerId: number;
   submittedByUserId: number;
@@ -46,7 +47,7 @@ interface OverviewTabContentProps {
 }
 
 const statusOptions: Array<{
-  value: 'ALL' | 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  value: 'ALL' | 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'A_RECONSIDERAR';
   label: string;
 }> = [
   { value: 'ALL', label: 'Todos' },
@@ -55,6 +56,7 @@ const statusOptions: Array<{
   { value: 'APPROVED', label: 'Aprobadas' },
   { value: 'REJECTED', label: 'Rechazadas' },
   { value: 'CANCELLED', label: 'Canceladas' },
+  { value: 'A_RECONSIDERAR', label: 'A Reconsiderar' },
 ];
 
 const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger }) => {
@@ -63,10 +65,13 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
   const [error, setError] = useState<string | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<LoanApplication | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isReconsiderModalOpen, setIsReconsiderModalOpen] = useState(false);
+  const [reconsiderApplicationId, setReconsiderApplicationId] = useState<string>('');
+  const [isSubmittingReconsideration, setIsSubmittingReconsideration] = useState(false);
 
   // Filtros, búsqueda y paginación
   const [status, setStatus] = useState<
-    'ALL' | 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
+    'ALL' | 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'A_RECONSIDERAR'
   >('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -269,6 +274,62 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     setPage(1);
   };
 
+  const handleReconsider = (publicId: string) => {
+    setReconsiderApplicationId(publicId);
+    setIsReconsiderModalOpen(true);
+  };
+
+  const handleReconsiderSubmit = async (data: { reason: string; files: File[] }) => {
+    setIsSubmittingReconsideration(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('reason', data.reason);
+      
+      // Agregar archivos al FormData
+      data.files.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      const token = getTokenFromCookies();
+      const response = await fetch(`/api/loan-applications/${reconsiderApplicationId}/reconsider`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Refrescar la lista de aplicaciones
+      fetchApplications();
+      
+      // Cerrar modal
+      setIsReconsiderModalOpen(false);
+      setReconsiderApplicationId('');
+      
+      // TODO: Mostrar mensaje de éxito (podríamos agregar un toast/modal de confirmación)
+      console.log('Reconsideración enviada exitosamente:', result);
+      
+    } catch (error) {
+      console.error('Error al enviar reconsideración:', error);
+      // TODO: Mostrar mensaje de error
+    } finally {
+      setIsSubmittingReconsideration(false);
+    }
+  };
+
+  const handleReconsiderCancel = () => {
+    setIsReconsiderModalOpen(false);
+    setReconsiderApplicationId('');
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -442,13 +503,25 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
                     <StatusBadge status={app.status} type="application" />
                   </td>
                   <td className="px-4 py-3 align-middle text-right">
-                    <button
-                      onClick={() => handleViewDetails(app)}
-                      className="inline-flex items-center justify-center p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Ver detalles"
-                    >
-                      <Eye className="w-4 h-4 text-gray-500" />
-                    </button>
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={() => handleViewDetails(app)}
+                        className="inline-flex items-center justify-center p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Ver detalles"
+                      >
+                        <Eye className="w-4 h-4 text-gray-500" />
+                      </button>
+                      
+                      {app.status === 'REJECTED' && (
+                        <button
+                          onClick={() => handleReconsider(app.publicId)}
+                          className="inline-flex items-center justify-center p-2 hover:bg-orange-50 rounded-lg transition-colors text-orange-600 hover:text-orange-700"
+                          title="Solicitar reconsideración"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -501,6 +574,15 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
         application={selectedApplication}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Modal de reconsideración */}
+      <ReconsiderModal
+        isOpen={isReconsiderModalOpen}
+        onClose={handleReconsiderCancel}
+        onSubmit={handleReconsiderSubmit}
+        applicationId={reconsiderApplicationId}
+        isLoading={isSubmittingReconsideration}
       />
     </div>
   );
