@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, DollarSign, Calendar, Hash, Phone, Mail, MapPin, Building, Car, FileText, Clock, Heart, Briefcase, Eye, UserCheck, Download } from 'lucide-react';
+import { FileText, X, Calendar, User, Heart, MapPin, Briefcase, Car, Calculator, Building, Eye, Download, Phone, Mail, Hash, DollarSign, UserCheck, Clock } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
 interface LoanApplication {
@@ -38,7 +38,7 @@ interface LoanApplication {
   vehicleVersion?: string;
   vehicleCondition?: string;
   documentsMetadata?: any;
-  status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'A_RECONSIDERAR';
   statusReason?: string;
   reviewedAt?: string;
   reviewedByUserId?: number;
@@ -49,6 +49,40 @@ interface LoanApplication {
   dealerId: number;
   executiveId?: number;
   submittedByUserId: number;
+  // Campos de reconsideración
+  reconsiderationRequested?: boolean;
+  reconsiderationReason?: string;
+  reconsiderationRequestedAt?: string;
+  reconsiderationReviewedAt?: string;
+  reconsiderationReviewedByUserId?: number;
+  reconsiderationDocumentsMetadata?: any;
+  dealer?: {
+    id: number;
+    legalName?: string;
+    tradeName: string;
+    cuit?: string;
+    email?: string;
+    phone?: string;
+    addressStreet?: string;
+    addressCity?: string;
+    addressProvince?: string;
+    postalCode?: string;
+    status: string;
+  };
+  executive?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    phone?: string;
+  };
+  submittedByUser?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    role: string;
+  };
 }
 
 interface LoanApplicationModalProps {
@@ -60,11 +94,21 @@ interface LoanApplicationModalProps {
 const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application, isOpen, onClose }) => {
   if (!isOpen || !application) return null;
 
-  const formatCurrency = (value: number | string | undefined) => {
-    if (!value) return 'N/A';
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(numValue)) return 'N/A';
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(numValue);
+  // Debug logs
+  console.log('🔍 Modal Debug - Application data:', {
+    publicId: application.publicId,
+    spouseIncome: application.spouseIncome,
+    reconsiderationRequested: application.reconsiderationRequested,
+    status: application.status,
+    reconsiderationDocumentsMetadata: application.reconsiderationDocumentsMetadata
+  });
+
+  const formatCurrency = (amount: number | string) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS'
+    }).format(num);
   };
 
   const formatPercentage = (value: number | string | undefined) => {
@@ -179,10 +223,10 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
               <Heart className="w-5 h-5 text-brand-primary-600" />
               Información del Cónyuge
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500 mb-1">Nombre Completo</p>
-                <p className="font-semibold text-gray-900">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+                <p className="text-sm text-purple-600 mb-1">Nombre Completo</p>
+                <p className="text-lg font-bold text-purple-800">
                   {application.spouseFirstName && application.spouseLastName 
                     ? `${application.spouseFirstName} ${application.spouseLastName}` 
                     : 'N/A'}
@@ -195,10 +239,83 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                 </p>
                 <p className="font-semibold text-gray-900">{application.spouseCuil || 'N/A'}</p>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500 mb-1">Ingreso del Cónyuge</p>
-                <p className="font-semibold text-gray-900">{formatCurrency(application.spouseIncome)}</p>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <p className="text-sm text-green-600 mb-1 flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />
+                  Ingreso del Cónyuge
+                </p>
+                <p className="font-semibold text-green-800">
+                  {application.spouseIncome 
+                    ? formatCurrency(application.spouseIncome)
+                    : 'No registrado'
+                  }
+                </p>
               </div>
+            </div>
+          </div>
+
+          {/* Información del Concesionario */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Building className="w-5 h-5 text-brand-primary-600" />
+              Información del Concesionario
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-600 mb-1">Nombre Comercial</p>
+                <p className="text-lg font-bold text-blue-800">{application.dealer?.tradeName || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1">Razón Social</p>
+                <p className="font-semibold text-gray-900">{application.dealer?.legalName || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1">CUIT</p>
+                <p className="font-semibold text-gray-900">{application.dealer?.cuit || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                  <Mail className="w-3 h-3" />
+                  Email
+                </p>
+                <p className="font-semibold text-gray-900">{application.dealer?.email || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  Teléfono
+                </p>
+                <p className="font-semibold text-gray-900">{application.dealer?.phone || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1">Estado</p>
+                <p className="font-semibold text-gray-900">{application.dealer?.status || 'N/A'}</p>
+              </div>
+              {application.dealer?.addressStreet && (
+                <div className="bg-gray-50 p-4 rounded-lg md:col-span-2">
+                  <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    Dirección
+                  </p>
+                  <p className="font-semibold text-gray-900">
+                    {application.dealer.addressStreet}
+                    {application.dealer.addressCity && `, ${application.dealer.addressCity}`}
+                    {application.dealer.addressProvince && `, ${application.dealer.addressProvince}`}
+                    {application.dealer.postalCode && ` (${application.dealer.postalCode})`}
+                  </p>
+                </div>
+              )}
+              {application.executive && (
+                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 mb-1">Ejecutivo Asignado</p>
+                  <p className="text-lg font-bold text-green-800">
+                    {application.executive.firstName && application.executive.lastName 
+                      ? `${application.executive.firstName} ${application.executive.lastName}` 
+                      : 'N/A'}
+                  </p>
+                  <p className="text-sm text-green-700">{application.executive.email}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -319,11 +436,11 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
             </div>
           </div>
 
-          {/* Documentos */}
+          {/* Documentos Iniciales */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5 text-brand-primary-600" />
-              Documentos
+              Documentos Iniciales
             </h3>
             {(() => {
               let documents = [];
@@ -403,6 +520,115 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
               );
             })()}
           </div>
+
+          {/* Documentos de Reconsideración */}
+          {(application.reconsiderationRequested || application.status === 'A_RECONSIDERAR') && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-orange-600" />
+                Documentos de Reconsideración
+              </h3>
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm font-medium text-orange-800">
+                    Solicitada el {application.reconsiderationRequestedAt 
+                      ? new Date(application.reconsiderationRequestedAt).toLocaleDateString('es-AR', {
+                          year: 'numeric',
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : 'Fecha no disponible'
+                    }
+                  </span>
+                </div>
+                {application.reconsiderationReason && (
+                  <p className="text-sm text-orange-700">
+                    <strong>Motivo:</strong> {application.reconsiderationReason}
+                  </p>
+                )}
+              </div>
+              {(() => {
+                let reconsiderationDocs = [];
+                try {
+                  if (application.reconsiderationDocumentsMetadata) {
+                    const parsed = typeof application.reconsiderationDocumentsMetadata === 'string' 
+                      ? JSON.parse(application.reconsiderationDocumentsMetadata) 
+                      : application.reconsiderationDocumentsMetadata;
+                    reconsiderationDocs = Array.isArray(parsed) ? parsed : [];
+                  }
+                } catch (e) {
+                  console.error('Error parsing reconsideration documents metadata:', e);
+                }
+
+                if (reconsiderationDocs.length === 0) {
+                  return (
+                    <div className="bg-gray-50 p-4 rounded-lg text-center">
+                      <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-500">No hay documentos de reconsideración adjuntos</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {reconsiderationDocs.map((doc: any, index: number) => (
+                      <div key={index} className="bg-white border border-orange-200 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-orange-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{doc.name || `Documento Reconsideración ${index + 1}`}</p>
+                            <p className="text-sm text-gray-500">
+                              {doc.size ? `${(doc.size / 1024 / 1024).toFixed(2)} MB` : 'Tamaño desconocido'} • 
+                              {doc.type || 'Tipo desconocido'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {doc.url && (
+                            <>
+                              <button
+                                onClick={() => window.open(doc.url, '_blank')}
+                                className="flex items-center gap-1 px-3 py-2 text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
+                                title="Ver documento"
+                              >
+                                <Eye className="w-4 h-4" />
+                                Ver
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = doc.url;
+                                  link.download = doc.name || `reconsideracion-${index + 1}`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                                className="flex items-center gap-1 px-3 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                                title="Descargar documento"
+                              >
+                                <Download className="w-4 h-4" />
+                                Descargar
+                              </button>
+                            </>
+                          )}
+                          {!doc.url && (
+                            <span className="text-sm text-gray-400 px-3 py-2">
+                              No disponible
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Información de Revisión */}
           <div>

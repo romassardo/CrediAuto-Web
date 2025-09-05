@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
+const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '');
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,17 +11,48 @@ export async function GET(request: NextRequest) {
     const headerUserId = request.headers.get('x-user-id');
     let userId: number | null = headerUserId ? Number(headerUserId) : null;
 
-    // 2) Fallback: verificar cookie access_token si no llegaron headers (p.ej., en tests directos)
+    // 2) Fallback: verificar cookie access_token; si no está, intentar con refresh_token; último intento: Authorization Bearer
     if (!userId) {
-      const token = request.cookies.get('access_token')?.value;
-      if (!token) {
+      const accessToken = request.cookies.get('access_token')?.value;
+      const refreshToken = request.cookies.get('refresh_token')?.value;
+
+      if (accessToken) {
+        try {
+          const { payload } = await jwtVerify(accessToken, JWT_SECRET);
+          userId = (payload.userId as number) ?? null;
+        } catch (_e) {
+          // access_token inválido, intentamos con refresh
+        }
+      }
+
+      if (!userId && refreshToken) {
+        try {
+          const { payload } = await jwtVerify(refreshToken, JWT_REFRESH_SECRET);
+          userId = (payload.userId as number) ?? null;
+        } catch (_e) {
+          // refresh_token inválido, seguimos intentando
+        }
+      }
+
+      if (!userId) {
+        const auth = request.headers.get('authorization') || request.headers.get('Authorization');
+        const bearer = auth && auth.startsWith('Bearer ')
+          ? auth.slice('Bearer '.length)
+          : null;
+        if (bearer) {
+          try {
+            const { payload } = await jwtVerify(bearer, JWT_SECRET);
+            userId = (payload.userId as number) ?? null;
+          } catch (_e) {}
+        }
+      }
+
+      if (!userId) {
         return NextResponse.json(
           { error: 'Token no encontrado' },
           { status: 401 }
         );
       }
-      const { payload } = await jwtVerify(token, JWT_SECRET);
-      userId = (payload.userId as number) ?? null;
     }
 
     if (!userId) {

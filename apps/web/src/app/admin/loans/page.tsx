@@ -32,6 +32,7 @@ interface AdminLoanApplication {
   spouseFirstName?: string;
   spouseLastName?: string;
   spouseCuil?: string;
+  spouseIncome?: number | string;
   // Campos adicionales de dirección y empleo
   applicantFirstName?: string;
   applicantLastName?: string;
@@ -77,6 +78,13 @@ interface AdminLoanApplication {
     calculationData?: any;
     documents?: any[];
   };
+  // Campos de reconsideración
+  reconsiderationRequested?: boolean;
+  reconsiderationReason?: string;
+  reconsiderationRequestedAt?: string;
+  reconsiderationReviewedAt?: string;
+  reconsiderationReviewedByUserId?: number;
+  reconsiderationDocumentsMetadata?: any;
 }
 
 type ModalType = "success" | "error" | "warning" | "info";
@@ -85,7 +93,7 @@ export default function AdminLoansPage() {
   const [apps, setApps] = useState<AdminLoanApplication[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'A_RECONSIDERAR'>('ALL');
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(15);
@@ -149,7 +157,15 @@ export default function AdminLoansPage() {
       }
 
       const result = await response.json();
+      console.log('🔎 Admin detalle - respuesta API', result);
       if (result.success && result.data) {
+        console.log('✅ Seteando selectedApp con detalle', {
+          publicId: result.data.publicId,
+          spouseIncome: result.data.spouseIncome,
+          status: result.data.status,
+          reconsiderationRequested: result.data.reconsiderationRequested,
+          hasReconsiderationDocs: !!result.data.reconsiderationDocumentsMetadata
+        });
         setSelectedApp(result.data);
       } else {
         throw new Error('No se pudieron obtener los detalles');
@@ -245,6 +261,30 @@ export default function AdminLoansPage() {
     fetchApplications();
   }, [fetchApplications]);
 
+  // Debug cuando cambia el detalle seleccionado
+  useEffect(() => {
+    if (!selectedApp) return;
+    try {
+      const recMeta = selectedApp.reconsiderationDocumentsMetadata;
+      const parsed = typeof recMeta === 'string' ? JSON.parse(recMeta) : recMeta;
+      const recCount = Array.isArray(parsed) ? parsed.length : 0;
+      console.log('🧩 SelectedApp cambiado', {
+        publicId: selectedApp.publicId,
+        spouseIncome: selectedApp.spouseIncome,
+        status: selectedApp.status,
+        reconsiderationRequested: selectedApp.reconsiderationRequested,
+        recDocsCount: recCount
+      });
+    } catch (e) {
+      console.log('🧩 SelectedApp cambiado (sin parse docs)', {
+        publicId: selectedApp.publicId,
+        spouseIncome: selectedApp.spouseIncome,
+        status: selectedApp.status,
+        reconsiderationRequested: selectedApp.reconsiderationRequested,
+      });
+    }
+  }, [selectedApp]);
+
   const updateStatus = async (
     applicationPublicId: string,
     nextStatus: "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED"
@@ -313,11 +353,12 @@ export default function AdminLoansPage() {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      UNDER_REVIEW: "bg-blue-100 text-blue-800 border-blue-200",
-      APPROVED: "bg-green-100 text-green-800 border-green-200",
-      REJECTED: "bg-red-100 text-red-800 border-red-200",
-      CANCELLED: "bg-gray-100 text-gray-800 border-gray-200",
+      PENDING: "bg-yellow-500 text-white border-yellow-600 shadow-sm font-semibold",
+      UNDER_REVIEW: "bg-blue-500 text-white border-blue-600 shadow-sm font-semibold",
+      APPROVED: "bg-green-500 text-white border-green-600 shadow-sm font-semibold",
+      REJECTED: "bg-red-500 text-white border-red-600 shadow-sm font-semibold",
+      CANCELLED: "bg-gray-500 text-white border-gray-600 shadow-sm font-semibold",
+      A_RECONSIDERAR: "bg-orange-500 text-white border-orange-600 shadow-sm font-semibold",
     };
     const labels: Record<string, string> = {
       PENDING: "Pendiente",
@@ -325,6 +366,7 @@ export default function AdminLoansPage() {
       APPROVED: "Aprobada",
       REJECTED: "Rechazada",
       CANCELLED: "Cancelada",
+      A_RECONSIDERAR: "A Reconsiderar",
     };
     return (
       <span
@@ -359,7 +401,7 @@ export default function AdminLoansPage() {
         <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-4 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex flex-wrap gap-2">
-              {(["ALL", "PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED", "CANCELLED"] as const).map((st) => (
+              {(["ALL", "PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED", "CANCELLED", "A_RECONSIDERAR"] as const).map((st) => (
                 <button
                   key={st}
                   onClick={() => { setStatusFilter(st); setPage(1); }}
@@ -375,6 +417,7 @@ export default function AdminLoansPage() {
                   {st === "APPROVED" && "Aprobadas"}
                   {st === "REJECTED" && "Rechazadas"}
                   {st === "CANCELLED" && "Canceladas"}
+                  {st === "A_RECONSIDERAR" && "A Reconsiderar"}
                 </button>
               ))}
             </div>
@@ -799,6 +842,16 @@ export default function AdminLoansPage() {
                         {selectedApp.submissionData?.spouseData?.cuilConyuge || selectedApp.spouseCuil || '-'}
                       </div>
                     </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Ingreso del Cónyuge</label>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {selectedApp.spouseIncome !== undefined && selectedApp.spouseIncome !== null && String(selectedApp.spouseIncome) !== ''
+                          ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(
+                              typeof selectedApp.spouseIncome === 'string' ? parseFloat(selectedApp.spouseIncome) : selectedApp.spouseIncome
+                            )
+                          : 'No registrado'}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -909,6 +962,83 @@ export default function AdminLoansPage() {
                   )}
                 </div>
               </div>
+
+              {/* Documentos de Reconsideración */}
+              {(selectedApp.reconsiderationRequested || selectedApp.status === 'A_RECONSIDERAR' || !!selectedApp.reconsiderationDocumentsMetadata) && (
+                <div className="mt-6 pt-6 border-t border-orange-200">
+                  <div className="flex items-center gap-2 pb-4">
+                    <FileText className="w-4 h-4 text-orange-600" />
+                    <h3 className="font-semibold text-gray-900">Documentos de Reconsideración</h3>
+                  </div>
+                  <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-1 text-sm text-orange-800">
+                      <Calendar className="w-4 h-4 text-orange-600" />
+                      <span>
+                        Solicitada el {selectedApp.reconsiderationRequestedAt ? new Date(selectedApp.reconsiderationRequestedAt).toLocaleString('es-AR') : 'Fecha no disponible'}
+                      </span>
+                    </div>
+                    {selectedApp.reconsiderationReason && (
+                      <p className="text-sm text-orange-700"><strong>Motivo:</strong> {selectedApp.reconsiderationReason}</p>
+                    )}
+                  </div>
+                  {(() => {
+                    try {
+                      const parsed = typeof selectedApp.reconsiderationDocumentsMetadata === 'string'
+                        ? JSON.parse(selectedApp.reconsiderationDocumentsMetadata)
+                        : selectedApp.reconsiderationDocumentsMetadata;
+                      const docs = Array.isArray(parsed) ? parsed : [];
+                      if (docs.length === 0) {
+                        return (
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <FileText className="w-8 h-8 text-orange-400" />
+                            </div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-1">Sin documentos de reconsideración</h4>
+                            <p className="text-xs text-gray-500">No se han subido documentos para la reconsideración</p>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {docs.map((doc: any, index: number) => (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200 hover:bg-orange-100 transition-colors">
+                              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
+                                <FileText className="w-4 h-4 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-900 truncate">{doc.name || `Documento ${index + 1}`}</div>
+                                <div className="text-xs text-gray-500">{doc.size ? `${Math.round(doc.size / 1024)} KB` : 'Tamaño desconocido'}</div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {doc.url && (
+                                  <>
+                                    <button onClick={() => window.open(doc.url, '_blank')} className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-100 transition-colors" title="Ver documento">
+                                      <ExternalLink className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => { const link = document.createElement('a'); link.href = doc.url; link.download = doc.name || `documento-recon-${index + 1}`; link.click(); }} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors" title="Descargar documento">
+                                      <Download className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    } catch (e) {
+                      console.error('Error parsing reconsideration documents metadata:', e);
+                      return (
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <X className="w-8 h-8 text-red-400" />
+                          </div>
+                          <p className="text-xs text-gray-500">No se pudieron leer los documentos de reconsideración</p>
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
+              )}
 
               {/* Acciones del modal */}
               <div className="mt-6 pt-6 border-t border-gray-200">
