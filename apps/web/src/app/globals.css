@@ -1,6 +1,33 @@
 @import "tailwindcss";
 
+/* Fuentes locales DM Sans (igual a nueva-landing) */
+@font-face {
+  font-family: 'DMSans';
+  src: url('/DMSans_18pt-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DMSans';
+  src: url('/DMSans_18pt-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DMSans';
+  src: url('/DMSans_18pt-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  /* Variables de fuente para DM Sans */
+  --font-dm-sans: 'DMSans', system-ui, sans-serif;
+  /* Fallback para Tailwind v3/v4: siempre definir --font-sans */
+  --font-sans: var(--font-dm-sans);
   /* Design tokens base (light) */
   --color-bg: #ffffff;
   --color-surface: #f5f7fa;
@@ -80,8 +107,8 @@
   /* Radio base utilizado por shadcn/ui */
   --radius: var(--radius-8);
 
-  /* Tipografía: Inter y Mono via next/font (variables definidas en layout) */
-  --font-sans: var(--font-inter);
+  /* Tipografía: DM Sans via next/font (variable definida en layout.tsx) */
+  --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-mono);
 
   /* Espaciado base (puedes extender según Guia UI-UX) */
@@ -99,7 +126,8 @@
 body {
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-sans);
+  /* Usar DM Sans directamente con fallbacks para evitar cambios si @theme no se procesa */
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
   text-rendering: optimizeLegibility;
 }
 
