@@ -1,8 +1,16 @@
+// BACKUP DE LA PÁGINA ORIGINAL ANTES DE MIGRACIÓN - 2025-01-07
+// Este archivo contiene la landing page original completa// BACKUP COMPLETO DE LA PÁGINA ORIGINAL ANTES DE MIGRACIÓN - 2025-01-07
+// Este archivo contiene la landing page original completa
+
+import Image from "next/image";
+import Link from "next/link";
 import type { Metadata } from "next";
-import "./globals.css";
+import { Button } from "@/components/ui/button"
+import { CheckCircle, Star, Zap, Shield, Building, FileText, Users, Calculator, Car, Bike, LogIn } from "lucide-react"
+import logoCrediexpress from "../../public/crediexpress-logo.png";
+import { LoginModal } from "@/components/LoginModal";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL ?? (process.env.NODE_ENV === 'production' ? 'https://crediexpress-auto.com' : 'http://localhost:3000')),
   title: 'Créditos Prendarios Inteligentes | Crediexpress Auto',
   description: 'Financiá tu auto o moto con las mejores condiciones del mercado. Tasas competitivas, aprobación rápida y transparencia total. +500 concesionarios aliados.',
   keywords: 'créditos prendarios, financiación auto, préstamos moto, créditos vehiculares, concesionarios Argentina',
@@ -31,15 +39,3 @@ export const metadata: Metadata = {
     follow: true,
   },
 };
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="es-AR" suppressHydrationWarning>
-      <body className="font-dm-sans">{children}</body>
-    </html>
-  );
-}

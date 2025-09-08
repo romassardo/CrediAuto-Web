@@ -1,755 +1,293 @@
 import Image from "next/image";
-import Link from "next/link";
-import type { Metadata } from "next";
-import { Button } from "@/components/ui/button"
-import { CheckCircle, Star, Zap, Shield, Building, FileText, Users, Calculator, Car, Bike, LogIn } from "lucide-react"
-import logoCrediexpress from "../../public/crediexpress-logo.png";
-import { LoginModal } from "@/components/LoginModal";
-
-export const metadata: Metadata = {
-  title: 'Créditos Prendarios Inteligentes | Crediexpress Auto',
-  description: 'Financiá tu auto o moto con las mejores condiciones del mercado. Tasas competitivas, aprobación rápida y transparencia total. +500 concesionarios aliados.',
-  keywords: 'créditos prendarios, financiación auto, préstamos moto, créditos vehiculares, concesionarios Argentina',
-  openGraph: {
-    title: 'Créditos Prendarios Inteligentes | Crediexpress Auto',
-    description: 'Financiá tu auto o moto con las mejores condiciones del mercado. Tasas competitivas, aprobación rápida y transparencia total.',
-    type: 'website',
-    locale: 'es_AR',
-    siteName: 'Crediexpress Auto',
-    images: [
-      {
-        url: '/crediexpress-logo.png',
-        width: 400,
-        height: 98,
-        alt: 'Crediexpress Auto - Créditos Prendarios',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Créditos Prendarios Inteligentes | Crediexpress Auto',
-    description: 'Financiá tu auto o moto con las mejores condiciones del mercado.',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
 
 export default function Home() {
   return (
-    <main className="font-sans bg-gradient-to-br from-white via-slate-50 to-blue-50 text-text min-h-screen">
-      {/* Header con Logo */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="w-full px-1 py-4">
-          <div className="flex items-center justify-between">
-            <Image
-              src={logoCrediexpress}
-              alt="Crediexpress Automotor"
-              width={400}
-              height={98}
-              priority
-              className="h-auto w-auto object-contain max-h-14"
-            />
-            <nav className="hidden md:flex items-center space-x-6" aria-label="Navegación principal">
-              <a href="#beneficios" className="text-gray-600 hover:text-brand-primary-600 font-medium transition-colors">Beneficios</a>
-              <a href="#como-acceder" className="text-gray-600 hover:text-brand-primary-600 font-medium transition-colors">Cómo funciona</a>
-              <LoginModal>
-                <Button variant="outline" className="border-2 border-brand-primary-600 text-brand-primary-600 hover:bg-brand-primary-600 hover:text-white transition-all">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Portal Concesionarios
-                </Button>
-              </LoginModal>
-              <Button className="bg-brand-primary-600 hover:bg-brand-primary-700 transition-colors">Contacto</Button>
-            </nav>
-          </div>
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      {/* Header */}
+      <header className="flex justify-between items-center px-4 md:px-8 lg:px-16 py-3 md:py-6 bg-white">
+        <div className="flex items-center">
+          <img
+            src="/recurso-15.svg"
+            alt="Crediexpress Automotor"
+            className="block h-auto w-[160px] md:w-[240px] lg:w-[320px]"
+          />
         </div>
+        <nav className="hidden md:flex items-center space-x-6 lg:space-x-12">
+          <a href="#" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Inicio</a>
+          <a href="#" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Quienes somos</a>
+          <a href="#" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Contacto</a>
+          <button className="text-white px-3 lg:px-6 py-1.5 lg:py-3 rounded-xl lg:rounded-2xl font-sans font-medium hover:opacity-90 transition-colors" style={{backgroundColor: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>
+            Agencias
+          </button>
+        </nav>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-white" aria-labelledby="hero-title">
-        {/* Imagen de fondo */}
+      {/* Hero Section */}
+      <section className="relative overflow-hidden min-h-screen">
+        {/* Background Image */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/70 to-white/40 z-10"></div>
           <Image
-            src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
-            alt="Auto de lujo"
+            src="/close-up-car-with-man-woman.jpg"
+            alt="Auto en concesionario"
             fill
-            sizes="100vw"
-            className="object-cover object-center"
+            className="object-cover"
             priority
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-primary-600/5 via-transparent to-brand-accent-500/5 z-20"></div>
-        <div className="container mx-auto px-6 sm:px-8 py-20 sm:py-32 relative z-30">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <div className="space-y-6">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-accent-500/10 border border-brand-accent-500/20">
-                  <span className="text-sm font-medium text-brand-primary-600 drop-shadow-sm">✨ Financiación confiable desde 2008</span>
-                </div>
-                <h1 id="hero-title" className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight drop-shadow-lg">
-                  <span className="text-brand-primary-600 drop-shadow-md">Créditos</span>
-                  <br />
-                  <span className="text-gray-900 drop-shadow-md">prendarios</span>
-                  <br />
-                  <span className="bg-gradient-to-r from-brand-accent-500 to-yellow-400 bg-clip-text text-transparent drop-shadow-md">inteligentes</span>
-                </h1>
-                <p className="text-xl text-gray-600 max-w-prose leading-relaxed drop-shadow-sm">
-                  Financiá tu auto o moto con las mejores condiciones del mercado. 
-                  <span className="font-semibold text-brand-primary-600 drop-shadow-sm">Tasas competitivas</span>, 
-                  <span className="font-semibold text-brand-primary-600 drop-shadow-sm">aprobación rápida</span> y 
-                  <span className="font-semibold text-brand-primary-600 drop-shadow-sm">transparencia total</span>.
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-brand-primary-600 hover:bg-brand-primary-700 text-white shadow-lg shadow-brand-primary-600/25 px-8 py-4 text-lg font-semibold transition-all" asChild>
-                  <a href="#como-acceder" aria-describedby="hero-title">Comenzar ahora</a>
-                </Button>
-                <Button variant="outline" size="lg" className="border-2 border-brand-primary-600 text-brand-primary-600 hover:bg-brand-primary-600 hover:text-white px-8 py-4 text-lg font-semibold transition-all" asChild>
-                  <a href="#beneficios" aria-describedby="hero-title">Ver beneficios</a>
-                </Button>
-              </div>
-            </div>
-            <div className="relative flex items-center justify-center">
-              <div className="relative w-full max-w-4xl">
-                {/* Fondo con sombra para el logo */}
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary-600/5 to-brand-accent-500/5 rounded-3xl"></div>
-                
-                {/* Logo principal - mucho más grande */}
-                <div className="relative z-10 flex items-center justify-center p-16">
-                  <Image
-                    src="/crediexpress-logo-sinfondo.png"
-                    alt="Crediexpress - Logo"
-                    width={800}
-                    height={800}
-                    className="w-full max-w-2xl drop-shadow-2xl hover:scale-105 transition-transform duration-500"
-                    style={{ height: 'auto' }}
-                  />
-                </div>
-                
-                {/* Elementos decorativos flotantes */}
-                <div className="absolute top-12 right-12 w-6 h-6 bg-brand-primary-600 rounded-full opacity-60 animate-pulse"></div>
-                <div className="absolute bottom-16 left-16 w-4 h-4 bg-brand-accent-500 rounded-full opacity-60 animate-pulse delay-300"></div>
-                <div className="absolute top-1/2 -right-6 w-8 h-8 bg-gradient-to-r from-brand-primary-600 to-brand-accent-500 rounded-full opacity-40 animate-pulse delay-700"></div>
-                <div className="absolute bottom-1/4 -left-8 w-3 h-3 bg-brand-accent-500 rounded-full opacity-50 animate-pulse delay-1000"></div>
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0">
+          <Image
+            src="/Recurso 1.svg"
+            alt="Gradiente"
+            fill
+            className="object-cover"
+          />
+        </div>
+        
+        {/* Content */}
+        <div className="relative z-10 h-full flex items-center justify-center min-h-screen">
+          <div className="w-full px-4 md:px-8 lg:px-16">
+            <div className="w-full flex flex-col justify-center h-full text-center md:text-left">
+              <h1 className="font-sans font-black leading-none mb-4" style={{fontSize: 'clamp(2.5rem, 8vw, 6rem)', lineHeight: '0.9'}}>
+                <span className="text-yellow-400">Tu crédito prendario</span>
+              </h1>
+              <h2 className="font-sans font-black leading-none mb-8 md:mb-12" style={{fontSize: 'clamp(2.5rem, 8vw, 6rem)', lineHeight: '0.9'}}>
+                <span className="text-white">fácil y rápido</span>
+              </h2>
+              <div className="flex justify-center md:justify-start">
+                <button className="bg-yellow-400 text-black px-6 py-3 rounded-3xl font-sans font-black hover:bg-yellow-500 transition-colors shadow-xl" style={{fontSize: 'clamp(1.2rem, 3vw, 2rem)'}}>
+                  Comenzar ahora
+                </button>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Estadísticas de Confianza */}
-      <section className="bg-gradient-to-br from-white via-slate-50 to-blue-50 py-20 sm:py-28 relative overflow-hidden">
-        {/* Elementos decorativos */}
-        <div className="absolute top-10 right-20 w-24 h-24 bg-brand-primary-600/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-16 left-16 w-32 h-32 bg-brand-accent-500/10 rounded-full blur-xl"></div>
-        
-        <div className="container mx-auto px-6 sm:px-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Columna izquierda - Contenido */}
-            <div className="space-y-8">
-              <div className="space-y-6">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-accent-500/10 border border-brand-accent-500/20">
-                  <span className="text-sm font-medium text-brand-primary-600">📊 Confianza que respalda</span>
-                </div>
-                
-                <h2 className="text-4xl sm:text-5xl font-bold leading-tight text-gray-900">
-                  Financiamos tu <span className="text-brand-primary-600">próximo</span> vehículo
-                </h2>
-                
-                <p className="text-xl text-gray-600 leading-relaxed">
-                  Créditos prendarios para autos y motos con las mejores condiciones del mercado.
-                </p>
-              </div>
-              
-              {/* Estadísticas de vehículos */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-6">
-                  <div className="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-brand-primary-600 to-brand-primary-700 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Car className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-brand-primary-600">70%</div>
-                    <div className="text-gray-700 font-medium">Financiación Autos</div>
-                    <div className="text-gray-500 text-sm">0km hasta 15 años</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-6">
-                  <div className="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-brand-accent-500 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Bike className="w-8 h-8 text-gray-900" />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-brand-primary-600">50%</div>
-                    <div className="text-gray-700 font-medium">Financiación Motos</div>
-                    <div className="text-gray-500 text-sm">0km hasta 2 años</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-6">
-                  <div className="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <CheckCircle className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-brand-primary-600">6-48</div>
-                    <div className="text-gray-700 font-medium">Cuotas flexibles</div>
-                    <div className="text-gray-500 text-sm">según tu vehículo</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Columna derecha - Mockup Dashboard */}
-            <div className="relative order-1 lg:order-2">
-              <div className="relative">
-                {/* Círculo decorativo de fondo */}
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary-600/20 to-brand-accent-500/20 rounded-full blur-3xl transform scale-110"></div>
-                
-                {/* Dashboard mockup */}
-                <div className="relative z-10">
-                  <div className="bg-white rounded-3xl shadow-2xl p-6 border border-gray-200 transform rotate-3 hover:rotate-1 transition-transform duration-500">
-                    <div className="space-y-4">
-                      {/* Header del dashboard */}
-                      <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-brand-primary-600 rounded-lg flex items-center justify-center">
-                            <Building className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="text-sm font-semibold text-gray-800">Dashboard Crediexpress</div>
-                        </div>
-                        <div className="flex gap-1">
-                          <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                          <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                        </div>
-                      </div>
-                      
-                      {/* Métricas */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-3 text-center">
-                          <div className="text-2xl font-bold text-brand-primary-600">500</div>
-                          <div className="text-xs text-gray-600">Concesionarios</div>
-                        </div>
-                        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-3 text-center">
-                          <div className="text-2xl font-bold text-brand-accent-500">15</div>
-                          <div className="text-xs text-gray-600">Años</div>
-                        </div>
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 text-center">
-                          <div className="text-2xl font-bold text-green-600">10k</div>
-                          <div className="text-xs text-gray-600">Créditos</div>
-                        </div>
-                      </div>
-                      
-                      {/* Gráfico simulado */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-brand-primary-600 rounded-full"></div>
-                          <div className="text-xs text-gray-600">Crecimiento mensual</div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="h-2 bg-gradient-to-r from-brand-primary-600 to-brand-primary-400 rounded w-full"></div>
-                          <div className="h-2 bg-gradient-to-r from-brand-primary-600 to-brand-primary-400 rounded w-4/5"></div>
-                          <div className="h-2 bg-gradient-to-r from-brand-primary-600 to-brand-primary-400 rounded w-3/4"></div>
-                          <div className="h-2 bg-gradient-to-r from-brand-primary-600 to-brand-primary-400 rounded w-5/6"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Tarjeta flotante */}
-                  <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-xl p-4 border border-gray-200 transform -rotate-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-brand-accent-500 to-yellow-500 rounded-xl flex items-center justify-center">
-                        <Star className="w-5 h-5 text-gray-900" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-800">98% Satisfacción</div>
-                        <div className="text-xs text-gray-500">Clientes felices</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Elementos decorativos flotantes */}
-                <div className="absolute top-8 right-8 w-3 h-3 bg-brand-primary-600 rounded-full opacity-60 animate-pulse"></div>
-                <div className="absolute bottom-12 left-12 w-2 h-2 bg-brand-accent-500 rounded-full opacity-60 animate-pulse delay-300"></div>
-                <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gradient-to-r from-brand-primary-600 to-brand-accent-500 rounded-full opacity-40 animate-pulse delay-700"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Cómo Acceder */}
-      <section id="como-acceder" className="bg-gradient-to-br from-white via-gray-50 to-slate-100 py-20 sm:py-28 relative overflow-hidden">
-        {/* Elementos decorativos */}
-        <div className="absolute top-16 left-20 w-20 h-20 bg-brand-accent-500/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 right-16 w-28 h-28 bg-brand-primary-600/10 rounded-full blur-xl"></div>
-        
-        <div className="container mx-auto px-6 sm:px-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Columna izquierda - Mockup Proceso */}
-            <div className="relative order-2 lg:order-1">
-              <div className="relative">
-                {/* Círculo decorativo de fondo */}
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary-600/20 to-brand-accent-500/20 rounded-full blur-3xl transform scale-110"></div>
-                
-                {/* Mockup del proceso */}
-                <div className="relative z-10 space-y-6">
-                  {/* Paso 1 - Móvil */}
-                  <div className="flex justify-end">
-                    <div className="bg-white rounded-2xl shadow-xl p-3 border border-gray-200 transform rotate-6 hover:rotate-3 transition-transform duration-300">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 w-32 h-48">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Building className="w-4 h-4 text-brand-primary-600" />
-                            <div className="text-xs font-semibold text-gray-800">Paso 1</div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="h-2 bg-white/60 rounded w-full"></div>
-                            <div className="h-2 bg-white/60 rounded w-3/4"></div>
-                          </div>
-                          <div className="bg-brand-primary-600 text-white rounded p-2 text-center text-xs">
-                            Concesionario
-                          </div>
-                          <div className="space-y-1">
-                            <div className="h-1 bg-white/40 rounded w-full"></div>
-                            <div className="h-1 bg-white/40 rounded w-2/3"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Paso 2 - Tablet */}
-                  <div className="flex justify-center -mt-8">
-                    <div className="bg-white rounded-2xl shadow-2xl p-4 border border-gray-200 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
-                      <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 w-64 h-40">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-5 h-5 text-brand-accent-500" />
-                              <div className="text-sm font-semibold text-gray-800">Solicitud</div>
-                            </div>
-                            <div className="text-xs bg-brand-accent-500 text-gray-900 px-2 py-1 rounded">Paso 2</div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="h-3 bg-white/60 rounded"></div>
-                            <div className="h-3 bg-white/60 rounded"></div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="h-2 bg-white/50 rounded w-full"></div>
-                            <div className="h-2 bg-white/50 rounded w-4/5"></div>
-                            <div className="h-2 bg-white/50 rounded w-3/4"></div>
-                          </div>
-                          <div className="bg-brand-accent-500 text-gray-900 rounded p-2 text-center text-sm font-medium">
-                            Simular
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Paso 3 - Tarjeta de aprobación */}
-                  <div className="flex justify-start -mt-6">
-                    <div className="bg-white rounded-2xl shadow-xl p-4 border border-gray-200 transform rotate-12 hover:rotate-6 transition-transform duration-300">
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 w-40 h-32">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <CheckCircle className="w-6 h-6 text-green-600" />
-                            <div className="text-xs bg-green-600 text-white px-2 py-1 rounded">Paso 3</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-green-600">¡Aprobado!</div>
-                            <div className="text-xs text-gray-600 mt-1">24-48 horas</div>
-                          </div>
-                          <div className="bg-green-600 text-white rounded p-2 text-center text-xs font-medium">
-                            Retirar vehículo
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Elementos decorativos flotantes */}
-                <div className="absolute top-4 left-4 w-3 h-3 bg-brand-primary-600 rounded-full opacity-60 animate-bounce"></div>
-                <div className="absolute bottom-8 right-8 w-2 h-2 bg-brand-accent-500 rounded-full opacity-60 animate-bounce delay-300"></div>
-                <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full opacity-40 animate-bounce delay-700"></div>
-              </div>
-            </div>
-            
-            {/* Columna derecha - Contenido */}
-            <div className="space-y-8 order-1 lg:order-2">
-              <div className="space-y-6">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-primary-600/10 border border-brand-primary-600/20">
-                  <span className="text-sm font-medium text-brand-primary-600">🚀 ¿Cómo acceder a tu crédito?</span>
-                </div>
-                
-                <h2 className="text-4xl sm:text-5xl font-bold leading-tight text-gray-900">
-                  Proceso <span className="text-brand-primary-600">simple</span> en 3 pasos
-                </h2>
-                
-                <p className="text-xl text-gray-600 leading-relaxed">
-                  Obtené tu crédito prendario de forma rápida y segura a través de nuestros concesionarios aliados.
-                </p>
-              </div>
-              
-              {/* Pasos del proceso */}
-              <div className="space-y-6">
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-brand-primary-600 to-brand-primary-700 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">1</span>
-                  </div>
-                  <div className="pt-2">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Visitá un concesionario</h3>
-                    <p className="text-gray-600">Elegí el auto o moto que querés en cualquiera de nuestros +500 concesionarios aliados</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-brand-accent-500 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-gray-900 font-bold text-lg">2</span>
-                  </div>
-                  <div className="pt-2">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Solicitá el crédito</h3>
-                    <p className="text-gray-600">El concesionario te ayuda a completar la solicitud y simular las condiciones</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">3</span>
-                  </div>
-                  <div className="pt-2">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Obtené la aprobación</h3>
-                    <p className="text-gray-600">Recibí la respuesta en 24-48 horas y retirá tu vehículo</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* CTA */}
-              <div className="pt-4">
-                <Button 
-                  size="lg" 
-                  className="bg-brand-primary-600 hover:bg-brand-primary-700 text-white font-bold px-8 py-4 text-lg shadow-lg shadow-brand-primary-600/25 transition-all"
-                >
-                  Encontrar Concesionario
-                </Button>
-              </div>
-            </div>
-  	          </div>
-  	        </div>
-  	      </section>
-
-      {/* Sección para Concesionarios */}
-      <section className="bg-gradient-to-br from-brand-primary-600 via-brand-primary-700 to-brand-primary-800 py-20 sm:py-28 relative overflow-hidden">
-        {/* Elementos decorativos */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 right-10 w-32 h-32 bg-brand-accent-500/20 rounded-full blur-xl"></div>
-        <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-white/5 rounded-full blur-lg"></div>
-        
-        <div className="container mx-auto px-6 sm:px-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Columna izquierda - Imagen */}
-            <div className="relative order-2 lg:order-1">
-              <div className="relative">
-                {/* Círculo decorativo de fondo */}
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary-600/20 to-brand-accent-500/20 rounded-full blur-3xl transform scale-110"></div>
-                
-                {/* Contenedor de dispositivos */}
-                <div className="relative flex items-center justify-center">
-                  {/* Tablet */}
-                  <div className="relative z-10 transform rotate-12">
-                    <div className="bg-white rounded-2xl shadow-2xl p-4 border border-gray-200">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 h-64 w-80">
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-brand-primary-600 rounded-full flex items-center justify-center">
-                              <Car className="w-4 h-4 text-white" />
-                            </div>
-                            <div className="text-sm font-semibold text-gray-800">Portal Concesionarios</div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="h-3 bg-white/60 rounded w-3/4"></div>
-                            <div className="h-3 bg-white/60 rounded w-1/2"></div>
-                            <div className="h-3 bg-white/60 rounded w-2/3"></div>
-                          </div>
-                          <div className="bg-brand-primary-600 text-white rounded-lg p-3 text-center text-sm font-medium">
-                            Simular Crédito
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Móvil superpuesto */}
-                  <div className="absolute -bottom-8 -right-8 z-20 transform -rotate-6">
-                    <div className="bg-white rounded-2xl shadow-xl p-2 border border-gray-200">
-                      <div className="bg-gradient-to-br from-brand-accent-500/20 to-yellow-100 rounded-xl p-4 h-40 w-24">
-                        <div className="space-y-2">
-                          <div className="w-4 h-4 bg-brand-accent-500 rounded-full mx-auto"></div>
-                          <div className="space-y-1">
-                            <div className="h-1.5 bg-white/60 rounded w-full"></div>
-                            <div className="h-1.5 bg-white/60 rounded w-3/4"></div>
-                            <div className="h-1.5 bg-white/60 rounded w-1/2"></div>
-                          </div>
-                          <div className="bg-brand-accent-500 rounded p-1 text-center">
-                            <div className="w-2 h-2 bg-white rounded mx-auto"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Elementos decorativos flotantes */}
-                <div className="absolute top-4 right-4 w-3 h-3 bg-brand-primary-600 rounded-full opacity-60"></div>
-                <div className="absolute bottom-8 left-8 w-2 h-2 bg-brand-accent-500 rounded-full opacity-60"></div>
-                <div className="absolute top-1/2 -left-4 w-4 h-4 bg-gradient-to-r from-brand-primary-600 to-brand-accent-500 rounded-full opacity-40"></div>
-              </div>
-            </div>
-            
-            {/* Columna derecha - Contenido */}
-            <div className="space-y-8 order-1 lg:order-2">
-              <div className="space-y-6">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 border border-white/30">
-                  <span className="text-sm font-medium text-white">🏢 Créditos prendarios</span>
-                </div>
-                
-                <h2 className="text-4xl sm:text-5xl font-bold leading-tight text-white">
-                  ¿Sos <span className="text-brand-accent-500">concesionario</span>?
-                </h2>
-                
-                <p className="text-xl text-white/90 leading-relaxed">
-                  Sumate a nuestra comunidad, ofrecé a tus clientes la mejor financiación para autos o motos y aumentá tus ingresos.
-                </p>
-              </div>
-              
-              {/* Beneficios */}
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-brand-accent-500 rounded-full flex items-center justify-center mt-1">
-                    <CheckCircle className="w-4 h-4 text-gray-900" />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">Podés simular tus créditos desde nuestra web agencias</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-brand-accent-500 rounded-full flex items-center justify-center mt-1">
-                    <CheckCircle className="w-4 h-4 text-gray-900" />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">Te ofrecemos la mejor atención personalizada</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* CTA */}
-              <div className="pt-4">
-                <Button 
-                  size="lg" 
-                  className="bg-brand-accent-500 hover:bg-yellow-400 text-gray-900 font-bold px-8 py-4 text-lg shadow-xl shadow-black/20 transition-all transform hover:scale-105"
-                  asChild
-                >
-                  <Link href="/portal/registro-concesionario">
-                    Registrá tu agencia
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Beneficios */}
-      <section id="beneficios" className="bg-gradient-to-br from-white via-gray-50 to-slate-100 py-20 sm:py-28 relative overflow-hidden">
-        {/* Elementos decorativos */}
-        <div className="absolute top-16 right-20 w-20 h-20 bg-brand-accent-500/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 left-16 w-28 h-28 bg-brand-primary-600/10 rounded-full blur-xl"></div>
-        
-        <div className="container mx-auto px-6 sm:px-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Columna izquierda - Contenido */}
-            <div className="space-y-8">
-              <div className="space-y-6">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-primary-600/10 border border-brand-primary-600/20">
-                  <span className="text-sm font-medium text-brand-primary-600">✨ ¿Por qué elegir Crediexpress?</span>
-                </div>
-                
-                <h2 className="text-4xl sm:text-5xl font-bold leading-tight text-gray-900">
-                  Ventajas que nos hacen <span className="text-brand-primary-600">únicos</span>
-                </h2>
-                
-                <p className="text-xl text-gray-600 leading-relaxed">
-                  Descubrí por qué somos la mejor opción para financiar tu vehículo con condiciones excepcionales.
-                </p>
-              </div>
-              
-              {/* Beneficios */}
-              <div className="space-y-6">
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Zap className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="pt-2">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Aprobación Express</h3>
-                    <p className="text-gray-600">Respuesta en 24-48 horas hábiles con documentación mínima</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Shield className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="pt-2">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Seguridad Garantizada</h3>
-                    <p className="text-gray-600">Plataforma segura con encriptación bancaria y protección de datos</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="pt-2">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Red de Concesionarios</h3>
-                    <p className="text-gray-600">Más de 500 concesionarios aliados en todo el país</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Calculator className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="pt-2">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Cuotas Flexibles</h3>
-                    <p className="text-gray-600">Hasta 48 meses para autos y 24 para motos con tasas competitivas</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Columna derecha - Mockup Beneficios */}
-            <div className="relative order-1 lg:order-2">
-              <div className="relative">
-                {/* Círculo decorativo de fondo */}
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-primary-600/20 to-brand-accent-500/20 rounded-full blur-3xl transform scale-110"></div>
-                
-                {/* Mockup de beneficios */}
-                <div className="relative z-10 space-y-6">
-                  {/* Tarjeta principal - Aprobación */}
-                  <div className="flex justify-center">
-                    <div className="bg-white rounded-3xl shadow-2xl p-6 border border-gray-200 transform hover:scale-105 transition-transform duration-300 w-80">
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
-                                <CheckCircle className="w-6 h-6 text-white" />
-                              </div>
-                              <div className="text-lg font-bold text-gray-900">¡Aprobado!</div>
-                            </div>
-                            <div className="text-xs bg-green-600 text-white px-3 py-1 rounded-full">Express</div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-white/60 rounded-xl p-3">
-                              <div className="text-xs text-gray-600">Monto</div>
-                              <div className="font-bold text-gray-900">$2.500.000</div>
-                            </div>
-                            <div className="bg-white/60 rounded-xl p-3">
-                              <div className="text-xs text-gray-600">Plazo</div>
-                              <div className="font-bold text-gray-900">36 meses</div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-green-600 text-white rounded-xl p-3 text-center font-medium">
-                            24-48 horas
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Tarjetas flotantes - Beneficios */}
-                  <div className="flex justify-start -mt-4">
-                    <div className="bg-white rounded-2xl shadow-xl p-4 border border-gray-200 transform rotate-6 hover:rotate-3 transition-transform duration-300">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 w-32 h-24">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Shield className="w-4 h-4 text-blue-600" />
-                            <div className="text-xs font-semibold text-gray-800">Seguro</div>
-                          </div>
-                          <div className="text-xs text-gray-600">Encriptación bancaria</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end -mt-8">
-                    <div className="bg-white rounded-2xl shadow-xl p-4 border border-gray-200 transform -rotate-6 hover:rotate-0 transition-transform duration-300">
-                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 w-36 h-28">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-purple-600" />
-                            <div className="text-xs font-semibold text-gray-800">Red</div>
-                          </div>
-                          <div className="text-lg font-bold text-purple-600">+500</div>
-                          <div className="text-xs text-gray-600">Concesionarios</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Elementos decorativos flotantes */}
-                <div className="absolute top-8 left-8 w-3 h-3 bg-brand-primary-600 rounded-full opacity-60 animate-bounce"></div>
-                <div className="absolute bottom-12 right-12 w-2 h-2 bg-brand-accent-500 rounded-full opacity-60 animate-bounce delay-300"></div>
-                <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full opacity-40 animate-bounce delay-700"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Sección de Testimonios eliminada por requerimiento: no reintroducir sin solicitud explícita */}
-
-      {/* CTA Final */}
-      <section className="bg-brand-primary-600 text-white py-16 sm:py-24">
-        <div className="container mx-auto px-6 sm:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl font-semibold mb-4">
-            ¿Listo para financiar tu próximo vehículo?
+      {/* Secondary Section */}
+      <section className="pt-8 md:pt-16 lg:pt-32 pb-8 md:pb-16 text-center" style={{backgroundColor: '#f6f6f6'}}>
+        <div className="mx-auto px-4 md:px-6 lg:px-12 w-full max-w-[1800px] xl:max-w-[2400px] 2xl:max-w-[2560px]">
+          <h2 className="font-sans font-black mb-4" style={{fontSize: 'clamp(3rem, 9vw, 6rem)'}}>
+            <span style={{color: '#1E2480'}}>Tu próximo auto, </span>
+            <span style={{color: '#FDB913'}}>hoy.</span>
           </h2>
-          <p className="text-base mb-8 opacity-90">
-            Comenzá ahora y obtené tu pre-aprobación en minutos
+          <p className="leading-tight mb-8 md:mb-16 mx-auto font-sans font-normal whitespace-nowrap" style={{color: '#1E2480', fontSize: 'clamp(1.44rem, 4.8vw, 3rem)'}}>
+            Accedé a créditos prendarios simples y transparentes
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" className="transition-all">
-              Encontrar Concesionario
-            </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-brand-primary-600 transition-all">
-              Contactar Asesor
-            </Button>
+
+          {/* SVG Icons */}
+          <div className="flex flex-wrap justify-center gap-0 w-full mx-auto">
+            <div className="flex justify-center items-center">
+              <img
+                src="/Recurso 17.svg"
+                alt="Hasta el 70% del valor"
+                className="w-full md:w-[408px] xl:w-[510px] h-auto drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
+              />
+            </div>
+            
+            <div className="flex items-center m-0 p-0">
+              <img
+                src="/Recurso 18.svg"
+                alt="Hasta 60 cuotas"
+                className="w-full md:w-[408px] xl:w-[510px] h-auto drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
+              />
+            </div>
+            
+            <div className="flex items-center m-0 p-0">
+              <img
+                src="/Recurso 19.svg"
+                alt="0KM hasta 15 años"
+                className="w-full md:w-[408px] xl:w-[510px] h-auto drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer Información */}
-      <footer className="bg-surface py-8">
-        <div className="container mx-auto px-6 sm:px-8 text-center">
-          <p className="text-sm text-[color:var(--color-text)]/60">
-            Crediexpress Auto - Créditos prendarios para autos y motos
-          </p>
-          <p className="text-xs text-[color:var(--color-text)]/40 mt-2">
-            Los valores mostrados son estimativos. Sujeto a evaluación crediticia.
-          </p>
+      {/* Background gradiente que se extiende desde Agencias hasta Formulario */}
+      <div
+        className="bg-no-repeat"
+        style={{
+          backgroundImage: "url('/Recurso 14.svg')",
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover',
+          backgroundPosition: 'right top'
+        }}
+      >
+        {/* Agencias & Concesionarios Section */}
+        <section className="py-24">
+          <div className="mx-auto px-6 md:px-12 w-full max-w-[1800px]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-y-10 gap-x-0">
+              <div className="relative shrink-0 self-center">
+                <img
+                  src="/Foto.png"
+                  alt="Entrega de llaves de auto"
+                  className="rounded-2xl w-full max-w-[1200px] block ml-auto lg:scale-[1.3] lg:origin-center"
+                  style={{ height: 'auto' }}
+                />
+              </div>
+              <div className="relative text-white w-full self-center max-w-[1500px] pl-6 md:pl-10 lg:pl-16">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h2 className="font-sans font-black tracking-tight leading-[0.95] m-0" style={{fontSize: 'clamp(3rem, 7vw, 5rem)'}}>
+                      <span style={{color: '#1E2480'}}>Agencias &</span>
+                    </h2>
+                    <h2 className="font-sans font-black tracking-tight leading-[0.95]" style={{color: '#FFFFFF', fontSize: 'clamp(3rem, 7vw, 5rem)'}}>
+                      concesionarios
+                    </h2>
+                  </div>
+                  <div className="h-[4px] bg-white w-[22ch] text-[clamp(2rem,3.5vw,3rem)]"></div>
+
+                  <p className="leading-[1.10] font-sans font-normal" style={{color: '#1E2480', fontSize: 'clamp(2rem, 3.5vw, 3rem)'}}>
+                    Sumate a nuestra red de ventas,<br />
+                    ofrecé la mejor financiación y<br />
+                    aumenta tus operaciones.
+                  </p>
+
+                  <button className="inline-flex items-center bg-white text-black px-[18px] py-[12px] rounded-2xl font-sans font-medium shadow-[0_10px_24px_rgba(0,0,0,0.2)] hover:bg-gray-100 transition-colors" style={{fontSize: 'clamp(1rem, 2.2vw, 1.75rem)'}}>
+                    Regístrate ahora
+                  </button>
+
+                  <p className="font-sans font-medium" style={{color: '#1E2480', fontSize: 'clamp(1rem, 2vw, 1.75rem)'}}>
+                    Si ya tenes usuario podés <a className="underline font-sans font-black" style={{color: '#1E2480'}} href="#">simular tu crédito</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Porque sabemos que cada operación cuenta */}
+      <section className="py-24 overflow-visible">
+        <div className="mx-auto px-0 md:px-0 max-w-none overflow-visible w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 items-center">
+            <div className="text-white">
+              <div className="ml-6 md:ml-12 lg:ml-24 text-left">
+                <h2 className="font-sans font-black mb-2 leading-[0.95]" style={{fontSize: 'clamp(2rem, 6vw, 4rem)'}}>
+                  Porque sabemos que
+                </h2>
+                <h2 className="font-sans font-black text-yellow-400 mb-12 leading-[0.95]" style={{fontSize: 'clamp(2rem, 6vw, 4rem)'}}>
+                  cada operación cuenta
+                </h2>
+                <div className="space-y-8 md:space-y-16">
+                  <div className="flex items-center gap-6 md:gap-10">
+                    <Image
+                      src="/calendario.png"
+                      alt="Calendario"
+                      width={70}
+                      height={70}
+                    />
+                    <span className="font-sans font-medium leading-[1.0]" style={{fontSize: 'clamp(1rem, 3.8vw, 2.5rem)'}}>Rapidez en la aprobación</span>
+                  </div>
+                  <div className="flex items-center gap-6 md:gap-10">
+                    <Image
+                      src="/candado.png"
+                      alt="Candado"
+                      width={70}
+                      height={70}
+                    />
+                    <span className="font-sans font-medium leading-[1.0]" style={{fontSize: 'clamp(1rem, 3.8vw, 2.5rem)'}}>Tasas competitivas, nos ajustamos<br />al perfil de cada cliente</span>
+                  </div>
+                  <div className="flex items-center gap-6 md:gap-10">
+                    <Image
+                      src="/billetera.png"
+                      alt="Billetera"
+                      width={70}
+                      height={70}
+                    />
+                    <span className="font-sans font-medium leading-[1.0]" style={{fontSize: 'clamp(1rem, 3.8vw, 2.5rem)'}}>Respaldo en las sucursales</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="relative min-h-[600px] overflow-visible z-20">
+              <img
+                src="/Auto.png"
+                alt="Auto"
+                className="absolute top-1/2 right-0 h-auto w-[132%] max-w-none transform -translate-y-1/2 translate-x-[15%] z-30"
+              />
+            </div>
+          </div>
         </div>
-      </footer>
-    </main>
+        </section>
+
+        {/* Contact Form */}
+      <section className="pt-12 md:pt-24 lg:pt-32" style={{ paddingBottom: '8rem' }}>
+        <div className="container mx-auto px-6">
+          <div className="max-w-6xl mx-auto">
+            {/* Form */}
+            <div className="rounded-[2rem] p-12 lg:p-16" style={{ backgroundColor: '#f6f6f6', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), 0 12px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)' }}>
+              {/* Header */}
+              <div className="text-center mb-12">
+                <h2 className="font-sans font-black mb-8" style={{ color: '#1E2480', fontSize: 'clamp(3rem, 5.5vw, 4rem)' }}>
+                  Estamos para ayudarte
+                </h2>
+                <p className="font-sans font-normal max-w-4xl mx-auto" style={{color: '#1E2480', fontSize: 'clamp(1.4rem, 2vw, 1.8rem)'}}>
+                  ¿Tenés dudas sobre nuestros créditos prendarios?<br />
+                  Escribinos y te asesoramos sin compromiso.
+                </p>
+              </div>
+              <form className="space-y-8">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-lg font-sans font-medium text-gray-700">Nombre completo</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Ingresá tu nombre"
+                        className="w-full px-6 py-4 text-lg font-sans font-medium border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-lg"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                        <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <label className="text-lg font-sans font-medium text-gray-700">Email</label>
+                    <div className="relative">
+                      <input
+                        type="email"
+                        placeholder="tu@email.com"
+                        className="w-full px-6 py-4 text-lg font-sans font-medium border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-lg"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                        <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-lg font-sans font-medium text-gray-700">Consulta</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Contanos en qué podemos ayudarte..."
+                    className="w-full px-6 py-4 text-lg font-sans font-normal border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 resize-none shadow-lg"
+                  ></textarea>
+                </div>
+
+                <div className="flex justify-end pt-6">
+                  <button
+                    type="submit"
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-sans font-medium py-4 px-12 text-lg rounded-lg transition-all duration-200 transform hover:-translate-y-1"
+                    style={{ boxShadow: '0 6px 12px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)' }}
+                  >
+                    Enviar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        </section>
+      </div>
+
+    </div>
   );
 }
