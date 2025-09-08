@@ -186,7 +186,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     const pg = parseInt(sp.get('page') || '1', 10);
     const ps = parseInt(sp.get('pageSize') || '10', 10);
     if (qs) setSearch(qs);
-    if (st && ['ALL', 'PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'CANCELLED'].includes(st)) setStatus(st);
+    if (st && ['ALL', 'PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'CANCELLED', 'A_RECONSIDERAR'].includes(st)) setStatus(st);
     if (!Number.isNaN(pg)) setPage(pg);
     if (!Number.isNaN(ps)) setPageSize(ps);
     setInitialized(true);
@@ -246,7 +246,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
   };
 
   const handleStatusChange = (
-    next: 'ALL' | 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
+    next: 'ALL' | 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'A_RECONSIDERAR'
   ) => {
     setStatus(next);
     setPage(1);

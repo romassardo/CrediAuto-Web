@@ -5,6 +5,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtVerify } from 'jose';
+import { Prisma } from '@prisma/client';
 
 export async function PATCH(
   request: NextRequest,
@@ -120,7 +121,7 @@ export async function PATCH(
         reconsiderationRequested: true,
         reconsiderationReason: reconsiderationReason,
         reconsiderationRequestedAt: new Date(),
-        reconsiderationDocumentsMetadata: newDocumentsMetadata.length > 0 ? newDocumentsMetadata : null,
+        reconsiderationDocumentsMetadata: newDocumentsMetadata.length > 0 ? newDocumentsMetadata : Prisma.DbNull,
         // Limpiar campos de revisión anterior para que el admin la procese como nueva
         reviewedAt: null,
         reviewedByUserId: null,
