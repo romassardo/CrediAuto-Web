@@ -122,6 +122,11 @@
   --spacing-16: 4rem;    /* 64px */
 }
 
+/* Scroll suave global para anclas */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Base */
 body {
   background: var(--color-bg);

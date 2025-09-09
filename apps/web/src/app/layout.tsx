@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es-AR" suppressHydrationWarning>
+    <html lang="es-AR" className="scroll-smooth" suppressHydrationWarning>
       <body className="font-dm-sans">{children}</body>
     </html>
   );

@@ -1,12 +1,23 @@
 {
-  "json.schemas": [
-    {
-      "fileMatch": ["mcp.json", "*.mcp.json"],
-      "url": "https://raw.githubusercontent.com/modelcontextprotocol/specification/main/schema/mcp.schema.json"
-    }
-  ],
   "files.associations": {
     "*.mcp.json": "json"
   },
-  "postman.settings.dotenv-detection-notification-visibility": false
+  "postman.settings.dotenv-detection-notification-visibility": false,
+
+  // Tailwind CSS IntelliSense settings for monorepo (apps/web)
+  "tailwindCSS.experimental.configFile": "apps/web/tailwind.config.ts",
+  "tailwindCSS.tailwindPath": "apps/web/node_modules/tailwindcss",
+  "tailwindCSS.includeLanguages": {
+    "typescriptreact": "html",
+    "javascriptreact": "html",
+    "typescript": "html",
+    "javascript": "html"
+  },
+  "tailwindCSS.emmetCompletions": true,
+  // Silence unknown at-rule warnings (e.g., @theme) from CSS language server
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+  // And also from Tailwind extension just in case
+  "tailwindCSS.lint.unknownAtRules": "ignore"
 }

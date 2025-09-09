@@ -67,13 +67,18 @@ export default function AdminNavigation({ title, subtitle, stats }: AdminNavigat
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (response.ok) {
-        router.push('/login');
+        router.replace('/');
+      } else {
+        // Incluso si la API no responde OK, intentamos llevar al home
+        router.replace('/');
       }
     } catch (error) {
       console.error('Error during logout:', error);
+      router.replace('/');
     } finally {
       setLoading(false);
     }

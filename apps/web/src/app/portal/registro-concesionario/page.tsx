@@ -26,42 +26,88 @@ export default function RegistroConcesionario() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
+
+    let nextValue: string | boolean = type === "checkbox" ? checked : value;
+
+    // Normalización en cliente: CUIT y teléfono solo dígitos
+    if (typeof nextValue === 'string' && (name === 'cuit' || name === 'telefono')) {
+      nextValue = nextValue.replace(/\D/g, '');
+    }
+
+    // Limpiar errores del campo al modificarlo
+    setFormErrors(prev => ({ ...prev, [name]: '' }));
+    setGeneralError(null);
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value.trim()
+      [name]: type === "checkbox" ? checked : (nextValue as string).trim()
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    setFormErrors({});
+    setGeneralError(null);
+
+    // Validaciones rápidas en cliente
+    const localErrors: Record<string, string> = {};
+    if (!formData.cuit || formData.cuit.replace(/\D/g, '').length !== 11) {
+      localErrors.cuit = 'El CUIT debe tener 11 dígitos (sin guiones ni espacios).';
+    }
+    if (!formData.telefono || formData.telefono.replace(/\D/g, '').length < 8) {
+      localErrors.telefono = 'El teléfono debe tener al menos 8 dígitos (solo números).';
+    }
+
+    if (Object.keys(localErrors).length > 0) {
+      setFormErrors(localErrors);
+      return;
+    }
+
     if (!isFormValid) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch('/api/dealers/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify(formData),
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        setGeneralError('El servidor devolvió un contenido no JSON. Por favor intentá nuevamente. Detalle: ' + text.slice(0, 300));
+        return;
+      }
+
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setShowSuccess(true);
       } else {
-        console.error('Error en el registro:', data.error);
-        alert(data.error || 'Error al procesar la solicitud');
+        // Mapear errores del servidor (Zod) si existen
+        const fieldErrors = (data.details as Record<string, string[] | undefined>) || {};
+        const mapped: Record<string, string> = {};
+        Object.keys(fieldErrors).forEach((key) => {
+          const arr = fieldErrors[key];
+          if (arr && arr.length) mapped[key] = arr.join(' ');
+        });
+        if (Object.keys(mapped).length) setFormErrors(mapped);
+        setGeneralError(data.error || data.message || `No se pudo completar el registro (HTTP ${response.status}). Intenta nuevamente.`);
       }
     } catch (error) {
       console.error('Error al enviar formulario:', error);
-      alert('Error de conexión. Por favor, intenta nuevamente.');
+      setGeneralError('Error de conexión. Por favor, intentá nuevamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -94,14 +140,11 @@ export default function RegistroConcesionario() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Link href="/" className="flex items-center gap-3 group">
-                <Image
-                  src="/crediexpress-logo-sinfondo.png"
-                  alt="Crediexpress Auto"
-                  width={40}
-                  height={40}
-                  className="object-contain w-10 h-10 group-hover:scale-105 transition-transform"
+                <img
+                  src="/recurso-15.svg"
+                  alt="Crediexpress Automotor"
+                  className="block h-auto w-[160px] md:w-[240px] lg:w-[320px] group-hover:opacity-90 transition-opacity"
                 />
-                <span className="text-xl font-bold text-brand-primary-600 group-hover:text-brand-primary-700 transition-colors">Crediexpress</span>
               </Link>
               <div className="hidden sm:block w-px h-6 bg-gray-300"></div>
               <Link href="/" className="flex items-center gap-3 text-brand-primary-600 hover:text-brand-primary-700 transition-all hover:gap-4 group">
@@ -110,7 +153,7 @@ export default function RegistroConcesionario() {
               </Link>
             </div>
             <div className="text-sm text-gray-500">
-              ¿Ya tenés cuenta? <Link href="/portal/login" className="text-brand-primary-600 hover:underline font-medium transition-all hover:text-brand-primary-700">Iniciar sesión</Link>
+              ¿Ya tenés cuenta? <Link href="/login" className="text-brand-primary-600 hover:underline font-medium transition-all hover:text-brand-primary-700">Iniciar sesión</Link>
             </div>
           </div>
         </div>
@@ -228,7 +271,12 @@ export default function RegistroConcesionario() {
               </div>
 
               {/* Formulario */}
-              <form onSubmit={handleSubmit} className="p-8 space-y-8">
+              <form onSubmit={handleSubmit} noValidate className="p-8 space-y-8">
+                {generalError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 text-red-700 p-3">
+                    {generalError}
+                  </div>
+                )}
                 {/* Sección: Datos del Responsable */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
@@ -299,10 +347,19 @@ export default function RegistroConcesionario() {
                         name="telefono"
                         value={formData.telefono}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
-                        placeholder="+54 11 1234-5678"
+                        inputMode="numeric"
+                        maxLength={15}
+                        className={`w-full px-4 py-3 border rounded-lg transition-all bg-white text-gray-900 placeholder-gray-400 shadow-sm ${formErrors.telefono ? 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 hover:border-gray-400'}`}
+                        placeholder="Ej: 1144455566 (solo números)"
+                        aria-invalid={!!formErrors.telefono}
+                        aria-describedby="telefono-help"
                         required
                       />
+                      {formErrors.telefono ? (
+                        <p className="mt-2 text-sm text-red-600">{formErrors.telefono}</p>
+                      ) : (
+                        <p id="telefono-help" className="mt-2 text-xs text-gray-500">Ingresá solo números, sin espacios ni guiones.</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -342,11 +399,20 @@ export default function RegistroConcesionario() {
                       name="cuit"
                       value={formData.cuit}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
-                      placeholder="20123456789"
+                      inputMode="numeric"
+                      title="Ingresá 11 dígitos (sin guiones ni espacios)"
                       maxLength={11}
+                      className={`w-full px-4 py-3 border rounded-lg transition-all bg-white text-gray-900 placeholder-gray-400 shadow-sm ${formErrors.cuit ? 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 hover:border-gray-400'}`}
+                      placeholder="20123456789"
+                      aria-invalid={!!formErrors.cuit}
+                      aria-describedby="cuit-help"
                       required
                     />
+                    {formErrors.cuit ? (
+                      <p className="mt-2 text-sm text-red-600">{formErrors.cuit}</p>
+                    ) : (
+                      <p id="cuit-help" className="mt-2 text-xs text-gray-500">Ingresá el CUIT sin guiones ni espacios (11 dígitos).</p>
+                    )}
                   </div>
 
                   <div>

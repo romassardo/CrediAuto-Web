@@ -235,9 +235,34 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     fetchApplications();
   };
 
-  const handleViewDetails = (application: LoanApplication) => {
-    setSelectedApplication(application);
+  const handleViewDetails = async (application: LoanApplication) => {
+    // Abrimos el modal y mostramos datos básicos mientras se carga el detalle
     setIsModalOpen(true);
+    setSelectedApplication(application);
+
+    try {
+      const token = getTokenFromCookies();
+      const res = await fetch(`/api/loan-applications/${application.publicId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        console.warn('⚠️ No se pudo obtener el detalle, usando datos básicos', res.status, res.statusText);
+        return;
+      }
+      const data = await res.json();
+      if (data?.success && data?.data) {
+        setSelectedApplication(data.data);
+      }
+    } catch (e) {
+      console.error('Error cargando detalle de solicitud:', e);
+      // Dejamos los datos básicos ya seteados como fallback
+    }
   };
 
   const handleCloseModal = () => {
@@ -390,11 +415,10 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
                   }}
                   className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <span className="font-medium text-sm text-gray-900">
                       {s.applicantFirstName} {s.applicantLastName}
                     </span>
-                    <span className="text-[11px] text-gray-400">#{s.publicId.substring(0, 8)}</span>
                   </div>
                   <div className="text-xs text-gray-500">
                     {s.applicantCuil && <>CUIL {s.applicantCuil} · </>}
@@ -463,7 +487,6 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
           <table className="min-w-[900px] w-full border-collapse bg-white rounded-xl overflow-hidden">
             <thead>
               <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-600">
-                <th className="px-4 py-3 border-b">ID</th>
                 <th className="px-4 py-3 border-b">Solicitante</th>
                 <th className="px-4 py-3 border-b">Préstamo</th>
                 <th className="px-4 py-3 border-b">Cuota</th>
@@ -475,7 +498,6 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
             <tbody className="text-sm text-gray-900">
               {applications.map((app: LoanApplication) => (
                 <tr key={app.publicId} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 align-middle text-xs text-gray-500">#{app.publicId.substring(0, 8)}</td>
                   <td className="px-4 py-3 align-middle">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-brand-primary-100 to-brand-primary-200 shadow-sm">

@@ -1,10 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div id="top" className="min-h-screen bg-white overflow-x-hidden pt-20 md:pt-28">
       {/* Header */}
-      <header className="flex justify-between items-center px-4 md:px-8 lg:px-16 py-3 md:py-6 bg-white">
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-8 lg:px-16 py-3 md:py-6 bg-white border-b border-gray-100 shadow-sm">
         <div className="flex items-center">
           <img
             src="/recurso-15.svg"
@@ -13,12 +14,12 @@ export default function Home() {
           />
         </div>
         <nav className="hidden md:flex items-center space-x-6 lg:space-x-12">
-          <a href="#" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Inicio</a>
+          <a href="#top" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Inicio</a>
           <a href="#" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Quienes somos</a>
-          <a href="#" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Contacto</a>
-          <button className="text-white px-3 lg:px-6 py-1.5 lg:py-3 rounded-xl lg:rounded-2xl font-sans font-medium hover:opacity-90 transition-colors" style={{backgroundColor: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>
+          <a href="#contacto" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Contacto</a>
+          <Link href="/login" prefetch={false} className="text-white px-3 lg:px-6 py-1.5 lg:py-3 rounded-xl lg:rounded-2xl font-sans font-medium hover:opacity-90 transition-colors" style={{backgroundColor: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>
             Agencias
-          </button>
+          </Link>
         </nav>
       </header>
 
@@ -56,9 +57,9 @@ export default function Home() {
                 <span className="text-white">fácil y rápido</span>
               </h2>
               <div className="flex justify-center md:justify-start">
-                <button className="bg-yellow-400 text-black px-6 py-3 rounded-3xl font-sans font-black hover:bg-yellow-500 transition-colors shadow-xl" style={{fontSize: 'clamp(1.2rem, 3vw, 2rem)'}}>
+                <a href="#contacto" className="bg-yellow-400 text-black px-6 py-3 rounded-3xl font-sans font-black hover:bg-yellow-500 transition-colors shadow-xl" style={{fontSize: 'clamp(1.2rem, 3vw, 2rem)'}}>
                   Comenzar ahora
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -145,12 +146,12 @@ export default function Home() {
                     aumenta tus operaciones.
                   </p>
 
-                  <button className="inline-flex items-center bg-white text-black px-[18px] py-[12px] rounded-2xl font-sans font-medium shadow-[0_10px_24px_rgba(0,0,0,0.2)] hover:bg-gray-100 transition-colors" style={{fontSize: 'clamp(1rem, 2.2vw, 1.75rem)'}}>
+                  <Link href="/portal/registro-concesionario" className="inline-flex items-center bg-white text-black px-[18px] py-[12px] rounded-2xl font-sans font-medium shadow-[0_10px_24px_rgba(0,0,0,0.2)] hover:bg-gray-100 transition-colors" style={{fontSize: 'clamp(1rem, 2.2vw, 1.75rem)'}}>
                     Regístrate ahora
-                  </button>
+                  </Link>
 
                   <p className="font-sans font-medium" style={{color: '#1E2480', fontSize: 'clamp(1rem, 2vw, 1.75rem)'}}>
-                    Si ya tenes usuario podés <a className="underline font-sans font-black" style={{color: '#1E2480'}} href="#">simular tu crédito</a>
+                    Si ya tenes usuario podés <Link href="/login" prefetch={false} className="underline font-sans font-black" style={{color: '#1E2480'}}>simular tu crédito</Link>
                   </p>
                 </div>
               </div>
@@ -213,7 +214,7 @@ export default function Home() {
         </section>
 
         {/* Contact Form */}
-      <section className="pt-12 md:pt-24 lg:pt-32" style={{ paddingBottom: '8rem' }}>
+      <section id="contacto" className="scroll-mt-24 md:scroll-mt-32 pt-12 md:pt-24 lg:pt-32" style={{ paddingBottom: '8rem' }}>
         <div className="container mx-auto px-6">
           <div className="max-w-6xl mx-auto">
             {/* Form */}
@@ -270,6 +271,24 @@ export default function Home() {
                     placeholder="Contanos en qué podemos ayudarte..."
                     className="w-full px-6 py-4 text-lg font-sans font-normal border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 resize-none shadow-lg"
                   ></textarea>
+                </div>
+
+                {/* Términos y condiciones */}
+                <div className="space-y-4">
+                  <div className="flex justify-center">
+                    <div className="inline-flex items-start gap-4 max-w-3xl">
+                      <input
+                        type="checkbox"
+                        id="aceptaContactoTerminos"
+                        name="aceptaContactoTerminos"
+                        className="mt-1.5 w-6 h-6 text-brand-primary-600 border-gray-300 rounded focus:ring-brand-primary-600"
+                        required
+                      />
+                      <label htmlFor="aceptaContactoTerminos" className="text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
+                        Acepto los <Link href="#" className="text-brand-primary-600 hover:underline font-semibold">términos y condiciones</Link> y autorizo el tratamiento de mis datos personales según la <Link href="#" className="text-brand-primary-600 hover:underline font-semibold">política de privacidad</Link>.
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex justify-end pt-6">

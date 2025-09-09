@@ -12,15 +12,15 @@ const registerDealerSchema = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').trim(),
   apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').trim(),
   email: z.string().email('Email inválido').toLowerCase().trim(),
-  telefono: z.string().min(8, 'El teléfono debe tener al menos 8 caracteres').trim(),
+  telefono: z.string()
+    .transform((s) => s.replace(/\D/g, '')) // conservar solo dígitos
+    .refine((s) => s.length >= 8, 'El teléfono debe tener al menos 8 dígitos'),
   
   // Datos del concesionario
   nombreComercial: z.string().min(3, 'El nombre comercial debe tener al menos 3 caracteres').trim(),
   cuit: z.string()
-    .min(11, 'El CUIT debe tener 11 caracteres')
-    .max(11, 'El CUIT debe tener 11 caracteres')
-    .regex(/^[0-9]+$/, 'El CUIT solo puede contener números')
-    .trim(),
+    .transform((s) => s.replace(/\D/g, '')) // conservar solo dígitos
+    .refine((s) => s.length === 11, 'El CUIT debe tener 11 dígitos'),
   direccion: z.string().min(5, 'La dirección debe tener al menos 5 caracteres').trim(),
   ciudad: z.string().min(2, 'La ciudad debe tener al menos 2 caracteres').trim(),
   provincia: z.string().min(2, 'La provincia debe tener al menos 2 caracteres').trim(),
