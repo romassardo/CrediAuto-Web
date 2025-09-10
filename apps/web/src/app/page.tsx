@@ -13,6 +13,15 @@ export default function Home() {
             className="block h-auto w-[160px] md:w-[240px] lg:w-[320px]"
           />
         </div>
+        
+        {/* Mobile Navigation - Solo botón Agencias */}
+        <div className="flex md:hidden">
+          <Link href="/login" prefetch={false} className="text-white px-3 py-2 rounded-xl font-sans font-medium hover:opacity-90 transition-colors text-sm" style={{backgroundColor: '#1E2480'}}>
+            Agencias
+          </Link>
+        </div>
+
+        {/* Desktop Navigation - Menú completo */}
         <nav className="hidden md:flex items-center space-x-6 lg:space-x-12">
           <a href="#top" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Inicio</a>
           <a href="#quienes-somos" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Quienes somos</a>
