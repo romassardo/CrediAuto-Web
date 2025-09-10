@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import ContactForm from "@/components/landing/ContactForm";
 
 export default function Home() {
   return (
@@ -279,78 +280,7 @@ export default function Home() {
                     ¿Tenés dudas sobre nuestros créditos prendarios? Escribinos y te asesoramos sin compromiso.
                   </p>
                 </div>
-                <form className="space-y-8">
-                  <div className="grid md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                      <label className="text-lg font-sans font-medium text-gray-700">Nombre completo</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="Ingresá tu nombre"
-                          className="w-full px-6 py-4 text-lg font-sans font-medium border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-lg"
-                        />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                          <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <label className="text-lg font-sans font-medium text-gray-700">Email</label>
-                      <div className="relative">
-                        <input
-                          type="email"
-                          placeholder="tu@email.com"
-                          className="w-full px-6 py-4 text-lg font-sans font-medium border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-lg"
-                        />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                          <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="text-lg font-sans font-medium text-gray-700">Consulta</label>
-                    <textarea
-                      rows={4}
-                      placeholder="Contanos en qué podemos ayudarte..."
-                      className="w-full px-6 py-4 text-lg font-sans font-normal border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 resize-none shadow-lg"
-                    ></textarea>
-                  </div>
-
-                  {/* Términos y condiciones */}
-                  <div className="space-y-4">
-                    <div className="flex justify-center">
-                      <div className="inline-flex items-start gap-4 max-w-3xl">
-                        <input
-                          type="checkbox"
-                          id="aceptaContactoTerminos"
-                          name="aceptaContactoTerminos"
-                          className="mt-1.5 w-6 h-6 text-brand-primary-600 border-gray-300 rounded focus:ring-brand-primary-600"
-                          required
-                        />
-                        <label htmlFor="aceptaContactoTerminos" className="text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                          Acepto los <Link href="#" className="text-brand-primary-600 hover:underline font-semibold">términos y condiciones</Link> y autorizo el tratamiento de mis datos personales según la <Link href="#" className="text-brand-primary-600 hover:underline font-semibold">política de privacidad</Link>.
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-6">
-                    <button
-                      type="submit"
-                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-sans font-medium py-4 px-12 text-lg rounded-lg transition-all duration-200 transform hover:-translate-y-1"
-                      style={{ boxShadow: '0 6px 12px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)' }}
-                    >
-                      Enviar
-                    </button>
-                  </div>
-                </form>
+                <ContactForm />
               </div>
             </div>
           </div>
