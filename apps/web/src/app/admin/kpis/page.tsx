@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 import { TrendingUp, TrendingDown, DollarSign, Users, FileText, Clock, Target, BarChart3, PieChart, Activity } from 'lucide-react';
 
@@ -21,87 +21,101 @@ interface ChartData {
   color: string;
 }
 
+interface APIResponse {
+  success: boolean;
+  data: {
+    kpiData: KPIData[];
+    statusDistribution: ChartData[];
+    monthlyTrend: MonthlyTrendData[];
+    summary: {
+      totalGrowth: number;
+      approvalRate: number;
+      avgProcessingTime: number;
+    };
+  };
+  error?: string;
+}
+
+interface MonthlyTrendData {
+  month: string;
+  applications: number;
+  approved: number;
+}
+
 export default function KPIsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [kpiData, setKpiData] = useState<KPIData[]>([]);
+  const [statusDistribution, setStatusDistribution] = useState<ChartData[]>([]);
+  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const kpiData: KPIData[] = [
-    {
-      id: 'total_applications',
-      title: 'Solicitudes Totales',
-      value: '1,247',
-      change: 12.5,
-      changeType: 'increase',
-      icon: <FileText className="w-6 h-6" />,
-      color: 'bg-blue-500',
-      description: 'Solicitudes recibidas en el período'
-    },
-    {
-      id: 'approval_rate',
-      title: 'Tasa de Aprobación',
-      value: '68.3%',
-      change: -2.1,
-      changeType: 'decrease',
-      icon: <Target className="w-6 h-6" />,
-      color: 'bg-green-500',
-      description: 'Porcentaje de solicitudes aprobadas'
-    },
-    {
-      id: 'avg_loan_amount',
-      title: 'Préstamo Promedio',
-      value: '$3.2M',
-      change: 8.7,
-      changeType: 'increase',
-      icon: <DollarSign className="w-6 h-6" />,
-      color: 'bg-purple-500',
-      description: 'Monto promedio de préstamos aprobados'
-    },
-    {
-      id: 'active_dealers',
-      title: 'Dealers Activos',
-      value: '89',
-      change: 5.2,
-      changeType: 'increase',
-      icon: <Users className="w-6 h-6" />,
-      color: 'bg-orange-500',
-      description: 'Concesionarios con actividad reciente'
-    },
-    {
-      id: 'avg_processing_time',
-      title: 'Tiempo Promedio',
-      value: '2.4 días',
-      change: -15.3,
-      changeType: 'increase',
-      icon: <Clock className="w-6 h-6" />,
-      color: 'bg-indigo-500',
-      description: 'Tiempo promedio de procesamiento'
-    },
-    {
-      id: 'monthly_volume',
-      title: 'Volumen Mensual',
-      value: '$127.5M',
-      change: 23.8,
-      changeType: 'increase',
-      icon: <TrendingUp className="w-6 h-6" />,
-      color: 'bg-emerald-500',
-      description: 'Volumen total de préstamos del mes'
+  // Función para agregar iconos a los KPIs
+  const addIconsToKPIs = (kpis: KPIData[]): KPIData[] => {
+    const iconMap: { [key: string]: { icon: React.ReactNode; color: string } } = {
+      'total_applications': { icon: <FileText className="w-6 h-6" />, color: 'bg-blue-500' },
+      'approval_rate': { icon: <Target className="w-6 h-6" />, color: 'bg-green-500' },
+      'avg_loan_amount': { icon: <DollarSign className="w-6 h-6" />, color: 'bg-purple-500' },
+      'active_dealers': { icon: <Users className="w-6 h-6" />, color: 'bg-orange-500' },
+      'avg_processing_time': { icon: <Clock className="w-6 h-6" />, color: 'bg-indigo-500' },
+      'monthly_volume': { icon: <TrendingUp className="w-6 h-6" />, color: 'bg-emerald-500' },
+    };
+
+    return kpis.map(kpi => ({
+      ...kpi,
+      icon: iconMap[kpi.id]?.icon || <Activity className="w-6 h-6" />,
+      color: iconMap[kpi.id]?.color || 'bg-gray-500'
+    }));
+  };
+
+  // Función para obtener datos del API
+  const fetchKPIData = async (period: '7d' | '30d' | '90d' | '1y') => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/api/admin/kpis?period=${period}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data: APIResponse = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Error desconocido al cargar KPIs');
+      }
+
+      // Agregar iconos y colores a los KPIs
+      const kpisWithIcons = addIconsToKPIs(data.data.kpiData);
+      
+      setKpiData(kpisWithIcons);
+      setStatusDistribution(data.data.statusDistribution);
+      setMonthlyTrend(data.data.monthlyTrend);
+      
+    } catch (error) {
+      console.error('❌ Error cargando KPIs:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+      
+      // Fallback a datos por defecto en caso de error
+      setKpiData([]);
+      setStatusDistribution([]);
+      setMonthlyTrend([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const statusDistribution: ChartData[] = [
-    { name: 'Aprobadas', value: 68.3, color: '#10b981' },
-    { name: 'Pendientes', value: 18.2, color: '#f59e0b' },
-    { name: 'Rechazadas', value: 10.1, color: '#ef4444' },
-    { name: 'Canceladas', value: 3.4, color: '#6b7280' }
-  ];
-
-  const monthlyTrend = [
-    { month: 'Ene', applications: 980, approved: 668 },
-    { month: 'Feb', applications: 1120, approved: 756 },
-    { month: 'Mar', applications: 1050, approved: 714 },
-    { month: 'Apr', applications: 1180, approved: 826 },
-    { month: 'May', applications: 1247, approved: 851 }
-  ];
+  // Cargar datos al montar el componente y cuando cambie el período
+  useEffect(() => {
+    fetchKPIData(timeRange);
+  }, [timeRange]);
 
   const getChangeIcon = (changeType: string) => {
     if (changeType === 'increase') return <TrendingUp className="w-4 h-4" />;
@@ -116,10 +130,8 @@ export default function KPIsPage() {
   };
 
   const handleTimeRangeChange = (range: '7d' | '30d' | '90d' | '1y') => {
-    setLoading(true);
     setTimeRange(range);
-    // Simular carga de datos
-    setTimeout(() => setLoading(false), 800);
+    // Los datos se cargarán automáticamente por el useEffect
   };
 
   return (
@@ -151,7 +163,8 @@ export default function KPIsPage() {
                 <button
                   key={range}
                   onClick={() => handleTimeRangeChange(range)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     timeRange === range
                       ? 'bg-brand-primary-600 text-white shadow-sm'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -166,6 +179,39 @@ export default function KPIsPage() {
             </div>
           </div>
         </div>
+
+        {/* Estado de Error */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <Activity className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-red-900">Error al cargar métricas</h3>
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+              <button
+                onClick={() => fetchKPIData(timeRange)}
+                className="ml-auto px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Estado de Loading */}
+        {loading && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-8 mb-6">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-primary-600"></div>
+                <span className="text-gray-700 font-medium">Cargando métricas...</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Grid de KPIs principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -204,29 +250,19 @@ export default function KPIsPage() {
                 <p className="text-sm text-gray-600">Porcentaje de solicitudes por estado</p>
               </div>
             </div>
-            
             <div className="space-y-4">
               {statusDistribution.map((item) => (
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    ></div>
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }}></div>
                     <span className="text-sm font-medium text-gray-700">{item.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="h-2 rounded-full"
-                        style={{ 
-                          width: `${item.value}%`,
-                          backgroundColor: item.color 
-                        }}
-                      ></div>
+                  <div className="flex items-center gap-3 w-1/2 sm:w-2/3">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div className="h-2 rounded-full" style={{ width: `${Math.min(item.value, 100)}%`, backgroundColor: item.color }}></div>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900 w-12 text-right">
-                      {item.value}%
+                    <span className="text-sm font-semibold text-gray-900 w-14 text-right tabular-nums">
+                      {item.value.toFixed(1)}%
                     </span>
                   </div>
                 </div>
@@ -245,23 +281,16 @@ export default function KPIsPage() {
                 <p className="text-sm text-gray-600">Solicitudes recibidas vs aprobadas</p>
               </div>
             </div>
-            
             <div className="space-y-3">
               {monthlyTrend.map((month) => (
                 <div key={month.month} className="flex items-center justify-between py-2">
                   <div className="text-sm font-medium text-gray-700 w-12">{month.month}</div>
                   <div className="flex-1 flex items-center gap-2 mx-4">
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="h-2 bg-blue-500 rounded-full"
-                        style={{ width: `${(month.applications / 1300) * 100}%` }}
-                      ></div>
+                      <div className="h-2 bg-blue-500 rounded-full" style={{ width: `${(month.applications / 1300) * 100}%` }}></div>
                     </div>
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="h-2 bg-green-500 rounded-full"
-                        style={{ width: `${(month.approved / 1300) * 100}%` }}
-                      ></div>
+                      <div className="h-2 bg-green-500 rounded-full" style={{ width: `${(month.approved / 1300) * 100}%` }}></div>
                     </div>
                   </div>
                   <div className="text-right">
@@ -271,7 +300,6 @@ export default function KPIsPage() {
                 </div>
               ))}
             </div>
-            
             <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -286,32 +314,52 @@ export default function KPIsPage() {
         </div>
 
         {/* Resumen ejecutivo */}
-        <div className="bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 rounded-xl shadow-lg p-6 text-white">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Target className="w-6 h-6" />
+        {!loading && !error && kpiData.length > 0 && (
+          <div className="bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 rounded-xl shadow-lg p-6 text-white">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <Target className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Resumen Ejecutivo</h3>
+                <p className="text-brand-primary-100">Análisis del período seleccionado</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold">Resumen Ejecutivo</h3>
-              <p className="text-brand-primary-100">Análisis del período seleccionado</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="text-2xl font-bold mb-1">
+                  {kpiData.find(k => k.id === 'total_applications')?.changeType === 'increase' ? '+' : ''}
+                  {kpiData.find(k => k.id === 'total_applications')?.change.toFixed(1) || '0'}%
+                </div>
+                <div className="text-sm text-brand-primary-100">Crecimiento en solicitudes</div>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="text-2xl font-bold mb-1">
+                  {kpiData.find(k => k.id === 'approval_rate')?.value || '0%'}
+                </div>
+                <div className="text-sm text-brand-primary-100">Tasa de aprobación actual</div>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="text-2xl font-bold mb-1">
+                  {kpiData.find(k => k.id === 'avg_processing_time')?.value || '0 días'}
+                </div>
+                <div className="text-sm text-brand-primary-100">Tiempo promedio de respuesta</div>
+              </div>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/10 rounded-lg p-4">
-              <div className="text-2xl font-bold mb-1">+12.5%</div>
-              <div className="text-sm text-brand-primary-100">Crecimiento en solicitudes</div>
+        )}
+
+        {/* Estado vacío cuando no hay datos */}
+        {!loading && !error && kpiData.length === 0 && (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-8 h-8 text-gray-400" />
             </div>
-            <div className="bg-white/10 rounded-lg p-4">
-              <div className="text-2xl font-bold mb-1">68.3%</div>
-              <div className="text-sm text-brand-primary-100">Tasa de aprobación actual</div>
-            </div>
-            <div className="bg-white/10 rounded-lg p-4">
-              <div className="text-2xl font-bold mb-1">2.4 días</div>
-              <div className="text-sm text-brand-primary-100">Tiempo promedio de respuesta</div>
-            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Sin datos disponibles</h3>
+            <p className="text-gray-600">No hay información suficiente para mostrar métricas en el período seleccionado.</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

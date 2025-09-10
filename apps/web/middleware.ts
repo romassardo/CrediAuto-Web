@@ -9,8 +9,8 @@ const adminRoutes = ['/admin']
 const portalRoutes = ['/portal']
 
 // Claves para verificar tokens
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '')
-const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '')
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret')
+const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret')
 
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname

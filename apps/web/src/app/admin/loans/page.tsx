@@ -384,6 +384,33 @@ export default function AdminLoansPage() {
 
   const formatDate = (s?: string) => (s ? new Date(s).toLocaleDateString() : "-");
 
+  // Exportar CSV usando el endpoint /api/admin/loan-applications/export
+  // Reutiliza los filtros actuales (status + búsqueda) y limita a 5000 filas.
+  const handleExport = () => {
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter && statusFilter !== "ALL") params.set("status", statusFilter);
+      if (searchTerm.trim()) params.set("search", searchTerm.trim());
+      if (totalCount && totalCount > 0) {
+        const max = Math.min(Math.max(totalCount, 1), 5000);
+        params.set("max", String(max));
+      }
+      params.set("format", "xlsx");
+      const url = `/api/admin/loan-applications/export?${params.toString()}`;
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Error iniciando exportación:', err);
+      showModal('Error', 'No se pudo iniciar la descarga del archivo.', 'error');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-blue-50 relative overflow-hidden">
       {/* Nueva Navegación Admin */}
@@ -421,14 +448,29 @@ export default function AdminLoansPage() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2 w-full lg:w-80 bg-white border-2 border-gray-300 rounded-lg px-3 py-2 shadow-sm">
-              <Search className="w-4 h-4 text-gray-500" />
-              <input
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-                placeholder="Buscar por nombre, DNI, email..."
-                className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder-gray-500"
-              />
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              <div className="flex items-center gap-2 w-full lg:w-80 bg-white border-2 border-gray-300 rounded-lg px-3 py-2 shadow-sm">
+                <Search className="w-4 h-4 text-gray-500" />
+                <input
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+                  placeholder="Buscar por nombre, DNI, email..."
+                  className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder-gray-500"
+                />
+              </div>
+              <button
+                onClick={handleExport}
+                disabled={loading || totalCount === 0}
+                title="Exportar Excel"
+                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors shadow-sm ${
+                  loading || totalCount === 0
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'bg-brand-primary-600 text-white border-brand-primary-700 hover:bg-brand-primary-700'
+                }`}
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Exportar</span>
+              </button>
             </div>
           </div>
         </div>
