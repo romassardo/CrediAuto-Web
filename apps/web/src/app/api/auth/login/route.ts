@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
     // Configurar cookies seguras
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // HTTP sin SSL en producción
       sameSite: 'lax' as const,
       path: '/'
     };
