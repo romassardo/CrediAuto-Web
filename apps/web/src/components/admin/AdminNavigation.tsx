@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 interface AdminNavigationProps {
   title: string;
   subtitle: string;
+  subtitleClassName?: string;
   stats?: {
     count: number;
     label: string;
@@ -21,7 +22,7 @@ interface UserInfo {
   role: string;
 }
 
-export default function AdminNavigation({ title, subtitle, stats }: AdminNavigationProps) {
+export default function AdminNavigation({ title, subtitle, subtitleClassName, stats }: AdminNavigationProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -30,7 +31,7 @@ export default function AdminNavigation({ title, subtitle, stats }: AdminNavigat
   const navigationItems = [
     { href: '/admin/loans', label: 'Préstamos' },
     { href: '/admin/dashboard', label: 'Concesionarios' },
-    { href: '/admin/rates', label: 'Tasas' },
+    { href: '/admin/rates/auto', label: 'Tasas' },
     { href: '/admin/kpis', label: 'KPIs' },
   ];
 
@@ -101,7 +102,7 @@ export default function AdminNavigation({ title, subtitle, stats }: AdminNavigat
                 <span className="text-xs font-medium text-brand-accent-500">🏢 Administración</span>
               </div>
               <h1 className="text-2xl font-bold text-white">{title}</h1>
-              <p className="text-brand-primary-100 text-sm">{subtitle}</p>
+              <p className={subtitleClassName ?? 'text-brand-accent-500 text-sm'}>{subtitle}</p>
             </div>
           </div>
           
@@ -135,7 +136,7 @@ export default function AdminNavigation({ title, subtitle, stats }: AdminNavigat
                 <div className="text-white text-sm font-medium">
                   {userInfo ? `${userInfo.firstName} ${userInfo.lastName}` : 'Cargando...'}
                 </div>
-                <div className="text-brand-primary-200 text-xs">
+                <div className="text-brand-accent-500 text-xs">
                   {userInfo ? (userInfo.role === 'ADMIN' ? 'Administrador' : userInfo.role) : 'Usuario'}
                 </div>
               </div>
@@ -157,7 +158,7 @@ export default function AdminNavigation({ title, subtitle, stats }: AdminNavigat
             {stats && (
               <div className="text-right">
                 <div className="text-white/90 text-sm font-medium">{stats.count} {stats.label}</div>
-                <div className="text-brand-primary-200 text-xs">Total registros</div>
+                <div className="text-brand-accent-500 text-xs">Total registros</div>
               </div>
             )}
           </div>

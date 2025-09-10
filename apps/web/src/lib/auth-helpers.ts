@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
-import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret');
+const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret');
 
 interface AuthResult {
   success: boolean;
@@ -30,37 +32,92 @@ export async function verifyAdminAuth(request: NextRequest): Promise<AuthResult>
       };
     }
 
-    // Fallback: verificar desde cookies
-    const cookieStore = await cookies();
-    const token = cookieStore.get('access_token')?.value;
+    // Fallbacks: cookies y/o Authorization Bearer
+    const accessToken = request.cookies.get('access_token')?.value || null;
+    const refreshToken = request.cookies.get('refresh_token')?.value || null;
 
-    if (!token) {
-      return {
-        success: false,
-        error: 'Token de acceso no encontrado',
-        status: 401
-      };
+    // 1) Intentar con access_token
+    if (accessToken) {
+      try {
+        const { payload } = await jwtVerify(accessToken, JWT_SECRET);
+        if (payload.role === 'ADMIN') {
+          return {
+            success: true,
+            user: {
+              userId: payload.userId as number,
+              role: payload.role as string,
+              dealerId: payload.dealerId as number | undefined,
+            },
+          };
+        }
+        return { success: false, error: 'Acceso denegado. Se requieren permisos de administrador', status: 403 };
+      } catch (_e) {
+        // seguimos con refresh
+      }
     }
 
-    // Verificar JWT
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
+    // 2) Intentar con refresh_token
+    if (refreshToken) {
+      try {
+        const { payload } = await jwtVerify(refreshToken, JWT_REFRESH_SECRET);
+        if (payload.role === 'ADMIN') {
+          return {
+            success: true,
+            user: {
+              userId: payload.userId as number,
+              role: payload.role as string,
+              dealerId: payload.dealerId as number | undefined,
+            },
+          };
+        }
+        return { success: false, error: 'Acceso denegado. Se requieren permisos de administrador', status: 403 };
+      } catch (_e) {
+        // seguimos con Authorization
+      }
+    }
 
-    if (payload.role !== 'ADMIN') {
-      return {
-        success: false,
-        error: 'Acceso denegado. Se requieren permisos de administrador',
-        status: 403
-      };
+    // 3) Intentar con Authorization: Bearer ...
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    const bearer = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
+    if (bearer) {
+      // Intentar primero con access, luego con refresh
+      try {
+        const { payload } = await jwtVerify(bearer, JWT_SECRET);
+        if (payload.role === 'ADMIN') {
+          return {
+            success: true,
+            user: {
+              userId: payload.userId as number,
+              role: payload.role as string,
+              dealerId: payload.dealerId as number | undefined,
+            },
+          };
+        }
+        return { success: false, error: 'Acceso denegado. Se requieren permisos de administrador', status: 403 };
+      } catch (_e1) {
+        try {
+          const { payload } = await jwtVerify(bearer, JWT_REFRESH_SECRET);
+          if (payload.role === 'ADMIN') {
+            return {
+              success: true,
+              user: {
+                userId: payload.userId as number,
+                role: payload.role as string,
+                dealerId: payload.dealerId as number | undefined,
+              },
+            };
+          }
+          return { success: false, error: 'Acceso denegado. Se requieren permisos de administrador', status: 403 };
+        } catch (_e2) {
+          // nada
+        }
+      }
     }
 
     return {
-      success: true,
-      user: {
-        userId: payload.userId as number,
-        role: payload.role as string,
-        dealerId: payload.dealerId as number | undefined
-      }
+      success: false,
+      error: 'Token de acceso no encontrado',
+      status: 401,
     };
 
   } catch (error) {

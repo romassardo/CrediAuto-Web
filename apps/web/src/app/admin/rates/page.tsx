@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 import { Settings, DollarSign, Percent, Calculator, Save, RefreshCw, AlertCircle, Plus, Edit, Trash2, Calendar } from 'lucide-react';
 
@@ -34,6 +35,12 @@ interface RateRangeFormData {
 }
 
 export default function RatesPage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/admin/rates/auto');
+  }, [router]);
+  return null;
+  
   const [rateRanges, setRateRanges] = useState<InterestRateRange[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);

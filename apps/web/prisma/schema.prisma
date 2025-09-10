@@ -95,6 +95,8 @@ model User {
   executiveLoanApplications LoanApplication[] @relation("LoanExecutive")
   reconsiderationReviewedLoanApplications LoanApplication[] @relation("LoanReconsiderationReviewedBy")
   createdRateRanges     InterestRateRange[]  @relation("RateRangeCreatedBy")
+  createdAutoRateRanges AutoInterestRateRange[] @relation("AutoRateRangeCreatedBy")
+  createdMotoRateRanges MotoInterestRateRange[] @relation("MotoRateRangeCreatedBy")
 
   @@index([dealerId], name: "idx_users_dealerId")
   @@index([status], name: "idx_users_status")
@@ -195,6 +197,48 @@ model InterestRateRange {
   @@index([isActive], name: "idx_rate_range_active")
   @@index([priority], name: "idx_rate_range_priority")
   @@map("interest_rate_ranges")
+}
+
+// Nuevas tablas separadas por producto y por plazo (meses)
+// Reglas de negocio: sin solapamientos (validado a nivel API), plazos válidos 6/12/24/48
+model AutoInterestRateRange {
+  id              Int       @id @default(autoincrement())
+  name            String    @db.VarChar(100)
+  description     String?   @db.VarChar(255)
+  yearFrom        Int
+  yearTo          Int
+  termMonths      Int
+  interestRate    Decimal   @db.Decimal(5,4)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdByUserId Int?
+
+  createdByUser   User?     @relation("AutoRateRangeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([yearFrom, yearTo, termMonths], name: "idx_auto_rate_year_term")
+  @@index([isActive], name: "idx_auto_rate_active")
+  @@map("auto_interest_rate_ranges")
+}
+
+model MotoInterestRateRange {
+  id              Int       @id @default(autoincrement())
+  name            String    @db.VarChar(100)
+  description     String?   @db.VarChar(255)
+  yearFrom        Int
+  yearTo          Int
+  termMonths      Int
+  interestRate    Decimal   @db.Decimal(5,4)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdByUserId Int?
+
+  createdByUser   User?     @relation("MotoRateRangeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([yearFrom, yearTo, termMonths], name: "idx_moto_rate_year_term")
+  @@index([isActive], name: "idx_moto_rate_active")
+  @@map("moto_interest_rate_ranges")
 }
 
 // Modelo loan_applications
