@@ -172,13 +172,15 @@ export default function RegistroConcesionario() {
                 </div>
                 
                 <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-                  <span className="text-brand-primary-600">Únete a nuestra</span>
+                  <span className="text-brand-primary-600">Sumate a nuestra</span>
                   <br />
                   <span className="bg-gradient-to-r from-brand-accent-500 to-yellow-400 bg-clip-text text-transparent">red de concesionarios</span>
                 </h1>
                 
-                <p className="text-xl text-gray-600 leading-relaxed">
-                  Accede a herramientas exclusivas para gestionar créditos prendarios de forma rápida y eficiente.
+                <p className="text-xl text-gray-600 leading-relaxed text-center">
+                Accedé a herramientas exclusivas que hacen que la gestión de créditos prendarios sea más simple, ágil y transparente. 
+                <br />
+                Sumate a una red que impulsa tu concesionaria todos los días.
                 </p>
               </div>
 
@@ -189,7 +191,7 @@ export default function RegistroConcesionario() {
                     <Clock className="w-5 h-5 text-brand-primary-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Aprobación en 24-48hs</h3>
+                    <h3 className="font-semibold text-gray-900 mb-1">Aprobación en 24hs</h3>
                     <p className="text-gray-600 text-sm">Procesamos tu solicitud de forma rápida y eficiente</p>
                   </div>
                 </div>
@@ -209,7 +211,7 @@ export default function RegistroConcesionario() {
                     <Building className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Red de +500 concesionarios</h3>
+                    <h3 className="font-semibold text-gray-900 mb-1">Red de +50 concesionarios</h3>
                     <p className="text-gray-600 text-sm">Forma parte de nuestra comunidad de socios</p>
                   </div>
                 </div>
