@@ -98,7 +98,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
       </div>
 
       {showCreateUser && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg ring-1 ring-gray-200 p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">Crear Ejecutivo de Cuentas</h3>
           <p className="text-xs text-gray-500 mb-4">Definí una contraseña inicial. En el primer ingreso, el ejecutivo deberá cambiarla.</p>
           <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -199,8 +199,8 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
           <p className="text-sm text-gray-400">Crea tu primer ejecutivo para comenzar</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-[900px] w-full border-collapse bg-white rounded-xl overflow-hidden">
+        <div className="overflow-x-auto bg-white rounded-2xl shadow-xl ring-1 ring-gray-300">
+          <table className="min-w-[900px] w-full border-collapse">
             <thead>
               <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-600">
                 {columns.map((c) => (

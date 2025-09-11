@@ -238,7 +238,7 @@ export default function AdminDealers() {
 
       <div className="container mx-auto px-6 sm:px-8 py-6 relative">
         {/* Filtros y búsqueda compactos */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-4 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex flex-wrap gap-2">
               {(['ALL', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED'] as const).map((status) => (
@@ -272,7 +272,7 @@ export default function AdminDealers() {
         </div>
 
         {/* Tabla de Concesionarios */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary-600"></div>
@@ -307,9 +307,12 @@ export default function AdminDealers() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredDealers.map((dealer) => (
-                    <tr key={dealer.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr key={dealer.id} className={`${dealer.status === 'PENDING_APPROVAL' ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-gray-50'}`}>
+                      <td className={`px-6 py-4 whitespace-nowrap ${dealer.status === 'PENDING_APPROVAL' ? 'border-l-4 border-brand-accent-500' : ''}`}>
                         <div className="flex items-center">
+                          {dealer.status === 'PENDING_APPROVAL' && (
+                            <span className="inline-block w-2 h-2 rounded-full bg-brand-accent-500 animate-pulse mr-2" title="Pendiente" aria-label="Pendiente"></span>
+                          )}
                           <div className="flex-shrink-0 h-10 w-10">
                             <div className="h-10 w-10 rounded-lg bg-brand-primary-600 flex items-center justify-center">
                               <Building2 className="h-5 w-5 text-white" />

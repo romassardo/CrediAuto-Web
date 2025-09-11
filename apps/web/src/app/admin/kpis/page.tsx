@@ -147,7 +147,7 @@ export default function KPIsPage() {
 
       <div className="container mx-auto px-6 sm:px-8 py-6">
         {/* Filtros de tiempo */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-4 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-brand-primary-100 rounded-lg flex items-center justify-center">
@@ -203,7 +203,7 @@ export default function KPIsPage() {
 
         {/* Estado de Loading */}
         {loading && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-8 mb-6">
+          <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-8 mb-6">
             <div className="flex items-center justify-center">
               <div className="flex items-center gap-3">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-primary-600"></div>
@@ -216,7 +216,7 @@ export default function KPIsPage() {
         {/* Grid de KPIs principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {kpiData.map((kpi) => (
-            <div key={kpi.id} className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-6 hover:shadow-xl transition-shadow">
+            <div key={kpi.id} className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-6 hover:shadow-2xl transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className={`w-12 h-12 ${kpi.color} rounded-xl flex items-center justify-center text-white`}>
                   {kpi.icon}
@@ -240,7 +240,7 @@ export default function KPIsPage() {
         {/* Gráficos y análisis detallado */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Distribución por Estado */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-6">
+          <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                 <PieChart className="w-5 h-5 text-purple-600" />
@@ -271,7 +271,7 @@ export default function KPIsPage() {
           </div>
 
           {/* Tendencia Mensual */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-6">
+          <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -352,7 +352,7 @@ export default function KPIsPage() {
 
         {/* Estado vacío cuando no hay datos */}
         {!loading && !error && kpiData.length === 0 && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-12 text-center">
+          <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
               <BarChart3 className="w-8 h-8 text-gray-400" />
             </div>

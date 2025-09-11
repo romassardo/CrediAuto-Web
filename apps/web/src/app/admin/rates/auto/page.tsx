@@ -467,7 +467,7 @@ export default function AdminAutoRatesPage() {
         )}
 
         {/* Header acciones */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-brand-primary-100 rounded-xl flex items-center justify-center">
@@ -499,7 +499,7 @@ export default function AdminAutoRatesPage() {
         </div>
 
         {/* Matriz */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 overflow-hidden">
           <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-3 border-b border-gray-200">
             <div className="grid grid-cols-7 gap-4 font-semibold text-gray-700">
               <div>Rango de años</div>

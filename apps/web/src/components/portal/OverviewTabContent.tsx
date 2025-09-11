@@ -483,8 +483,8 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
           <p className="text-sm text-gray-400">Las nuevas solicitudes aparecerán aquí.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-[900px] w-full border-collapse bg-white rounded-xl overflow-hidden">
+        <div className="overflow-x-auto bg-white rounded-2xl shadow-xl ring-1 ring-gray-300">
+          <table className="min-w-[900px] w-full border-collapse">
             <thead>
               <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-600">
                 <th className="px-4 py-3 border-b">Solicitante</th>
@@ -497,9 +497,16 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
             </thead>
             <tbody className="text-sm text-gray-900">
               {applications.map((app: LoanApplication) => (
-                <tr key={app.publicId} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 align-middle">
+                <tr key={app.publicId} className={`${app.status === 'PENDING' ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-gray-50'}`}>
+                  <td className={`px-4 py-3 align-middle ${app.status === 'PENDING' ? 'border-l-4 border-brand-accent-500' : ''}`}>
                     <div className="flex items-center gap-3">
+                      {app.status === 'PENDING' && (
+                        <span
+                          className="inline-block w-2 h-2 rounded-full bg-brand-accent-500 animate-pulse"
+                          title="Pendiente"
+                          aria-label="Pendiente"
+                        ></span>
+                      )}
                       <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-brand-primary-100 to-brand-primary-200 shadow-sm">
                         <User className="w-4 h-4 text-brand-primary-600" />
                       </div>

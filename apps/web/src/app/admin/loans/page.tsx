@@ -425,7 +425,7 @@ export default function AdminLoansPage() {
 
       <div className="container mx-auto px-6 sm:px-8 py-6 relative">
         {/* Filtros y búsqueda compactos */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 p-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-4 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex flex-wrap gap-2">
               {(["ALL", "PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED", "CANCELLED", "A_RECONSIDERAR"] as const).map((st) => (
@@ -476,7 +476,7 @@ export default function AdminLoansPage() {
         </div>
 
         {/* Tabla moderna y densa */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100/50 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary-600/20 border-t-brand-primary-600 mx-auto"></div>
@@ -491,7 +491,7 @@ export default function AdminLoansPage() {
               <p className="text-gray-500 text-sm">No se encontraron solicitudes para este filtro</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto bg-white">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
@@ -520,9 +520,12 @@ export default function AdminLoansPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {apps.map((a) => (
-                    <tr key={a.publicId} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
+                    <tr key={a.publicId} className={`${a.status === 'PENDING' ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-gray-50'} transition-colors`}>
+                      <td className={`px-4 py-3 ${a.status === 'PENDING' ? 'border-l-4 border-brand-accent-500' : ''}`}>
                         <div className="flex items-center gap-3">
+                          {a.status === 'PENDING' && (
+                            <span className="inline-block w-2 h-2 rounded-full bg-brand-accent-500 animate-pulse" title="Pendiente" aria-label="Pendiente"></span>
+                          )}
                           <div className="w-8 h-8 bg-brand-primary-600 rounded-full flex items-center justify-center">
                             <User className="w-4 h-4 text-white" />
                           </div>
