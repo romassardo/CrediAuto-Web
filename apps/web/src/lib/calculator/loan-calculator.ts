@@ -36,18 +36,18 @@ export type Result = {
     desembolsoNeto: number;       // P - costosIniciales
     sumaCuotas: number;           // Suma de cuotas (incluye extras si se configuraran)
     cftMensual: number;           // Con IVA
-    cftEfectivoAnual: number;     // Con IVA, anualización 365/30
+    cftEfectivoAnual: number;     // Con IVA, anualización 360/30
   };
 };
 
 // Conversión a tasa efectiva mensual SIN IVA según documentación empresarial
-// TNA -> TEM: (TNA/365)*30
-// TEA -> TEM: (1+TEA)^(30/365)-1
+// TNA -> TEM: (TNA/360)*30 = TNA/12 (divisor 360 confirmado por sistema productivo)
+// TEA -> TEM: (1+TEA)^(30/360)-1 = (1+TEA)^(1/12)-1
 function toMensualSinIVA(tasa: RateInput): number {
   if (tasa.tipo === 'MENSUAL') return tasa.valor;
-  if (tasa.tipo === 'TEA') return Math.pow(1 + tasa.valor, 30 / 365) - 1;
-  // Ignoramos capitalizaciones: la empresa usa 365/30 para TNA
-  return (tasa.valor / 365) * 30;
+  if (tasa.tipo === 'TEA') return Math.pow(1 + tasa.valor, 30 / 360) - 1;
+  // Empresa usa divisor 360 (no 365) para TNA -> TEM
+  return (tasa.valor / 360) * 30;
 }
 
 function cuotaFrances(P: number, i: number, n: number): number {
@@ -140,8 +140,8 @@ export function calcular(inputs: Inputs): Result {
   const cftMensualConIVA = irr(cashflows);
   const cftMensualNeto = cftMensualConIVA / ivaFactor;
 
-  // Anualización 365/30 según documentación
-  const cftEaNeto = Math.pow(1 + cftMensualNeto, 365 / 30) - 1;
+  // Anualización 360/30 = 12 según documentación (divisor 360 confirmado)
+  const cftEaNeto = Math.pow(1 + cftMensualNeto, 360 / 30) - 1;
   const cftEaTot = cftEaNeto * ivaFactor;
 
   return {

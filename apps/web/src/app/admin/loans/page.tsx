@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import AdminNavigation from "@/components/admin/AdminNavigation";
-import { Check, X, Search, Calendar, Clock, Eye, FileText, User, Building, DollarSign, Car, Heart, Download, ExternalLink, Briefcase, MapPin } from "lucide-react";
+import { Check, X, Search, Calendar, Clock, Eye, FileText, User, Building, DollarSign, Car, Heart, Download, ExternalLink, Briefcase, MapPin, AlertCircle, MessageSquare } from "lucide-react";
 
 // Tipos alineados con /api/admin/loan-applications (GET)
 interface AdminLoanApplication {
@@ -20,6 +20,7 @@ interface AdminLoanApplication {
   loanTerm: number;
   cft: number;
   status: string;
+  statusReason?: string;
   createdAt: string;
   reviewedAt?: string;
   // Campos adicionales del vehículo
@@ -127,6 +128,21 @@ export default function AdminLoansPage() {
   };
   const closeModal = () => setModalState((prev) => ({ ...prev, isOpen: false }));
 
+  // Modal para observación al rechazar
+  const [rejectModal, setRejectModal] = useState<{
+    isOpen: boolean;
+    appId: string | null;
+    notes: string;
+    submitting: boolean;
+  }>({ isOpen: false, appId: null, notes: '', submitting: false });
+
+  const openRejectModal = (appId: string) => {
+    setRejectModal({ isOpen: true, appId, notes: '', submitting: false });
+  };
+  const closeRejectModal = () => {
+    setRejectModal({ isOpen: false, appId: null, notes: '', submitting: false });
+  };
+
   // Función para obtener token de cookies
   const getTokenFromCookies = (): string | null => {
     if (typeof document === 'undefined') return null;
@@ -142,6 +158,10 @@ export default function AdminLoansPage() {
 
   const handleOpenDetailsModal = async (app: AdminLoanApplication) => {
     setIsModalOpen(true);
+    // Marcar observación del dealer/ejecutivo (reconsideración) como leída en este navegador
+    try {
+      markDealerObservationRead(app.publicId, app.reconsiderationRequestedAt);
+    } catch {}
     
     try {
       const token = getTokenFromCookies();
@@ -166,6 +186,8 @@ export default function AdminLoansPage() {
           reconsiderationRequested: result.data.reconsiderationRequested,
           hasReconsiderationDocs: !!result.data.reconsiderationDocumentsMetadata
         });
+        // Refrescar marca de lectura con la fecha exacta del detalle si está disponible
+        try { markDealerObservationRead(result.data.publicId, result.data.reconsiderationRequestedAt); } catch {}
         setSelectedApp(result.data);
       } else {
         throw new Error('No se pudieron obtener los detalles');
@@ -287,7 +309,8 @@ export default function AdminLoansPage() {
 
   const updateStatus = async (
     applicationPublicId: string,
-    nextStatus: "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED"
+    nextStatus: "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED",
+    adminNotes?: string
   ) => {
     setProcessingId(applicationPublicId);
     try {
@@ -300,7 +323,11 @@ export default function AdminLoansPage() {
           Accept: "application/json",
           ...(token && { Authorization: `Bearer ${token}` }),
         },
-        body: JSON.stringify({ applicationId: applicationPublicId, status: nextStatus }),
+        body: JSON.stringify({
+          applicationId: applicationPublicId,
+          status: nextStatus,
+          ...(adminNotes && adminNotes.trim() ? { adminNotes: adminNotes.trim() } : {}),
+        }),
       });
 
       const contentType = response.headers.get("content-type") || "";
@@ -351,6 +378,26 @@ export default function AdminLoansPage() {
     }
   };
 
+  const confirmReject = async () => {
+    if (!rejectModal.appId) return;
+    const notes = rejectModal.notes.trim();
+    if (!notes) {
+      showModal('Observación requerida', 'Por favor, ingresa una observación para el concesionario.', 'warning');
+      return;
+    }
+    setRejectModal((s) => ({ ...s, submitting: true }));
+    try {
+      await updateStatus(rejectModal.appId, 'REJECTED', notes);
+      await fetchApplications();
+      closeRejectModal();
+    } catch (e) {
+      console.error('Error al rechazar con observación:', e);
+      showModal('❌ Error', 'No se pudo rechazar la solicitud.', 'error');
+    } finally {
+      setRejectModal((s) => ({ ...s, submitting: false }));
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       PENDING: "bg-yellow-500 text-white border-yellow-600 shadow-sm font-semibold",
@@ -377,6 +424,29 @@ export default function AdminLoansPage() {
         {labels[status] || status}
       </span>
     );
+  };
+
+  // ==== Unread logic for Dealer/Ejecutivo observations (reconsideration) ====
+  const getLocal = (key: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    try { return localStorage.getItem(key); } catch { return null; }
+  };
+  const setLocal = (key: string, value: string) => {
+    if (typeof window === 'undefined') return;
+    try { localStorage.setItem(key, value); } catch {}
+  };
+  const RECON_SEEN_KEY = (id: string) => `recon_last_seen_at:${id}`;
+  const isDealerObservationUnread = (a: AdminLoanApplication): boolean => {
+    if (!a.reconsiderationReason) return false;
+    const seenIso = getLocal(RECON_SEEN_KEY(a.publicId));
+    const seen = seenIso ? Date.parse(seenIso) : 0;
+    const when = a.reconsiderationRequestedAt ? Date.parse(a.reconsiderationRequestedAt) : 0;
+    if (!when) return !seen; // si no hay fecha, mostrar si nunca se marcó como visto
+    return when > seen;
+  };
+  const markDealerObservationRead = (publicId: string, whenIso?: string) => {
+    const stamp = whenIso && whenIso.length > 0 ? whenIso : new Date().toISOString();
+    setLocal(RECON_SEEN_KEY(publicId), stamp);
   };
 
   const formatMoney = (n: number) =>
@@ -557,7 +627,18 @@ export default function AdminLoansPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {getStatusBadge(a.status)}
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(a.status)}
+                          {a.reconsiderationReason && isDealerObservationUnread(a) && (
+                            <span
+                              title={a.reconsiderationReason}
+                              aria-label="Observación de reconsideración (no leída)"
+                              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-50 border border-orange-200"
+                            >
+                              <AlertCircle className="w-3.5 h-3.5 text-orange-600" />
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm text-gray-900">{formatDate(a.createdAt)}</div>
@@ -604,7 +685,7 @@ export default function AdminLoansPage() {
                           )}
                           {a.status !== "REJECTED" && (
                             <button
-                              onClick={() => updateStatus(a.publicId, "REJECTED")}
+                              onClick={() => openRejectModal(a.publicId)}
                               disabled={processingId === a.publicId}
                               className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                               title="Rechazar"
@@ -1022,10 +1103,50 @@ export default function AdminLoansPage() {
                         Solicitada el {selectedApp.reconsiderationRequestedAt ? new Date(selectedApp.reconsiderationRequestedAt).toLocaleString('es-AR') : 'Fecha no disponible'}
                       </span>
                     </div>
-                    {selectedApp.reconsiderationReason && (
-                      <p className="text-sm text-orange-700"><strong>Motivo:</strong> {selectedApp.reconsiderationReason}</p>
-                    )}
                   </div>
+
+                  {/* Hilo de Observaciones (ordenado por fecha) */}
+                  {(selectedApp.statusReason || selectedApp.reconsiderationReason) && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 pb-2">
+                        <MessageSquare className="w-4 h-4 text-brand-primary-600" />
+                        <h4 className="font-semibold text-gray-900">Hilo de Observaciones</h4>
+                      </div>
+                      {(() => {
+                        const items: Array<{
+                          who: 'ADMIN' | 'DEALER';
+                          at?: string;
+                          text: string;
+                        }> = [];
+                        if (selectedApp.statusReason) {
+                          items.push({ who: 'ADMIN', at: selectedApp.reviewedAt, text: selectedApp.statusReason });
+                        }
+                        if (selectedApp.reconsiderationReason) {
+                          items.push({ who: 'DEALER', at: selectedApp.reconsiderationRequestedAt, text: selectedApp.reconsiderationReason });
+                        }
+                        items.sort((a, b) => {
+                          const ta = a.at ? Date.parse(a.at) : 0;
+                          const tb = b.at ? Date.parse(b.at) : 0;
+                          return ta - tb;
+                        });
+                        return (
+                          <div className="space-y-3">
+                            {items.map((m, idx) => (
+                              <div key={idx} className="flex items-start gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${m.who === 'ADMIN' ? 'bg-brand-primary-600' : 'bg-orange-600'}`}>{m.who === 'ADMIN' ? 'A' : 'D'}</div>
+                                <div className="flex-1">
+                                  <div className="text-xs text-gray-500">{m.who === 'ADMIN' ? 'Admin' : 'Concesionario'} • {m.at ? new Date(m.at).toLocaleString('es-AR') : 'Fecha no disponible'}</div>
+                                  <div className={`mt-1 p-3 rounded-lg whitespace-pre-wrap border ${m.who === 'ADMIN' ? 'bg-brand-primary-50 border-brand-primary-200 text-brand-primary-900' : 'bg-orange-50 border-orange-200 text-orange-900'}`}>
+                                    {m.text}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                   {(() => {
                     try {
                       const parsed = typeof selectedApp.reconsiderationDocumentsMetadata === 'string'
@@ -1117,7 +1238,7 @@ export default function AdminLoansPage() {
                   {selectedApp.status !== "REJECTED" && (
                     <button
                       onClick={() => {
-                        updateStatus(selectedApp.publicId, "REJECTED");
+                        openRejectModal(selectedApp.publicId);
                         handleCloseDetailsModal();
                       }}
                       disabled={processingId === selectedApp.publicId}
@@ -1141,6 +1262,65 @@ export default function AdminLoansPage() {
         message={modalState.message}
         type={modalState.type}
       />
+
+      {/* Modal de Rechazo - Observación para el concesionario */}
+      {rejectModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-brand-primary-600 to-brand-primary-700 px-6 py-4 relative">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-10 translate-x-10" />
+              <div className="relative flex items-center justify-between">
+                <h3 className="text-white font-semibold text-lg">Rechazar Solicitud</h3>
+                <button
+                  onClick={closeRejectModal}
+                  disabled={rejectModal.submitting}
+                  className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-brand-primary-100 text-sm mt-1">Envía una observación clara al concesionario indicando el motivo del rechazo o la documentación requerida.</p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observación para el concesionario <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={rejectModal.notes}
+                  onChange={(e) => setRejectModal((s) => ({ ...s, notes: e.target.value }))}
+                  rows={5}
+                  maxLength={1000}
+                  disabled={rejectModal.submitting}
+                  placeholder="Ej.: Faltan adjuntar recibos de sueldo de los últimos 3 meses. Por favor, súbelos y solicita la reconsideración."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent resize-none text-gray-900 placeholder:text-gray-400 disabled:bg-gray-50"
+                />
+                <div className="text-xs text-gray-500 mt-1">Máximo 1000 caracteres</div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  onClick={closeRejectModal}
+                  disabled={rejectModal.submitting}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmReject}
+                  disabled={rejectModal.submitting}
+                  className="px-5 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 shadow disabled:opacity-50"
+                >
+                  {rejectModal.submitting ? 'Rechazando...' : 'Rechazar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ interface SubmitResult {
 export default function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +32,10 @@ export default function ContactForm() {
       setErrorMsg("Ingresá un email válido.");
       return;
     }
+    if (!phone.trim() || phone.trim().length < 8) {
+      setErrorMsg("Ingresá un número de teléfono válido (mínimo 8 dígitos).");
+      return;
+    }
     if (!message.trim() || message.trim().length < 10) {
       setErrorMsg("Contanos un poco más sobre tu consulta (mínimo 10 caracteres).");
       return;
@@ -48,7 +53,7 @@ export default function ContactForm() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ name, email, message, consent }),
+        body: JSON.stringify({ name, email, phone, message, consent }),
       });
 
       let data: (SubmitResult & { providerError?: string; details?: unknown }) | null = null;
@@ -87,6 +92,7 @@ export default function ContactForm() {
       );
       setName("");
       setEmail("");
+      setPhone("");
       setMessage("");
       setConsent(false);
     } catch (err) {
@@ -164,6 +170,39 @@ export default function ContactForm() {
                 ></path>
               </svg>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <label className="text-lg font-sans font-medium text-gray-700">
+          Número de teléfono
+        </label>
+        <div className="relative">
+          <input
+            type="tel"
+            placeholder="Ej: 11 5555-5555"
+            className="w-full px-6 py-4 text-lg font-sans font-medium border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-lg"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            disabled={isLoading}
+            required
+            aria-required="true"
+          />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+            <svg
+              className="w-7 h-7 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+              ></path>
+            </svg>
           </div>
         </div>
       </div>

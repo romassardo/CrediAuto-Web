@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import AdminNavigation from '@/components/admin/AdminNavigation';
-import { Percent, Plus, RefreshCw, Save, AlertCircle, Calendar, Layers, Edit, Trash2 } from 'lucide-react';
+import MotoRatesSection from '@/components/admin/rates/MotoRatesSection';
+import { Percent, Plus, RefreshCw, Save, AlertCircle, Calendar, Edit, Trash2, Layers, Car, Bike } from 'lucide-react';
 
 interface AutoRateRow {
   id: number;
@@ -24,7 +25,7 @@ interface GroupedRange {
   yearFrom: number;
   yearTo: number;
   isActive: boolean; // true si al menos 1 está activo
-  terms: Record<6 | 12 | 24 | 48, number | null>;
+  terms: Record<6 | 12 | 18 | 24 | 36 | 48, number | null>;
 }
 
 export default function AdminAutoRatesPage() {
@@ -35,6 +36,7 @@ export default function AdminAutoRatesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null); // "yearFrom-yearTo"
+  const [showCreateMoto, setShowCreateMoto] = useState(false);
 
   // Helpers para formatear/normalizar porcentajes
   const toPercentStr = (rate: number) => {
@@ -63,11 +65,11 @@ export default function AdminAutoRatesPage() {
     yearFrom: new Date().getFullYear() - 5,
     yearTo: new Date().getFullYear(),
     isActive: true,
-    rates: { m6: 0.45, m12: 0.45, m24: 0.45, m48: 0.45 },
+    rates: { m6: 0.45, m12: 0.45, m18: 0.45, m24: 0.45, m36: 0.45, m48: 0.45 },
   });
 
   // Estados de texto para inputs de % (evita "saltos" al escribir)
-  const [formStrRates, setFormStrRates] = useState({ m6: '45', m12: '45', m24: '45', m48: '45' });
+  const [formStrRates, setFormStrRates] = useState({ m6: '45', m12: '45', m18: '45', m24: '45', m36: '45', m48: '45' });
 
   const [editForm, setEditForm] = useState({
     name: '',
@@ -75,12 +77,12 @@ export default function AdminAutoRatesPage() {
     yearFrom: new Date().getFullYear() - 5,
     yearTo: new Date().getFullYear(),
     isActive: true,
-    rates: { m6: 0.45, m12: 0.45, m24: 0.45, m48: 0.45 },
+    rates: { m6: 0.45, m12: 0.45, m18: 0.45, m24: 0.45, m36: 0.45, m48: 0.45 },
   });
 
-  const [editStrRates, setEditStrRates] = useState({ m6: '45', m12: '45', m24: '45', m48: '45' });
+  const [editStrRates, setEditStrRates] = useState({ m6: '45', m12: '45', m18: '45', m24: '45', m36: '45', m48: '45' });
 
-  const TERMS: Array<6 | 12 | 24 | 48> = [6, 12, 24, 48];
+  const TERMS: Array<6 | 12 | 18 | 24 | 36 | 48> = [6, 12, 18, 24, 36, 48];
 
   const getTokenFromCookies = () => {
     const cookies = document.cookie.split(';');
@@ -129,11 +131,11 @@ export default function AdminAutoRatesPage() {
           yearFrom: r.yearFrom,
           yearTo: r.yearTo,
           isActive: r.isActive,
-          terms: { 6: null, 12: null, 24: null, 48: null },
+          terms: { 6: null, 12: null, 18: null, 24: null, 36: null, 48: null },
         });
       }
       const g = map.get(key)!;
-      g.terms[r.termMonths as 6 | 12 | 24 | 48] = r.interestRate;
+      g.terms[r.termMonths as 6 | 12 | 18 | 24 | 36 | 48] = r.interestRate;
       g.isActive = g.isActive || r.isActive;
       if (!g.name && r.name) g.name = r.name;
       if (!g.description && r.description) g.description = r.description;
@@ -154,14 +156,18 @@ export default function AdminAutoRatesPage() {
       rates: {
         m6: g.terms[6] ?? 0.45,
         m12: g.terms[12] ?? 0.45,
+        m18: g.terms[18] ?? 0.45,
         m24: g.terms[24] ?? 0.45,
+        m36: g.terms[36] ?? 0.45,
         m48: g.terms[48] ?? 0.45,
       },
     });
     setEditStrRates({
       m6: toPercentStr(g.terms[6] ?? 0.45),
       m12: toPercentStr(g.terms[12] ?? 0.45),
+      m18: toPercentStr(g.terms[18] ?? 0.45),
       m24: toPercentStr(g.terms[24] ?? 0.45),
+      m36: toPercentStr(g.terms[36] ?? 0.45),
       m48: toPercentStr(g.terms[48] ?? 0.45),
     });
     setError('');
@@ -207,7 +213,9 @@ export default function AdminAutoRatesPage() {
       const normalizedRates = {
         m6: parseOr(editStrRates.m6, editForm.rates.m6),
         m12: parseOr(editStrRates.m12, editForm.rates.m12),
+        m18: parseOr(editStrRates.m18, editForm.rates.m18),
         m24: parseOr(editStrRates.m24, editForm.rates.m24),
+        m36: parseOr(editStrRates.m36, editForm.rates.m36),
         m48: parseOr(editStrRates.m48, editForm.rates.m48),
       };
       const body = {
@@ -219,7 +227,9 @@ export default function AdminAutoRatesPage() {
         terms: {
           6: Number(normalizedRates.m6),
           12: Number(normalizedRates.m12),
+          18: Number(normalizedRates.m18),
           24: Number(normalizedRates.m24),
+          36: Number(normalizedRates.m36),
           48: Number(normalizedRates.m48),
         },
       } as const;
@@ -264,7 +274,9 @@ export default function AdminAutoRatesPage() {
       const normalizedRates = {
         m6: parseOr(formStrRates.m6, form.rates.m6),
         m12: parseOr(formStrRates.m12, form.rates.m12),
+        m18: parseOr(formStrRates.m18, form.rates.m18),
         m24: parseOr(formStrRates.m24, form.rates.m24),
+        m36: parseOr(formStrRates.m36, form.rates.m36),
         m48: parseOr(formStrRates.m48, form.rates.m48),
       };
       const body = {
@@ -276,7 +288,9 @@ export default function AdminAutoRatesPage() {
         terms: {
           6: Number(normalizedRates.m6),
           12: Number(normalizedRates.m12),
+          18: Number(normalizedRates.m18),
           24: Number(normalizedRates.m24),
+          36: Number(normalizedRates.m36),
           48: Number(normalizedRates.m48),
         },
       } as const;
@@ -299,14 +313,14 @@ export default function AdminAutoRatesPage() {
         }
         return;
       }
-      setSuccess('Rango AUTO creado correctamente (6/12/24/48)');
+      setSuccess('Rango AUTO creado correctamente (6/12/18/24/36/48)');
       setShowCreate(false);
       setForm({
         name: '', description: '',
         yearFrom: new Date().getFullYear() - 5,
         yearTo: new Date().getFullYear(),
         isActive: true,
-        rates: { m6: 0.45, m12: 0.45, m24: 0.45, m48: 0.45 },
+        rates: { m6: 0.45, m12: 0.45, m18: 0.45, m24: 0.45, m36: 0.45, m48: 0.45 },
       });
       await fetchRows();
     } catch (e: any) {
@@ -320,7 +334,7 @@ export default function AdminAutoRatesPage() {
     <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-blue-50">
       <AdminNavigation
         title="Tasas AUTO por plazo"
-        subtitle="Configure tasas por rango de años y plazos 6/12/24/48"
+        subtitle="Configure tasas por rango de años y plazos 6/12/18/24/36/48"
         subtitleClassName="text-brand-accent-500 text-sm"
         stats={{ count: grouped.length, label: 'rangos' }}
       />
@@ -339,8 +353,8 @@ export default function AdminAutoRatesPage() {
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
               <div className="p-6 border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">Editar rango AUTO (4 plazos)</h3>
-                <p className="text-gray-600 text-sm">Actualiza nombre, rango de años, estado y tasas 6/12/24/48</p>
+                <h3 className="text-xl font-bold text-gray-900">Editar rango AUTO (6 plazos)</h3>
+                <p className="text-gray-600 text-sm">Actualiza nombre, rango de años, estado y tasas 6/12/18/24/36/48</p>
               </div>
               <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -391,7 +405,7 @@ export default function AdminAutoRatesPage() {
                   </div>
 
                   {/* Tasas */}
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-6 gap-4">
                     {TERMS.map((t) => (
                       <div key={t}>
                         <label className="block text-sm font-medium text-gray-700 mb-2">{t} meses (%) *</label>
@@ -399,10 +413,10 @@ export default function AdminAutoRatesPage() {
                           <input
                             type="text"
                             inputMode="decimal"
-                            value={editStrRates[`m${t}` as 'm6' | 'm12' | 'm24' | 'm48']}
+                            value={editStrRates[`m${t}` as 'm6' | 'm12' | 'm18' | 'm24' | 'm36' | 'm48']}
                             onChange={(e) => setEditStrRates({ ...editStrRates, [`m${t}`]: e.target.value } as any)}
                             onBlur={() => {
-                              const raw = editStrRates[`m${t}` as 'm6' | 'm12' | 'm24' | 'm48'];
+                              const raw = editStrRates[`m${t}` as 'm6' | 'm12' | 'm18' | 'm24' | 'm36' | 'm48'];
                               const normalized = normalizePercentInput(raw);
                               if (normalized != null) {
                                 setEditForm((prev) => ({
@@ -466,16 +480,16 @@ export default function AdminAutoRatesPage() {
           </div>
         )}
 
-        {/* Header acciones */}
+        {/* Header acciones - Sección AUTO */}
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-brand-primary-100 rounded-xl flex items-center justify-center">
-                <Layers className="w-6 h-6 text-brand-primary-600" />
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center">
+                <Car className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Rangos configurados</h2>
-                <p className="text-gray-600 text-sm">Vista en matriz (6/12/24/48)</p>
+                <h2 className="text-2xl font-bold text-gray-900">Tasas para Automóviles</h2>
+                <p className="text-gray-600">Plazos disponibles: 6, 12, 18, 24, 36 y 48 meses</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -498,17 +512,40 @@ export default function AdminAutoRatesPage() {
           </div>
         </div>
 
-        {/* Matriz */}
+        {/* Matriz mejorada */}
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-3 border-b border-gray-200">
-            <div className="grid grid-cols-7 gap-4 font-semibold text-gray-700">
-              <div>Rango de años</div>
-              <div className="text-right">6 meses</div>
-              <div className="text-right">12 meses</div>
-              <div className="text-right">24 meses</div>
-              <div className="text-right">48 meses</div>
-              <div className="text-right">Activo</div>
-              <div className="text-right">Acciones</div>
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+            <div className="grid grid-cols-9 gap-3 font-bold text-gray-800 text-sm">
+              <div className="flex items-center">
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium mr-2">RANGO</span>
+                Años del vehículo
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-blue-700">6m</div>
+                <div className="text-xs text-gray-500">meses</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-blue-700">12m</div>
+                <div className="text-xs text-gray-500">meses</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-blue-700">18m</div>
+                <div className="text-xs text-gray-500">meses</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-blue-700">24m</div>
+                <div className="text-xs text-gray-500">meses</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-blue-700">36m</div>
+                <div className="text-xs text-gray-500">meses</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-blue-700">48m</div>
+                <div className="text-xs text-gray-500">meses</div>
+              </div>
+              <div className="text-center">Estado</div>
+              <div className="text-center">Acciones</div>
             </div>
           </div>
           {loading ? (
@@ -530,34 +567,67 @@ export default function AdminAutoRatesPage() {
               </button>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-100">
-              {grouped.map((g) => (
-                <li key={g.key} className="px-6 py-4">
-                  <div className="grid grid-cols-7 gap-4 items-center">
-                    <div>
-                      <div className="font-semibold text-gray-900">{g.yearFrom} - {g.yearTo}</div>
-                      <div className="text-sm text-gray-600">{g.name}</div>
+            <ul className="divide-y divide-gray-50">
+              {grouped.map((g, index) => (
+                <li key={g.key} className={`px-6 py-6 hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                  <div className="grid grid-cols-9 gap-3 items-center">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                          {g.yearFrom} - {g.yearTo}
+                        </span>
+                      </div>
+                      <div className="text-sm font-medium text-gray-800">{g.name}</div>
                     </div>
-                    <div className="text-right tabular-nums">{formatRate(g.terms[6])}</div>
-                    <div className="text-right tabular-nums">{formatRate(g.terms[12])}</div>
-                    <div className="text-right tabular-nums">{formatRate(g.terms[24])}</div>
-                    <div className="text-right tabular-nums">{formatRate(g.terms[48])}</div>
-                    <div className="text-right">
-                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${g.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
+                    
+                    {/* Tasas mejoradas - más grandes y visibles */}
+                    <div className="text-center">
+                      <div className={`text-lg font-bold tabular-nums ${g.terms[6] ? 'text-blue-700' : 'text-gray-400'}`}>
+                        {g.terms[6] ? `${(g.terms[6] * 100).toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-lg font-bold tabular-nums ${g.terms[12] ? 'text-blue-700' : 'text-gray-400'}`}>
+                        {g.terms[12] ? `${(g.terms[12] * 100).toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-lg font-bold tabular-nums ${g.terms[18] ? 'text-blue-700' : 'text-gray-400'}`}>
+                        {g.terms[18] ? `${(g.terms[18] * 100).toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-lg font-bold tabular-nums ${g.terms[24] ? 'text-blue-700' : 'text-gray-400'}`}>
+                        {g.terms[24] ? `${(g.terms[24] * 100).toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-lg font-bold tabular-nums ${g.terms[36] ? 'text-blue-700' : 'text-gray-400'}`}>
+                        {g.terms[36] ? `${(g.terms[36] * 100).toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-lg font-bold tabular-nums ${g.terms[48] ? 'text-blue-700' : 'text-gray-400'}`}>
+                        {g.terms[48] ? `${(g.terms[48] * 100).toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${g.isActive ? 'bg-green-100 text-green-800 ring-1 ring-green-200' : 'bg-gray-100 text-gray-700 ring-1 ring-gray-200'}`}>
                         {g.isActive ? 'Activo' : 'Inactivo'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={() => onEdit(g)}
-                        className="p-2 text-gray-600 hover:text-brand-primary-600 hover:bg-brand-primary-50 rounded-lg transition-all"
+                        className="p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-transparent hover:border-blue-200"
                         title="Editar rango"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => onDelete(g)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-200"
                         title="Eliminar rango"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -575,8 +645,8 @@ export default function AdminAutoRatesPage() {
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
               <div className="p-6 border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">Nuevo rango AUTO (4 plazos)</h3>
-                <p className="text-gray-600 text-sm">Crea 4 tasas para 6/12/24/48 meses en un solo paso</p>
+                <h3 className="text-xl font-bold text-gray-900">Nuevo rango AUTO (6 plazos)</h3>
+                <p className="text-gray-600 text-sm">Crea 6 tasas para 6/12/18/24/36/48 meses en un solo paso</p>
               </div>
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -627,7 +697,7 @@ export default function AdminAutoRatesPage() {
                   </div>
 
                   {/* Tasas */}
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-6 gap-4">
                     {TERMS.map((t) => (
                       <div key={t}>
                         <label className="block text-sm font-medium text-gray-700 mb-2">{t} meses (%) *</label>
@@ -635,10 +705,10 @@ export default function AdminAutoRatesPage() {
                           <input
                             type="text"
                             inputMode="decimal"
-                            value={formStrRates[`m${t}` as 'm6' | 'm12' | 'm24' | 'm48']}
+                            value={formStrRates[`m${t}` as 'm6' | 'm12' | 'm18' | 'm24' | 'm36' | 'm48']}
                             onChange={(e) => setFormStrRates({ ...formStrRates, [`m${t}`]: e.target.value } as any)}
                             onBlur={() => {
-                              const raw = formStrRates[`m${t}` as 'm6' | 'm12' | 'm24' | 'm48'];
+                              const raw = formStrRates[`m${t}` as 'm6' | 'm12' | 'm18' | 'm24' | 'm36' | 'm48'];
                               const normalized = normalizePercentInput(raw);
                               if (normalized != null) {
                                 setForm((prev) => ({
@@ -695,6 +765,44 @@ export default function AdminAutoRatesPage() {
             </div>
           </div>
         )}
+
+        {/* Sección de Motos - Header unificado */}
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-6 mb-6 mt-12">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center">
+                <Bike className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Tasas para Motocicletas</h2>
+                <p className="text-gray-600">Plazos disponibles: 6, 12 y 24 meses únicamente</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Actualizar
+              </button>
+              <button
+                onClick={() => {
+                  // Trigger crear rango en MotoRatesSection
+                  const createButton = document.querySelector('[data-moto-create-button]') as HTMLButtonElement;
+                  if (createButton) createButton.click();
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-brand-primary-600 text-white rounded-lg hover:bg-brand-primary-700 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo Rango
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Contenido de la sección Motos */}
+        <MotoRatesSection />
       </div>
     </div>
   );

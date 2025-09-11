@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Calculator, TrendingUp, DollarSign, Calendar, CheckCircle } from 'lucide-react';
 import { calcular, type Inputs, type Result } from '@/lib/calculator/loan-calculator';
 
@@ -33,7 +33,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
   const [selectedTerm, setSelectedTerm] = useState<number>(24);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const availableTerms = [6, 12, 24, 48];
+  const availableTerms = useMemo(() => (product === 'AUTO' ? [6, 12, 18, 24, 36, 48] : [6, 12, 24]), [product]);
 
   // Obtener tasas por plazo según producto y año
   const fetchRatesByProductYear = async (prod: 'AUTO' | 'MOTO', year: number) => {
@@ -285,7 +285,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
               </div>
 
               <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-                La cuota se calcula con tasa mensual que <strong>incluye IVA</strong> y se <strong>redondea a entero</strong>. Conversión TNA→TEM: 365/30. El CFT anual se obtiene sobre el desembolso neto (descontando <strong>solo</strong> gastos de otorgamiento <em>netos de IVA</em>) y se anualiza con 365/30.
+                La cuota se calcula con tasa mensual que <strong>incluye IVA</strong> y se <strong>redondea a entero</strong>. Conversión TNA→TEM: 360/30 = TNA/12. El CFT anual se obtiene sobre el desembolso neto (descontando <strong>solo</strong> gastos de otorgamiento <em>netos de IVA</em>) y se anualiza con 360/30.
               </div>
             </div>
           )}

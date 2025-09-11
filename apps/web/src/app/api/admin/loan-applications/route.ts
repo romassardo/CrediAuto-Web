@@ -114,6 +114,10 @@ export async function GET(request: Request) {
           cftAnnual: true,
           documentsMetadata: true,
           status: true,
+          statusReason: true,
+          reconsiderationReason: true as any,
+          reconsiderationRequested: true as any,
+          reconsiderationRequestedAt: true as any,
           createdAt: true,
           reviewedAt: true,
           dealer: {
@@ -152,6 +156,10 @@ export async function GET(request: Request) {
       cftAnnual: Prisma.Decimal;
       documentsMetadata: Prisma.JsonValue | null;
       status: LoanApplicationStatus;
+      statusReason: string | null;
+      reconsiderationReason: string | null;
+      reconsiderationRequested: boolean;
+      reconsiderationRequestedAt: Date | null;
       createdAt: Date;
       reviewedAt: Date | null;
       dealer: { id: number; tradeName: string; email: string | null };
@@ -173,6 +181,10 @@ export async function GET(request: Request) {
       cft: Number(a.cftAnnual),
       documentsMetadata: a.documentsMetadata,
       status: a.status,
+      statusReason: a.statusReason ?? undefined,
+      reconsiderationReason: a.reconsiderationReason ?? undefined,
+      reconsiderationRequested: (a as any).reconsiderationRequested ?? false,
+      reconsiderationRequestedAt: (a as any).reconsiderationRequestedAt ?? undefined,
       createdAt: a.createdAt,
       reviewedAt: a.reviewedAt ?? undefined,
       dealer: {
@@ -264,15 +276,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Datos inválidos', details: parsed.error.errors }, { status: 400 });
     }
 
-    const { applicationId, status } = parsed.data;
+    const { applicationId, status, adminNotes } = parsed.data;
 
-    // 3) Actualizar la solicitud (registrar quién revisó si lo tenemos)
+    // 3) Actualizar la solicitud (registrar quién revisó si lo tenemos). Si viene adminNotes, guardarlo en statusReason.
     const updatedApplication = await prisma.loanApplication.update({
       where: { publicId: applicationId },
       data: {
         status,
         reviewedAt: new Date(),
         reviewedByUserId: userId ? parseInt(userId, 10) : undefined,
+        ...(adminNotes && adminNotes.trim() ? { statusReason: adminNotes.trim() } : {}),
       },
       include: {
         dealer: {
@@ -290,6 +303,26 @@ export async function PATCH(request: Request) {
         },
       },
     });
+
+    // 4) Registrar en audit log
+    try {
+      const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+      await prisma.auditLog.create({
+        data: {
+          actorUserId: userId ? parseInt(userId, 10) : undefined,
+          action: 'LOAN_APPLICATION_STATUS_UPDATE',
+          entityType: 'LoanApplication',
+          entityId: applicationId,
+          metadata: {
+            newStatus: status,
+            adminNotes: adminNotes && adminNotes.trim() ? adminNotes.trim() : null,
+          },
+          ip,
+        },
+      });
+    } catch (logErr) {
+      console.warn('⚠️ No se pudo registrar audit log de actualización de estado:', logErr);
+    }
 
     return NextResponse.json({
       success: true,

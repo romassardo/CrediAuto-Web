@@ -10,6 +10,7 @@ export const maxDuration = 15;
 const contactSchema = z.object({
   name: z.string().min(2, 'El nombre es demasiado corto'),
   email: z.string().email('Email inválido'),
+  phone: z.string().min(8, 'El número de teléfono es demasiado corto'),
   message: z.string().min(10, 'La consulta es demasiado corta'),
   consent: z.boolean().refine((v) => v === true, {
     message: 'Debés aceptar los términos y condiciones',
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, email, message } = parsed.data;
+    const { name, email, phone, message } = parsed.data;
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     const CONTACT_RECIPIENT = process.env.CONTACT_RECIPIENT;
@@ -66,6 +67,10 @@ export async function POST(req: NextRequest) {
             <tr>
               <td style="padding:8px 0; color:#555;">Email</td>
               <td style="padding:8px 0; font-weight:600;">${escapeHtml(email)}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0; color:#555;">Teléfono</td>
+              <td style="padding:8px 0; font-weight:600;">${escapeHtml(phone)}</td>
             </tr>
             <tr>
               <td style="padding:8px 0; color:#555; vertical-align:top">Mensaje</td>

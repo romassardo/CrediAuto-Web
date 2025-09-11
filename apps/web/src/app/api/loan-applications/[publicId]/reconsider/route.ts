@@ -16,9 +16,16 @@ export async function PATCH(
     const resolvedParams = await params;
     const { publicId } = resolvedParams;
 
-    // Obtener token JWT desde cookies (middleware no inyecta headers en PATCH)
+    // Obtener token JWT: preferir cookie, pero aceptar Authorization: Bearer como fallback
     const cookieStore = await cookies();
-    const accessToken = cookieStore.get('access_token')?.value;
+    const fromCookie = cookieStore.get('access_token')?.value;
+    let accessToken = fromCookie;
+    if (!accessToken) {
+      const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+      if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+        accessToken = authHeader.slice(7).trim();
+      }
+    }
 
     if (!accessToken) {
       return Response.json({ error: 'No autorizado - Token faltante' }, { status: 401 });
@@ -113,7 +120,7 @@ export async function PATCH(
       }
     }
 
-    // Actualizar la solicitud con datos de reconsideración
+    // Actualizar la solicitud con datos de reconsideración (preservando observación inicial del admin)
     const updatedApplication = await prisma.loanApplication.update({
       where: { id: existingApplication.id },
       data: {
@@ -122,10 +129,7 @@ export async function PATCH(
         reconsiderationReason: reconsiderationReason,
         reconsiderationRequestedAt: new Date(),
         reconsiderationDocumentsMetadata: newDocumentsMetadata.length > 0 ? newDocumentsMetadata : Prisma.DbNull,
-        // Limpiar campos de revisión anterior para que el admin la procese como nueva
-        reviewedAt: null,
-        reviewedByUserId: null,
-        statusReason: null
+        // Importante: no limpiar statusReason ni reviewedAt, para que el hilo muestre la primera observación del admin
       },
       include: {
         dealer: {

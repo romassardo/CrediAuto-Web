@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, X, Calendar, User, Heart, MapPin, Briefcase, Car, Calculator, Building, Eye, Download, Phone, Mail, Hash, DollarSign, UserCheck, Clock, ExternalLink } from 'lucide-react';
+import { FileText, X, Calendar, User, Heart, MapPin, Briefcase, Car, Calculator, Building, Eye, Download, Phone, Mail, Hash, DollarSign, UserCheck, Clock, ExternalLink, AlertCircle, MessageSquare } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
 interface LoanApplication {
@@ -150,6 +150,19 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+          {/* Observación del Administrador (motivo de rechazo o requerimiento) */}
+          {application.statusReason && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                <div>
+                  <h3 className="text-red-800 font-semibold">Observación del Administrador</h3>
+                  <p className="text-sm text-red-700 mt-1 whitespace-pre-wrap">{application.statusReason}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Información Personal */}
                 <div className="space-y-4">
@@ -474,10 +487,50 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                     Solicitada el {application.reconsiderationRequestedAt ? new Date(application.reconsiderationRequestedAt).toLocaleString('es-AR') : 'Fecha no disponible'}
                   </span>
                 </div>
-                {application.reconsiderationReason && (
-                  <p className="text-sm text-orange-700"><strong>Motivo:</strong> {application.reconsiderationReason}</p>
-                )}
               </div>
+
+              {/* Hilo de Observaciones (ordenado por fecha) */}
+              {(application.statusReason || application.reconsiderationReason) && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 pb-2">
+                    <MessageSquare className="w-4 h-4 text-brand-primary-600" />
+                    <h4 className="font-semibold text-gray-900">Hilo de Observaciones</h4>
+                  </div>
+                  {(() => {
+                    const items: Array<{
+                      who: 'ADMIN' | 'DEALER';
+                      at?: string;
+                      text: string;
+                    }> = [];
+                    if (application.statusReason) {
+                      items.push({ who: 'ADMIN', at: application.reviewedAt, text: application.statusReason });
+                    }
+                    if (application.reconsiderationReason) {
+                      items.push({ who: 'DEALER', at: application.reconsiderationRequestedAt, text: application.reconsiderationReason });
+                    }
+                    items.sort((a, b) => {
+                      const ta = a.at ? Date.parse(a.at) : 0;
+                      const tb = b.at ? Date.parse(b.at) : 0;
+                      return ta - tb;
+                    });
+                    return (
+                      <div className="space-y-3">
+                        {items.map((m, idx) => (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${m.who === 'ADMIN' ? 'bg-brand-primary-600' : 'bg-orange-600'}`}>{m.who === 'ADMIN' ? 'A' : 'D'}</div>
+                            <div className="flex-1">
+                              <div className="text-xs text-gray-500">{m.who === 'ADMIN' ? 'Admin' : 'Concesionario'} • {m.at ? new Date(m.at).toLocaleString('es-AR') : 'Fecha no disponible'}</div>
+                              <div className={`mt-1 p-3 rounded-lg whitespace-pre-wrap border ${m.who === 'ADMIN' ? 'bg-brand-primary-50 border-brand-primary-200 text-brand-primary-900' : 'bg-orange-50 border-orange-200 text-orange-900'}`}>
+                                {m.text}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
               {(() => {
                 try {
                   const parsed = typeof application.reconsiderationDocumentsMetadata === 'string'

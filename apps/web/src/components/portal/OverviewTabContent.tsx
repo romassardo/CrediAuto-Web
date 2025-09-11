@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Eye, User, RefreshCw, Search, X, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Eye, User, RefreshCw, Search, X, ChevronLeft, ChevronRight, RotateCcw, AlertCircle } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import StatusBadge from './StatusBadge';
 import LoanApplicationModal from './LoanApplicationModal';
@@ -36,8 +36,10 @@ interface LoanApplication {
   vehicleModel?: string;
   vehicleYear?: number;
   vehicleCondition?: string;
+  statusReason?: string;
   status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'A_RECONSIDERAR';
   createdAt: string;
+  reviewedAt?: string;
   dealerId: number;
   submittedByUserId: number;
 }
@@ -92,6 +94,29 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+  };
+
+  // === Unread logic for Admin observations (statusReason) ===
+  const getLocal = (key: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    try { return localStorage.getItem(key); } catch { return null; }
+  };
+  const setLocal = (key: string, value: string) => {
+    if (typeof window === 'undefined') return;
+    try { localStorage.setItem(key, value); } catch {}
+  };
+  const ADMIN_SEEN_KEY = (id: string) => `admin_reason_last_seen_at:${id}`;
+  const isAdminObservationUnread = (a: LoanApplication): boolean => {
+    if (!a.statusReason) return false;
+    const seenIso = getLocal(ADMIN_SEEN_KEY(a.publicId));
+    const seen = seenIso ? Date.parse(seenIso) : 0;
+    const when = a.reviewedAt ? Date.parse(a.reviewedAt) : 0;
+    if (!when) return !seen; // si no hay fecha, mostrar si nunca se marcó como visto
+    return when > seen;
+  };
+  const markAdminObservationRead = (publicId: string, whenIso?: string) => {
+    const stamp = whenIso && whenIso.length > 0 ? whenIso : new Date().toISOString();
+    setLocal(ADMIN_SEEN_KEY(publicId), stamp);
   };
 
   // Cerrar sugerencias al hacer click afuera o presionar ESC
@@ -239,6 +264,11 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     // Abrimos el modal y mostramos datos básicos mientras se carga el detalle
     setIsModalOpen(true);
     setSelectedApplication(application);
+
+    // Marcar observación del admin como leída al abrir
+    try {
+      markAdminObservationRead(application.publicId, application.reviewedAt);
+    } catch {}
 
     try {
       const token = getTokenFromCookies();
@@ -529,7 +559,18 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
                     <div className="text-xs text-gray-500">Solicitud</div>
                   </td>
                   <td className="px-4 py-3 align-middle">
-                    <StatusBadge status={app.status} type="application" />
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={app.status} type="application" />
+                      {app.statusReason && isAdminObservationUnread(app) && (
+                        <span
+                          title={app.statusReason}
+                          aria-label="Observación del administrador (no leída)"
+                          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-50 border border-yellow-200"
+                        >
+                          <AlertCircle className="w-3.5 h-3.5 text-brand-accent-500" />
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 align-middle text-right">
                     <div className="flex items-center gap-2 justify-end">

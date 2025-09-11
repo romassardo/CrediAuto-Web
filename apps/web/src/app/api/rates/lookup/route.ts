@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 const QuerySchema = z.object({
   product: z.enum(['AUTO', 'MOTO']),
   year: z.coerce.number().int().min(1900).max(2050),
-  term: z.coerce.number().int().refine((v) => [6, 12, 24, 48].includes(v), {
+  term: z.coerce.number().int().refine((v) => [6, 12, 18, 24, 36, 48].includes(v), {
     message: 'term inválido (válidos: 6, 12, 24, 48)'
   })
 });
@@ -31,6 +31,20 @@ export async function GET(request: NextRequest) {
     }
 
     const { product, year, term } = parsed.data;
+
+    // Validación de términos por producto
+    if (product === 'MOTO' && ![6, 12, 24].includes(term)) {
+      return NextResponse.json(
+        { success: false, error: 'term inválido para MOTO (válidos: 6, 12, 24)' },
+        { status: 400 }
+      );
+    }
+    if (product === 'AUTO' && ![6, 12, 18, 24, 36, 48].includes(term)) {
+      return NextResponse.json(
+        { success: false, error: 'term inválido para AUTO (válidos: 6, 12, 18, 24, 36, 48)' },
+        { status: 400 }
+      );
+    }
 
     // Tablas separadas por producto (recomendación del negocio)
     const tableName = product === 'AUTO' ? 'auto_interest_rate_ranges' : 'moto_interest_rate_ranges';
