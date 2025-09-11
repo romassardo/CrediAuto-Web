@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Calculator, FileText, Users, LogOut, TrendingUp, Eye, Settings, User, Building } from 'lucide-react';
 import { usePortalDashboard } from '@/hooks/portal/usePortalDashboard';
 import LoanCalculator from '@/components/calculator/LoanCalculator';
@@ -39,6 +40,8 @@ export default function DashboardPage() {
     handleActivateExecutive,
     handleSuspendExecutive,
     handleDeleteExecutive,
+    handleUpdateExecutive,
+    handleResetExecutivePassword,
     overviewRefreshTick,
   } = usePortalDashboard();
 
@@ -80,59 +83,69 @@ export default function DashboardPage() {
       {/* Header rediseñado según guía UI/UX */}
       <header className="bg-gradient-to-r from-brand-primary-600 via-brand-primary-700 to-brand-primary-800 shadow-2xl relative overflow-hidden">
         {/* Elementos decorativos */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand-accent-500/20 rounded-full translate-y-16 -translate-x-16"></div>
-        <div className="absolute top-1/2 right-1/4 w-6 h-6 bg-brand-accent-500 rounded-full opacity-60 animate-pulse"></div>
-        <div className="absolute bottom-4 right-12 w-4 h-4 bg-white/40 rounded-full animate-pulse delay-300"></div>
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-12 translate-x-12"></div>
+        <div className="absolute bottom-0 left-0 w-20 h-20 bg-brand-accent-500/20 rounded-full translate-y-10 -translate-x-10"></div>
+        <div className="absolute top-1/2 right-1/4 w-4 h-4 bg-brand-accent-500 rounded-full opacity-60 animate-pulse"></div>
+        <div className="absolute bottom-4 right-12 w-3 h-3 bg-white/40 rounded-full animate-pulse delay-300"></div>
         
         <div className="max-w-[1600px] mx-auto px-6 sm:px-8 relative z-10">
-          <div className="flex justify-between items-center py-8">
+          <div className="flex justify-between items-center py-4">
             <div className="space-y-3">
               {/* Badge con gradiente */}
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-brand-accent-500/20 to-yellow-400/20 border border-brand-accent-500/30 backdrop-blur-sm">
-                <div className="w-2 h-2 bg-brand-accent-500 rounded-full mr-2 animate-pulse"></div>
-                <span className="text-sm font-bold text-white drop-shadow-sm">
+              <div className="inline-flex items-center px-2.5 py-1.5 rounded-full bg-gradient-to-r from-brand-accent-500/20 to-yellow-400/20 border border-brand-accent-500/30 backdrop-blur-sm">
+                <div className="w-1.5 h-1.5 bg-brand-accent-500 rounded-full mr-2 animate-pulse"></div>
+                <span className="text-xs font-bold text-white drop-shadow-sm">
                   {isExecutive ? '👤 Ejecutivo de Cuentas' : '🏢 Portal Concesionario'}
                 </span>
               </div>
               
               {/* Título principal */}
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <Building className="w-6 h-6 text-white" />
+                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                  <Building className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-lg">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">
                   {isExecutive ? 'Portal Ejecutivo' : 'Dashboard Concesionario'}
                 </h1>
               </div>
               
               {/* Subtítulo */}
-              <p className="text-brand-primary-100 text-lg drop-shadow-sm max-w-2xl">
+              <p className="text-brand-primary-100 text-sm sm:text-base drop-shadow-sm max-w-2xl">
                 {isExecutive ? 'Calculadora y solicitudes de crédito' : 'Gestiona tu equipo y solicitudes'}
               </p>
             </div>
             
-            {/* Área de usuario y logout */}
+            {/* Área de usuario, perfil y logout */}
             <div className="flex items-center space-x-4">
               {/* Info del usuario */}
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-3">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold">{user.firstName} {user.lastName}</div>
-                  <div className="text-xs text-brand-primary-100">{user.role === 'EJECUTIVO_CUENTAS' ? 'Ejecutivo' : 'Dealer'}</div>
+                  <div className="font-semibold text-sm">{user.firstName} {user.lastName}</div>
+                  <div className="text-[11px] text-brand-primary-100">{user.role === 'EJECUTIVO_CUENTAS' ? 'Ejecutivo' : 'Dealer'}</div>
                 </div>
               </div>
-              
+
+              {/* Botón Perfil */}
+              <Link
+                href="/portal/profile"
+                className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                title="Perfil"
+              >
+                <Settings className="w-4 h-4" />
+                <span className="font-medium text-sm">Perfil</span>
+              </Link>
+
               {/* Botón de logout */}
               <button
                 onClick={handleLogout}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:scale-105"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:scale-105"
                 title="Cerrar Sesión"
               >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">Salir</span>
+                <LogOut className="w-4 h-4" />
+                <span className="font-medium text-sm">Salir</span>
               </button>
             </div>
           </div>
@@ -157,13 +170,13 @@ export default function DashboardPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all transform hover:scale-105 ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition-all transform hover:scale-105 ${
                       activeTab === tab.id
                         ? 'bg-white text-brand-primary-600 shadow-lg'
                         : 'text-white/80 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <tab.icon className="w-5 h-5" />
+                    <tab.icon className="w-4 h-4" />
                     {tab.label}
                   </button>
                 ))}
@@ -246,6 +259,8 @@ export default function DashboardPage() {
                 onActivate={handleActivateExecutive}
                 onSuspend={handleSuspendExecutive}
                 onDelete={handleDeleteExecutive}
+                onUpdate={handleUpdateExecutive}
+                onResetPassword={handleResetExecutivePassword}
               />
             )}
 

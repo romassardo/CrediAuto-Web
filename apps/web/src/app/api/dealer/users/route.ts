@@ -8,12 +8,17 @@ import { z } from 'zod';
 import { debugAuth, errorLog } from '@/lib/logger';
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
-// Esquema para crear ejecutivo de cuentas
+// Esquema para crear ejecutivo de cuentas (dealer define contraseña inicial)
 const createUserSchema = z.object({
   email: z.string().email('Email inválido').toLowerCase(),
   firstName: z.string().min(1, 'Nombre requerido'),
   lastName: z.string().min(1, 'Apellido requerido'),
   phone: z.string().optional(),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  confirmPassword: z.string().min(1, 'Confirmación requerida'),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: 'Las contraseñas no coinciden',
+  path: ['confirmPassword'],
 });
 
 // Función para verificar autorización del dealer
@@ -186,7 +191,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, firstName, lastName, phone } = validation.data;
+    const { email, firstName, lastName, phone, password } = validation.data;
 
     // Verificar si el email ya existe
     const existingUser = await prisma.user.findFirst({
@@ -203,9 +208,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generar contraseña temporal
-    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-    const passwordHash = await bcrypt.hash(tempPassword, 12);
+    // Usar la contraseña definida por el dealer
+    const passwordHash = await bcrypt.hash(password, 12);
 
     // Crear usuario ejecutivo
     const newUser = await prisma.user.create({
@@ -216,7 +220,7 @@ export async function POST(request: NextRequest) {
         lastName,
         phone,
         role: 'EJECUTIVO_CUENTAS',
-        status: 'INVITED',
+        status: 'INVITED', // En el primer login deberá cambiar contraseña
         passwordHash,
         dealerId: dealer.id,
       }
@@ -238,16 +242,9 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // TODO: Enviar email con credenciales al ejecutivo
-    debugAuth(`Credenciales para ejecutivo ${email}:`, {
-      email,
-      password: tempPassword,
-      loginUrl: `${process.env.NEXTAUTH_URL}/login`
-    });
-
     return NextResponse.json({
       success: true,
-      message: 'Ejecutivo de cuentas creado exitosamente',
+      message: 'Ejecutivo de cuentas creado exitosamente. Deberá cambiar su contraseña en el primer ingreso.',
       user: {
         id: newUser.publicId,
         email: newUser.email,
@@ -255,7 +252,6 @@ export async function POST(request: NextRequest) {
         lastName: newUser.lastName,
         phone: newUser.phone,
         status: newUser.status,
-        tempPassword, // Solo para desarrollo - remover en producción
       }
     });
 

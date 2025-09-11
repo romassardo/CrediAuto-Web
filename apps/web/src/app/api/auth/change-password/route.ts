@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret');
+const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret');
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Contraseña actual requerida'),
@@ -31,30 +34,53 @@ export async function POST(request: NextRequest) {
 
     const { currentPassword, newPassword } = validation.data;
 
-    // Obtener token de las cookies
-    const accessToken = request.cookies.get('accessToken')?.value;
-    if (!accessToken) {
+    // Resolver identidad del usuario (headers -> cookies -> Authorization)
+    const headerUserId = request.headers.get('x-user-id');
+    let userId: number | null = headerUserId ? Number(headerUserId) : null;
+
+    if (!userId) {
+      const access = request.cookies.get('access_token')?.value;
+      const refresh = request.cookies.get('refresh_token')?.value;
+
+      if (access) {
+        try {
+          const { payload } = await jwtVerify(access, JWT_SECRET);
+          userId = (payload.userId as number) ?? null;
+        } catch (_) {}
+      }
+
+      if (!userId && refresh) {
+        try {
+          const { payload } = await jwtVerify(refresh, JWT_REFRESH_SECRET);
+          userId = (payload.userId as number) ?? null;
+        } catch (_) {}
+      }
+
+      if (!userId) {
+        const auth = request.headers.get('authorization') || request.headers.get('Authorization');
+        const bearer = auth && auth.startsWith('Bearer ')
+          ? auth.slice('Bearer '.length)
+          : null;
+        if (bearer) {
+          try {
+            const { payload } = await jwtVerify(bearer, JWT_SECRET);
+            userId = (payload.userId as number) ?? null;
+          } catch (_) {}
+        }
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    // Verificar token
-    let decoded;
-    try {
-      decoded = jwt.verify(accessToken, process.env.JWT_SECRET!) as any;
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Token inválido' },
-        { status: 401 }
-      );
-    }
-
     // Buscar usuario
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { 
-        id: decoded.userId,
+        id: userId,
         deletedAt: null 
       }
     });
@@ -108,10 +134,29 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Contraseña actualizada correctamente'
+    // Revocar tokens de refresh activos y limpiar cookies para forzar re-login
+    await prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() },
     });
+
+    const response = NextResponse.json({
+      success: true,
+      message: 'Contraseña actualizada correctamente. Se cerró tu sesión por seguridad.',
+    });
+
+    const cookieBase = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+      path: '/',
+      maxAge: 0,
+    };
+
+    response.cookies.set('access_token', '', cookieBase);
+    response.cookies.set('refresh_token', '', cookieBase);
+
+    return response;
 
   } catch (error) {
     console.error('Change password error:', error);

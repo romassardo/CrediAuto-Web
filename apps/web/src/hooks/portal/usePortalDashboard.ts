@@ -82,14 +82,21 @@ export const usePortalDashboard = () => {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [calculationData, setCalculationData] = useState<CalculationSelection | null>(null);
   const [isSubmittingLoan, setIsSubmittingLoan] = useState(false);
-  const [newExecutive, setNewExecutive] = useState({ email: '', firstName: '', lastName: '', phone: '' });
+  const [newExecutive, setNewExecutive] = useState({ email: '', firstName: '', lastName: '', phone: '', password: '', confirmPassword: '' });
   const mainTabRef = useRef<HTMLDivElement>(null);
   const [overviewRefreshTick, setOverviewRefreshTick] = useState(0);
 
-  // Redirección si no está autenticado
+  // Redirección si no está autenticado o si debe cambiar contraseña (INVITED)
   useEffect(() => {
-    if (!authLoading && !user) {
-      window.location.href = '/';
+    if (!authLoading) {
+      if (!user) {
+        window.location.href = '/';
+        return;
+      }
+      if (user && (user as any).status === 'INVITED') {
+        window.location.href = '/change-password';
+        return;
+      }
     }
   }, [user, authLoading]);
 
@@ -157,6 +164,16 @@ export const usePortalDashboard = () => {
   // --- MANEJADORES DE EVENTOS ---
   const handleCreateExecutive = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validaciones básicas en cliente para mejor UX
+    if (!newExecutive.password || newExecutive.password.length < 8) {
+      showModal('⚠️ Datos inválidos', 'La contraseña inicial debe tener al menos 8 caracteres.', 'warning');
+      return;
+    }
+    if (newExecutive.password !== newExecutive.confirmPassword) {
+      showModal('⚠️ Datos inválidos', 'Las contraseñas no coinciden.', 'warning');
+      return;
+    }
+
     setTeamLoading(true);
     try {
       const response = await authFetch('/api/dealer/users', {
@@ -168,8 +185,8 @@ export const usePortalDashboard = () => {
       });
       const data = await response.json();
       if (data.success) {
-        showModal('✅ Ejecutivo Creado', `El usuario ${newExecutive.email} ha sido creado y recibirá un correo para establecer su contraseña.`, 'success');
-        setNewExecutive({ email: '', firstName: '', lastName: '', phone: '' });
+        showModal('✅ Ejecutivo Creado', `El usuario ${newExecutive.email} ha sido creado. Deberá cambiar su contraseña en el primer ingreso.`, 'success');
+        setNewExecutive({ email: '', firstName: '', lastName: '', phone: '', password: '', confirmPassword: '' });
         setShowCreateUser(false);
         fetchTeam();
       } else {
@@ -247,6 +264,54 @@ export const usePortalDashboard = () => {
       }
     } catch (error) {
       console.error('Error eliminando usuario:', error);
+      showModal('❌ Error de Conexión', 'No se pudo conectar con el servidor.', 'error');
+    } finally {
+      setTeamLoading(false);
+    }
+  };
+
+  // Actualizar datos básicos del ejecutivo (email/phone)
+  const handleUpdateExecutive = async (target: User, changes: { email?: string; phone?: string | null }) => {
+    setTeamLoading(true);
+    try {
+      const response = await authFetch(`/api/dealer/users/${target.publicId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(changes),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && (data as any).success) {
+        showModal('✅ Usuario actualizado', `${target.email} fue actualizado correctamente.`, 'success');
+        fetchTeam();
+      } else {
+        const msg = (data as any).error || `Error ${response.status}`;
+        showModal('❌ No se pudo actualizar', msg, 'error');
+      }
+    } catch (error) {
+      console.error('Error actualizando usuario:', error);
+      showModal('❌ Error de Conexión', 'No se pudo conectar con el servidor.', 'error');
+    } finally {
+      setTeamLoading(false);
+    }
+  };
+
+  // Resetear contraseña del ejecutivo (genera temporal y revoca sesiones)
+  const handleResetExecutivePassword = async (target: User) => {
+    setTeamLoading(true);
+    try {
+      const response = await authFetch(`/api/dealer/users/${target.publicId}/reset-password`, {
+        method: 'POST',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && (data as any).success) {
+        const temp = (data as any).tempPassword ? `\n\nContraseña temporal: ${(data as any).tempPassword}` : '';
+        showModal('🔑 Contraseña temporal generada', `Se generó una nueva contraseña temporal.${temp}`, 'info');
+        fetchTeam();
+      } else {
+        showModal('❌ No se pudo resetear', (data as any).error || `Error ${response.status}`, 'error');
+      }
+    } catch (error) {
+      console.error('Error reseteando contraseña:', error);
       showModal('❌ Error de Conexión', 'No se pudo conectar con el servidor.', 'error');
     } finally {
       setTeamLoading(false);
@@ -427,6 +492,8 @@ export const usePortalDashboard = () => {
     handleSuspendExecutive,
     handleActivateExecutive,
     handleDeleteExecutive,
+    handleUpdateExecutive,
+    handleResetExecutivePassword,
     
     // Overview Tab state and handlers
     applications,

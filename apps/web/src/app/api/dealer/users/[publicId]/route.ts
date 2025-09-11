@@ -101,7 +101,11 @@ async function verifyDealerAuth(request: NextRequest) {
 }
 
 const patchSchema = z.object({
-  status: z.enum(['ACTIVE', 'SUSPENDED']),
+  status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
+  email: z.string().email('Email inválido').toLowerCase().optional(),
+  phone: z.string().max(50, 'Teléfono muy largo').nullable().optional(),
+}).refine((d) => typeof d.status !== 'undefined' || typeof d.email !== 'undefined' || typeof d.phone !== 'undefined', {
+  message: 'No hay cambios para aplicar',
 });
 
 export async function PATCH(
@@ -139,33 +143,55 @@ export async function PATCH(
       return NextResponse.json({ error: 'El usuario no pertenece a su concesionario' }, { status: 403 });
     }
 
-    const newStatus = parsed.data.status;
+    const { status: newStatus, email: newEmail, phone: newPhone } = parsed.data;
 
     await prisma.$transaction(async (tx) => {
-      await tx.user.update({ where: { id: target.id }, data: { status: newStatus } });
-      if (newStatus === 'SUSPENDED') {
+      const dataToUpdate: { status?: 'ACTIVE'|'SUSPENDED'; email?: string; phone?: string | null } = {};
+      if (typeof newStatus !== 'undefined') dataToUpdate.status = newStatus;
+      if (typeof newEmail !== 'undefined') {
+        // Chequear unicidad de email
+        const existing = await tx.user.findFirst({ where: { email: newEmail, deletedAt: null, NOT: { id: target.id } } });
+        if (existing) {
+          throw Object.assign(new Error('El email ya está en uso'), { code: 'EMAIL_TAKEN' });
+        }
+        dataToUpdate.email = newEmail;
+      }
+      if (typeof newPhone !== 'undefined') dataToUpdate.phone = newPhone ?? null;
+
+      if (Object.keys(dataToUpdate).length === 0) return; // nada que hacer
+
+      await tx.user.update({ where: { id: target.id }, data: dataToUpdate });
+
+      // Revocar tokens si se suspendió
+      if (dataToUpdate.status === 'SUSPENDED') {
         await tx.refreshToken.updateMany({ where: { userId: target.id, revokedAt: null }, data: { revokedAt: new Date() } });
       }
+
+      const changed = Object.keys(dataToUpdate);
       await tx.auditLog.create({
         data: {
           actorUserId: dealerUser.id,
-          action: newStatus === 'ACTIVE' ? 'user.activated' : 'user.suspended',
+          action: changed.includes('status') ? (dataToUpdate.status === 'ACTIVE' ? 'user.activated' : 'user.suspended') : 'user.updated',
           entityType: 'user',
           entityId: target.publicId,
           metadata: {
             dealerId: dealer.publicId,
             targetEmail: target.email,
             targetRole: target.role,
-            newStatus,
+            changed,
+            ...(dataToUpdate.status ? { newStatus: dataToUpdate.status } : {}),
           },
           ip: request.headers.get('x-forwarded-for') || 'unknown',
         },
       });
     });
 
-    return NextResponse.json({ success: true, user: { publicId: target.publicId, status: newStatus } });
-  } catch (error) {
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
     errorLog('Error en PATCH /api/dealer/users/[publicId]:', error);
+    if (error?.code === 'EMAIL_TAKEN') {
+      return NextResponse.json({ error: 'El email ya está en uso' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

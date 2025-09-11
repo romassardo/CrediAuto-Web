@@ -1,5 +1,6 @@
 import React from 'react';
-import { Building, User, LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { Building, User, LogOut, Settings } from 'lucide-react';
 import { type User as UserType } from '@/hooks/portal/usePortalDashboard';
 
 interface PortalHeaderProps {
@@ -64,6 +65,15 @@ const PortalHeader: React.FC<PortalHeaderProps> = ({ user, isExecutive }) => {
                 <div className="text-xs text-brand-primary-100">{user.role === 'EJECUTIVO_CUENTAS' ? 'Ejecutivo' : 'Dealer'}</div>
               </div>
             </div>
+
+            <Link
+              href="/portal/profile"
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-3 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+              title="Perfil"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="font-medium text-sm">Perfil</span>
+            </Link>
             
             <button
               onClick={handleLogout}

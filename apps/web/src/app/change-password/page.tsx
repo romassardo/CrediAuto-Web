@@ -76,6 +76,7 @@ export default function ChangePasswordPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
@@ -88,9 +89,9 @@ export default function ChangePasswordPage() {
 
       setSuccess(true);
       
-      // Redireccionar después de 2 segundos
+      // Redireccionar después de 2 segundos (se cerrará la sesión por seguridad)
       setTimeout(() => {
-        window.location.href = '/portal/dashboard';
+        window.location.href = '/';
       }, 2000);
 
     } catch (error) {
@@ -110,7 +111,7 @@ export default function ChangePasswordPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Contraseña Actualizada!</h2>
           <p className="text-gray-600 mb-4">
-            Tu contraseña ha sido cambiada exitosamente. Serás redirigido al dashboard.
+            Tu contraseña ha sido cambiada exitosamente. Por seguridad, serás redirigido al inicio para volver a iniciar sesión.
           </p>
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-primary-600 mx-auto"></div>
         </div>

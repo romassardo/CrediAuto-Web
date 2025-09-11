@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Building2, LogOut, User } from 'lucide-react';
+import { Building2, LogOut, User, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface AdminNavigationProps {
@@ -141,6 +141,15 @@ export default function AdminNavigation({ title, subtitle, subtitleClassName, st
                 </div>
               </div>
             </div>
+
+            {/* Botón Perfil */}
+            <Link
+              href="/admin/profile"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20 text-white transition-all"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="text-sm font-medium">Perfil</span>
+            </Link>
 
             {/* Botón de logout */}
             <button
