@@ -132,6 +132,12 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
     return `${pct.toFixed(1)}%`;
   };
 
+  // Formatear teléfono quitando prefijo +54 (y opcional 9)
+  const formatPhone = (val?: string | null) => {
+    if (!val) return '-';
+    return String(val).trim().replace(/^\+54\s*9?\s*/, '');
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
@@ -201,7 +207,7 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</label>
-                      <div className="text-sm text-gray-900">{application.applicantPhone}</div>
+                      <div className="text-sm text-gray-900">{formatPhone(application.applicantPhone)}</div>
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Nacimiento</label>
@@ -321,7 +327,7 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono Empresa</label>
-                        <div className="text-sm text-gray-900">{application.companyPhone || '-'}</div>
+                        <div className="text-sm text-gray-900">{application.companyPhone ? formatPhone(application.companyPhone) : '-'}</div>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Experiencia</label>

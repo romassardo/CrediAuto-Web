@@ -454,6 +454,12 @@ export default function AdminLoansPage() {
 
   const formatDate = (s?: string) => (s ? new Date(s).toLocaleDateString() : "-");
 
+  // Quitar prefijo +54 (y opcional 9) para mostrar teléfonos
+  const formatPhone = (val?: string | null) => {
+    if (!val) return '-';
+    return String(val).trim().replace(/^\+54\s*9?\s*/, '');
+  };
+
   const formatPercent = (value?: number | string | null) => {
     if (value === undefined || value === null || (value as any) === '') return '—';
     const num = typeof value === 'string' ? parseFloat(value) : value;
@@ -611,13 +617,13 @@ export default function AdminLoansPage() {
                             <div className="font-semibold text-gray-900 text-sm">
                               {a.clientFirstName} {a.clientLastName}
                             </div>
-                            <div className="text-xs text-gray-500">DNI: {a.clientDni}</div>
+                            <div className="text-xs text-gray-500">CUIL: {a.applicantCuil || a.clientDni}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm text-gray-900">{a.clientEmail}</div>
-                        <div className="text-xs text-gray-500">{a.clientPhone}</div>
+                        <div className="text-xs text-gray-500">{formatPhone((a as any).clientPhone)}</div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm font-semibold text-gray-900">{formatMoney(a.loanAmount)}</div>
@@ -796,7 +802,7 @@ export default function AdminLoansPage() {
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</label>
-                      <div className="text-sm text-gray-900">{selectedApp.applicantPhone || selectedApp.clientPhone}</div>
+                      <div className="text-sm text-gray-900">{formatPhone(selectedApp.applicantPhone || (selectedApp as any).clientPhone)}</div>
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Nacimiento</label>
@@ -863,7 +869,7 @@ export default function AdminLoansPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono Empresa</label>
-                        <div className="text-sm text-gray-900">{selectedApp.companyPhone || '-'}</div>
+                        <div className="text-sm text-gray-900">{selectedApp.companyPhone ? formatPhone(selectedApp.companyPhone) : '-'}</div>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Experiencia</label>

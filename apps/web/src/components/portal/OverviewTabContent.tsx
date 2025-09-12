@@ -93,7 +93,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
   const [initialized, setInitialized] = useState(false);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   };
 
   const formatPercent = (value: number | string | undefined) => {
@@ -101,7 +101,14 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     const num = typeof value === 'string' ? parseFloat(value) : value;
     if (!Number.isFinite(num)) return '—';
     const pct = num <= 2 ? num * 100 : num; // escala razones (0-2) a %
+    // Porcentajes con 1 decimal en portal
     return `${pct.toFixed(1)}%`;
+  };
+
+  // Quitar prefijo +54 (y opcional '9') de números para mostrar
+  const formatPhone = (val?: string | null) => {
+    if (!val) return '-';
+    return String(val).trim().replace(/^\+54\s*9?\s*/, '');
   };
 
   // === Unread logic for Admin observations (statusReason) ===
@@ -171,14 +178,19 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
       }
 
       const data = await response.json();
+      if (opts?.abortSignal?.aborted) return;
       setApplications(data.items || []);
       setTotal(data.total ?? 0);
       setTotalPages(data.totalPages ?? 1);
-    } catch (err) {
+    } catch (err: any) {
+      // Ignorar abortos intencionales del fetch (cleanup o cambios de filtros)
+      if (err?.name === 'AbortError' || err?.code === 20) {
+        return;
+      }
       console.error('Error fetching applications:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
-      setLoading(false);
+      if (!opts?.abortSignal?.aborted) setLoading(false);
     }
   }, [status, search, page, pageSize]);
 
@@ -460,7 +472,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
                   </div>
                   <div className="text-xs text-gray-500">
                     {s.applicantCuil && <>CUIL {s.applicantCuil} · </>}
-                    {s.applicantEmail} · {s.applicantPhone}
+                    {s.applicantEmail} · {formatPhone(s.applicantPhone)}
                   </div>
                 </li>
               ))}
@@ -550,7 +562,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
                       </div>
                       <div>
                         <div className="font-medium">{app.applicantFirstName} {app.applicantLastName}</div>
-                        <div className="text-xs text-gray-500">{app.applicantEmail} · {app.applicantPhone}</div>
+                        <div className="text-xs text-gray-500">{app.applicantEmail} · {formatPhone(app.applicantPhone)}</div>
                       </div>
                     </div>
                   </td>

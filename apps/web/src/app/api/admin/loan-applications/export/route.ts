@@ -167,6 +167,14 @@ export async function GET(request: Request) {
     });
 
     if (format === 'xlsx') {
+      // Helper para normalizar porcentajes a fracción (para formato % nativo de Excel)
+      const toPercentFraction = (x: unknown): number | undefined => {
+        if (x === null || x === undefined || x === ('' as any)) return undefined;
+        const n = Number(x);
+        if (!Number.isFinite(n)) return undefined;
+        // Si viene como 118 ó 45, convertir a 1.18 / 0.45. Si ya viene como 1.18 o 0.45, dejarlo.
+        return n > 5 ? n / 100 : n;
+      };
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Solicitudes');
 
@@ -289,8 +297,8 @@ export async function GET(request: Request) {
           loanTermMonths: a.loanTermMonths,
           monthlyPayment: Number(a.monthlyPayment),
           totalAmount: Number(a.totalAmount),
-          interestRate: Number(a.interestRate),
-          cftAnnual: Number(a.cftAnnual),
+          interestRate: toPercentFraction(a.interestRate),
+          cftAnnual: toPercentFraction(a.cftAnnual),
 
           dealerId: a.dealer?.id ?? undefined,
           dealerTradeName: a.dealer?.tradeName ?? undefined,
@@ -331,11 +339,12 @@ export async function GET(request: Request) {
         });
       }
 
-      const decimalCols = ['interestRate','cftAnnual'];
-      for (const key of decimalCols) {
+      const percentCols = ['interestRate','cftAnnual'];
+      for (const key of percentCols) {
         const col = worksheet.getColumn(key);
         col.eachCell({ includeEmpty: false }, (cell: ExcelJS.Cell) => {
-          cell.numFmt = '0.00'; // si quisieras porcentaje real, usa '0.00%' y guarda fracción (0.12)
+          // Formato nativo de porcentaje en Excel; espera fracciones (0.45 → 45.00%)
+          cell.numFmt = '0.00%';
         });
       }
 
