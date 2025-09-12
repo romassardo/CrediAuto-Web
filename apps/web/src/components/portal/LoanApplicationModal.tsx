@@ -85,6 +85,18 @@ interface LoanApplication {
   };
 }
 
+// Helper: tomar primer número válido (>0) desde múltiples fuentes
+const firstValidNumber = (
+  ...vals: Array<number | string | undefined | null>
+): number | undefined => {
+  for (const v of vals) {
+    if (v === undefined || v === null || (v as any) === '') continue;
+    const num = typeof v === 'string' ? parseFloat(v) : v;
+    if (Number.isFinite(num) && (num as number) > 0) return num as number;
+  }
+  return undefined;
+};
+
 interface LoanApplicationModalProps {
   application: LoanApplication | null;
   isOpen: boolean;
@@ -112,10 +124,12 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
   };
 
   const formatPercentage = (value: number | string | undefined) => {
-    if (!value) return 'N/A';
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(numValue)) return 'N/A';
-    return `${numValue.toFixed(2)}%`;
+    if (value === undefined || value === null || value === ('' as any)) return '—';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (!Number.isFinite(num)) return '—';
+    // Heurística: si es una razón (0-2 aprox o 1.18), escalar a %; si ya es porcentaje (>= 2), dejar como está
+    const pct = num <= 2 ? num * 100 : num;
+    return `${pct.toFixed(1)}%`;
   };
 
   return (
@@ -380,16 +394,43 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Cuota Mensual</label>
                       <div className="text-sm font-semibold text-gray-900">{formatCurrency(application.monthlyPayment)}</div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Plazo</label>
-                        <div className="text-sm text-gray-900">{application.loanTermMonths} meses</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">CFT</label>
-                        <div className="text-sm font-semibold text-brand-primary-600">{formatPercentage(application.cftAnnual)}</div>
-                      </div>
-                    </div>
+                    {(() => {
+                      // Fallbacks robustos (evitar 0.0 como valor "válido")
+                      const loanTerm = firstValidNumber(
+                        application.loanTermMonths,
+                        application.calculationData?.loanTermMonths,
+                        application.submissionData?.calculationData?.loanTermMonths
+                      );
+                      const cft = firstValidNumber(
+                        application.cftAnnual,
+                        application.calculationData?.cftAnnual,
+                        application.submissionData?.calculationData?.cftAnnual
+                      );
+                      const rate = firstValidNumber(
+                        application.interestRate,
+                        application.calculationData?.interestRate,
+                        application.submissionData?.calculationData?.interestRate
+                      );
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Plazo</label>
+                              <div className="text-sm text-gray-900">{loanTerm ?? '-'} meses</div>
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">CFT</label>
+                              <div className="text-sm font-semibold text-brand-primary-600">{formatPercentage(cft)}</div>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Tasa aplicada</label>
+                            <div className="text-sm font-semibold text-gray-900">{formatPercentage(rate)}</div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                    
                   </div>
                 </div>
 

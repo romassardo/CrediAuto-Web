@@ -96,6 +96,14 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
   };
 
+  const formatPercent = (value: number | string | undefined) => {
+    if (value === undefined || value === null || (value as any) === '') return '—';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (!Number.isFinite(num)) return '—';
+    const pct = num <= 2 ? num * 100 : num; // escala razones (0-2) a %
+    return `${pct.toFixed(1)}%`;
+  };
+
   // === Unread logic for Admin observations (statusReason) ===
   const getLocal = (key: string): string | null => {
     if (typeof window === 'undefined') return null;
@@ -553,6 +561,22 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
                   <td className="px-4 py-3 align-middle">
                     <div className="font-semibold">{formatCurrency(app.monthlyPayment)}</div>
                     <div className="text-xs text-gray-500">Mensual</div>
+                    {(() => {
+                      const loanTerm = app.loanTermMonths
+                        ?? (app as any).calculationData?.loanTermMonths
+                        ?? (app as any).submissionData?.calculationData?.loanTermMonths;
+                      const cft = app.cftAnnual
+                        ?? (app as any).calculationData?.cftAnnual
+                        ?? (app as any).submissionData?.calculationData?.cftAnnual;
+                      const rate = app.interestRate
+                        ?? (app as any).calculationData?.interestRate
+                        ?? (app as any).submissionData?.calculationData?.interestRate;
+                      return (
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {loanTerm ? `${loanTerm}m` : '—'} • CFT: {formatPercent(cft)} • Tasa: {formatPercent(rate)}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 align-middle">
                     <div className="font-medium">{new Date(app.createdAt).toLocaleDateString('es-AR')}</div>

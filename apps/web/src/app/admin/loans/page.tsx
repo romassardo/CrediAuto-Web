@@ -454,6 +454,14 @@ export default function AdminLoansPage() {
 
   const formatDate = (s?: string) => (s ? new Date(s).toLocaleDateString() : "-");
 
+  const formatPercent = (value?: number | string | null) => {
+    if (value === undefined || value === null || (value as any) === '') return '—';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (!Number.isFinite(num)) return '—';
+    const pct = num <= 2 ? num * 100 : num; // escala razones (ej: 1.18 → 118%)
+    return `${pct.toFixed(1)}%`;
+  };
+
   // Exportar CSV usando el endpoint /api/admin/loan-applications/export
   // Reutiliza los filtros actuales (status + búsqueda) y limita a 5000 filas.
   const handleExport = () => {
@@ -616,7 +624,7 @@ export default function AdminLoansPage() {
                         <div className="text-xs text-gray-500">
                           {formatMoney(a.monthlyPayment)} × {a.loanTerm}m
                         </div>
-                        <div className="text-xs text-brand-primary-600">CFT: {(a.cft || 0).toFixed(2)}%</div>
+                        <div className="text-xs text-brand-primary-600">CFT: {formatPercent(a.cft)}</div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -886,16 +894,38 @@ export default function AdminLoansPage() {
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Cuota Mensual</label>
                       <div className="text-sm font-semibold text-gray-900">{formatMoney(selectedApp.monthlyPayment)}</div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Plazo</label>
-                        <div className="text-sm text-gray-900">{selectedApp.loanTerm} meses</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">CFT</label>
-                        <div className="text-sm font-semibold text-brand-primary-600">{(selectedApp.cft || 0).toFixed(2)}%</div>
-                      </div>
-                    </div>
+                    {(() => {
+                      const loanTerm = selectedApp.loanTerm
+                        || (selectedApp as any).loanTermMonths
+                        || selectedApp.submissionData?.calculationData?.loanTermMonths
+                        || (selectedApp as any).calculationData?.loanTermMonths
+                        || (selectedApp.submissionData as any)?.calculationData?.loanTerm;
+                      const cft = (selectedApp as any).cft
+                        || (selectedApp as any).cftAnnual
+                        || selectedApp.submissionData?.calculationData?.cftAnnual
+                        || (selectedApp as any).calculationData?.cftAnnual;
+                      const rate = (selectedApp as any).interestRate
+                        || selectedApp.submissionData?.calculationData?.interestRate
+                        || (selectedApp as any).calculationData?.interestRate;
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Plazo</label>
+                              <div className="text-sm text-gray-900">{loanTerm ? `${loanTerm} meses` : '-'}</div>
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">CFT</label>
+                              <div className="text-sm font-semibold text-brand-primary-600">{formatPercent(cft)}</div>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Tasa aplicada</label>
+                            <div className="text-sm font-semibold text-gray-900">{formatPercent(rate)}</div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
