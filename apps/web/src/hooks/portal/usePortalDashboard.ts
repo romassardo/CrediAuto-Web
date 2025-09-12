@@ -100,11 +100,13 @@ export const usePortalDashboard = () => {
     }
   }, [user, authLoading]);
 
-  // Forzar pestaña para ejecutivos
+  // Forzar pestaña válida para ejecutivos (permitir 'main' y 'overview')
   useEffect(() => {
-    if (isExecutiveValue && activeTab !== 'main') {
+    if (!isExecutiveValue) return;
+    if (activeTab !== 'main' && activeTab !== 'overview') {
       setActiveTab('main');
     }
+    // Nota: permitimos cambiar manualmente entre 'main' y 'overview'
   }, [isExecutiveValue, activeTab]);
 
   // --- LÓGICA DE OBTENCIÓN DE DATOS ---

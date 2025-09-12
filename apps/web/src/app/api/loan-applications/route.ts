@@ -306,8 +306,12 @@ export async function GET(request: Request) {
     }
 
     // RBAC: acotar por dealer según rol
-    if (role === 'DEALER' || role === 'EJECUTIVO_CUENTAS') {
+    if (role === 'DEALER') {
       where.dealerId = parseInt(dealerId!, 10);
+    } else if (role === 'EJECUTIVO_CUENTAS') {
+      // Los ejecutivos solo ven sus propias solicitudes
+      where.dealerId = parseInt(dealerId!, 10);
+      where.submittedByUserId = parseInt(userId!, 10);
     } else if (role === 'ADMIN' && adminDealerId) {
       where.dealerId = adminDealerId;
     }

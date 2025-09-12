@@ -68,9 +68,13 @@ export default function DashboardPage() {
   // Definir pestañas disponibles según el rol
   const availableTabs = [
     { id: 'main', label: 'Calculadora y Solicitud', icon: Calculator },
+    // Resumen está disponible para ejecutivos y dealers
+    ...(isExecutive || canAccessFullDashboard ? [
+      { id: 'overview', label: 'Resumen', icon: TrendingUp },
+    ] : []),
+    // Solo dealers pueden gestionar equipo
     ...(canAccessFullDashboard ? [
       { id: 'team', label: 'Gestión de Equipo', icon: Users },
-      { id: 'overview', label: 'Resumen', icon: TrendingUp },
     ] : [])
   ];
 

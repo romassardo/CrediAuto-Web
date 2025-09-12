@@ -266,7 +266,7 @@ export default function Home() {
         </section>
 
         {/* Contact Form */}
-        <section id="contacto" className="scroll-mt-20 md:scroll-mt-24 lg:scroll-mt-32 pt-12 md:pt-16 lg:pt-24 xl:pt-32" style={{ paddingBottom: '6rem' }}>
+        <section id="contacto" className="scroll-mt-20 md:scroll-mt-24 lg:scroll-mt-32 pt-12 md:pt-16 lg:pt-24 xl:pt-32 pb-12 md:pb-16 lg:pb-20">
           <div className="container mx-auto px-4 md:px-6 lg:px-8">
             <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto">
               {/* Form */}
@@ -286,6 +286,88 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white py-8 md:py-12 lg:py-16 border-t border-gray-100">
+        <div className="container mx-auto px-4 md:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Footer Content */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 lg:gap-12">
+              
+              {/* Logo Section */}
+              <div className="flex-shrink-0">
+                <img
+                  src="/recurso-15.svg"
+                  alt="Crediexpress Automotor"
+                  className="h-auto w-[200px] md:w-[240px] lg:w-[280px]"
+                />
+              </div>
+
+              {/* Institutional Links */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 lg:gap-8">
+                <a 
+                  href="https://www.bcra.gob.ar/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src="/Banco Central.png"
+                    alt="Banco Central de la República Argentina"
+                    className="h-12 md:h-14 lg:h-16 w-auto"
+                  />
+                </a>
+                
+                <a 
+                  href="https://www.argentina.gob.ar/aaip/datospersonales/reclama" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src="/Base de datos.jpg"
+                    alt="Protección de Datos Personales"
+                    className="h-12 md:h-14 lg:h-16 w-auto"
+                  />
+                </a>
+                
+                <a 
+                  href="https://auth.afip.gob.ar/contribuyente_/login.xhtml?action=SYSTEM&system=denuncias" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src="/Data Fiscal.png"
+                    alt="AFIP - Data Fiscal"
+                    className="h-12 md:h-14 lg:h-16 w-auto"
+                  />
+                </a>
+                
+                <a 
+                  href="https://www.bcra.gob.ar/BCRAyVos/Usuarios_Financieros.asp" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src="/usuarios financieros.jpg"
+                    alt="Usuarios Financieros - BCRA"
+                    className="h-12 md:h-14 lg:h-16 w-auto"
+                  />
+                </a>
+              </div>
+            </div>
+
+            {/* Legal Text */}
+            <div className="mt-8 lg:mt-12 pt-6 lg:pt-8 border-t border-gray-200">
+              <p className="text-gray-600 text-xs md:text-sm lg:text-base leading-relaxed font-sans font-normal">
+                El período mínimo para la devolución de un préstamo es de 3 meses, siendo el máximo 60 meses. La TNA de un préstamo varía dependiendo del perfil crediticio del solicitante, siendo la mínima 50,0% y la máxima 120,0%. A su vez, la TEA mínima es de 62.14% siendo la máxima 177.10%. (CFT) con IVA: Mínimo: 75,19% - Máximo: 214.29% A modo de ejemplo Monto solicitado de $8.000.000 a 24 meses TNA (sin IVA): 50,0% - TEA (sin IVA): 62.14% - CFTEA (con IVA): 75.19% Cuota: $582.119,- Total a pagar: $13.970.856, -
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
 
     </div>
   );
