@@ -10,7 +10,7 @@ const QuerySchema = z.object({
   product: z.enum(['AUTO', 'MOTO']),
   year: z.coerce.number().int().min(1900).max(2050),
   term: z.coerce.number().int().refine((v) => [6, 12, 18, 24, 36, 48].includes(v), {
-    message: 'term inválido (válidos: 6, 12, 24, 48)'
+    message: 'term inválido (válidos: 6, 12, 18, 24, 36, 48)'
   })
 });
 
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
     const { product, year, term } = parsed.data;
 
     // Validación de términos por producto
-    if (product === 'MOTO' && ![6, 12, 24].includes(term)) {
+    if (product === 'MOTO' && ![6, 12, 18].includes(term)) {
       return NextResponse.json(
-        { success: false, error: 'term inválido para MOTO (válidos: 6, 12, 24)' },
+        { success: false, error: 'term inválido para MOTO (válidos: 6, 12, 18)' },
         { status: 400 }
       );
     }
@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
 
         const r = rows[0];
         const rate = typeof r.interestRate === 'string' ? parseFloat(r.interestRate) : Number(r.interestRate);
+        console.log(`[rates.lookup] Fallback AUTO interest_rate_ranges match → year=${year}, term=${term}, rate=${rate}`);
         return NextResponse.json({
           success: true,
           data: {
@@ -95,6 +96,7 @@ export async function GET(request: NextRequest) {
             year,
             term,
             interestRate: rate,
+            unit: 'TNA',
             rateRange: {
               id: r.id,
               name: r.name,
@@ -117,6 +119,7 @@ export async function GET(request: NextRequest) {
 
     // Estructura nueva (por producto + plazo)
     const rate = typeof found.interestRate === 'string' ? parseFloat(found.interestRate) : Number(found.interestRate);
+    console.log(`[rates.lookup] ${tableName} match → product=${product}, year=${year}, term=${term}, rate=${rate}`);
     return NextResponse.json({
       success: true,
       data: {
@@ -124,6 +127,7 @@ export async function GET(request: NextRequest) {
         year,
         term,
         interestRate: rate,
+        unit: 'TNA',
         rateRange: {
           id: found.id,
           name: found.name,

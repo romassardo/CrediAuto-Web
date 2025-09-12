@@ -1,5 +1,8 @@
 // Script de verificación de integración completa del sistema de tasas AUTO/MOTO
-const fetch = require('node-fetch');
+// Usa fetch global (Node 18+) o hace fallback dinámico a node-fetch
+const fetch = (...args) => (typeof global.fetch === 'function'
+  ? global.fetch(...args)
+  : import('node-fetch').then(({ default: f }) => f(...args)));
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -78,8 +81,8 @@ async function verifyRatesIntegration() {
     }
   }
 
-  // Test 4: Verificar cálculo con divisor 360 (ejemplo específico)
-  console.log('\n📋 4. Verificando cálculo con divisor corregido (360 días)...');
+  // Test 4: Verificar cálculo con base 365 (ejemplo específico)
+  console.log('\n📋 4. Verificando cálculo con base 365 (30/365)...');
   totalTests++;
   
   // Test con valores conocidos: 5,000,000 a 60% TNA, 24 meses
@@ -87,19 +90,19 @@ async function verifyRatesIntegration() {
   const testMonto = 5000000;
   const testPlazo = 24;
   
-  // Cálculo esperado con divisor 360:
-  // TEM = (0.60 / 360) * 30 = 0.05 (5% mensual)
-  // Cuota = 5,000,000 * 0.05 / (1 - (1.05)^-24) ≈ 357,121
-  const expectedTEM = (testTNA / 360) * 30;
+  // Cálculo esperado con base 365:
+  // TEM = (0.60 / 365) * 30 ≈ 0.04932 (4.93% mensual)
+  // Cuota = 5,000,000 * TEM / (1 - (1+TEM)^-24)
+  const expectedTEM = (testTNA / 365) * 30;
   const expectedCuota = Math.round((testMonto * expectedTEM) / (1 - Math.pow(1 + expectedTEM, -testPlazo)));
   
   console.log(`   📊 Valores de prueba: $${testMonto.toLocaleString()} a ${(testTNA*100).toFixed(0)}% TNA, ${testPlazo} meses`);
-  console.log(`   📊 TEM esperado (con divisor 360): ${(expectedTEM*100).toFixed(2)}%`);
+  console.log(`   📊 TEM esperado (30/365): ${(expectedTEM*100).toFixed(2)}%`);
   console.log(`   📊 Cuota esperada: $${expectedCuota.toLocaleString()}`);
   
   // Esta verificación requiere que la calculadora esté funcionando
   // Por ahora solo mostramos los valores esperados
-  console.log(`   ✅ Fórmulas actualizadas con divisor 360`);
+  console.log(`   ✅ Fórmulas actualizadas a base 365`);
   passedTests++;
 
   // Resumen final

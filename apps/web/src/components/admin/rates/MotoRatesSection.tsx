@@ -23,7 +23,7 @@ interface GroupedRange {
   yearFrom: number;
   yearTo: number;
   isActive: boolean; // true si al menos 1 está activo
-  terms: Record<6 | 12 | 24, number | null>;
+  terms: Record<6 | 12 | 18, number | null>;
 }
 
 interface MotoRatesSectionProps {
@@ -66,11 +66,11 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
     yearFrom: new Date().getFullYear() - 5,
     yearTo: new Date().getFullYear(),
     isActive: true,
-    rates: { m6: 0.5, m12: 0.5, m24: 0.5 },
+    rates: { m6: 0.5, m12: 0.5, m18: 0.5 },
   });
 
   // Estados de texto para inputs de % (evita "saltos" al escribir)
-  const [formStrRates, setFormStrRates] = useState({ m6: "50", m12: "50", m24: "50" });
+  const [formStrRates, setFormStrRates] = useState({ m6: "50", m12: "50", m18: "50" });
 
   const [editForm, setEditForm] = useState({
     name: "",
@@ -78,12 +78,12 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
     yearFrom: new Date().getFullYear() - 5,
     yearTo: new Date().getFullYear(),
     isActive: true,
-    rates: { m6: 0.5, m12: 0.5, m24: 0.5 },
+    rates: { m6: 0.5, m12: 0.5, m18: 0.5 },
   });
 
-  const [editStrRates, setEditStrRates] = useState({ m6: "50", m12: "50", m24: "50" });
+  const [editStrRates, setEditStrRates] = useState({ m6: "50", m12: "50", m18: "50" });
 
-  const TERMS: Array<6 | 12 | 24> = [6, 12, 24];
+  const TERMS: Array<6 | 12 | 18> = [6, 12, 18];
 
   const getTokenFromCookies = () => {
     const cookies = document.cookie.split(";");
@@ -132,12 +132,12 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
           yearFrom: r.yearFrom,
           yearTo: r.yearTo,
           isActive: r.isActive,
-          terms: { 6: null, 12: null, 24: null },
+          terms: { 6: null, 12: null, 18: null },
         });
       }
       const g = map.get(key)!;
-      if ([6, 12, 24].includes(r.termMonths)) {
-        g.terms[r.termMonths as 6 | 12 | 24] = r.interestRate;
+      if ([6, 12, 18].includes(r.termMonths)) {
+        g.terms[r.termMonths as 6 | 12 | 18] = r.interestRate;
       }
       g.isActive = g.isActive || r.isActive;
       if (!g.name && r.name) g.name = r.name;
@@ -159,13 +159,13 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
       rates: {
         m6: g.terms[6] ?? 0.5,
         m12: g.terms[12] ?? 0.5,
-        m24: g.terms[24] ?? 0.5,
+        m18: g.terms[18] ?? 0.5,
       },
     });
     setEditStrRates({
       m6: toPercentStr(g.terms[6] ?? 0.5),
       m12: toPercentStr(g.terms[12] ?? 0.5),
-      m24: toPercentStr(g.terms[24] ?? 0.5),
+      m18: toPercentStr(g.terms[18] ?? 0.5),
     });
     setError("");
     setSuccess("");
@@ -210,7 +210,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
       const normalizedRates = {
         m6: parseOr(editStrRates.m6, editForm.rates.m6),
         m12: parseOr(editStrRates.m12, editForm.rates.m12),
-        m24: parseOr(editStrRates.m24, editForm.rates.m24),
+        m18: parseOr(editStrRates.m18, editForm.rates.m18),
       };
       const body = {
         name: editForm.name || undefined,
@@ -221,7 +221,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
         terms: {
           6: Number(normalizedRates.m6),
           12: Number(normalizedRates.m12),
-          24: Number(normalizedRates.m24),
+          18: Number(normalizedRates.m18),
         },
       } as const;
 
@@ -265,7 +265,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
       const normalizedRates = {
         m6: parseOr(formStrRates.m6, form.rates.m6),
         m12: parseOr(formStrRates.m12, form.rates.m12),
-        m24: parseOr(formStrRates.m24, form.rates.m24),
+        m18: parseOr(formStrRates.m18, form.rates.m18),
       };
       const body = {
         name: form.name,
@@ -276,7 +276,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
         terms: {
           6: Number(normalizedRates.m6),
           12: Number(normalizedRates.m12),
-          24: Number(normalizedRates.m24),
+          18: Number(normalizedRates.m18),
         },
       } as const;
 
@@ -298,7 +298,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
         }
         return;
       }
-      setSuccess("Rango MOTO creado correctamente (6/12/24)");
+      setSuccess("Rango MOTO creado correctamente (6/12/18)");
       setShowCreate(false);
       setForm({
         name: "",
@@ -306,7 +306,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
         yearFrom: new Date().getFullYear() - 5,
         yearTo: new Date().getFullYear(),
         isActive: true,
-        rates: { m6: 0.5, m12: 0.5, m24: 0.5 },
+        rates: { m6: 0.5, m12: 0.5, m18: 0.5 },
       });
       await fetchRows();
     } catch (e: any) {
@@ -364,7 +364,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
               <div className="text-xs text-gray-500">meses</div>
             </div>
             <div className="text-center">
-              <div className="font-bold text-orange-700">24m</div>
+              <div className="font-bold text-orange-700">18m</div>
               <div className="text-xs text-gray-500">meses</div>
             </div>
             <div className="text-center">Estado</div>
@@ -414,8 +414,8 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className={`text-lg font-bold tabular-nums ${g.terms[24] ? 'text-orange-700' : 'text-gray-400'}`}>
-                      {g.terms[24] ? `${(g.terms[24] * 100).toFixed(1)}%` : '—'}
+                    <div className={`text-lg font-bold tabular-nums ${g.terms[18] ? 'text-orange-700' : 'text-gray-400'}`}>
+                      {g.terms[18] ? `${(g.terms[18] * 100).toFixed(1)}%` : '—'}
                     </div>
                   </div>
                   
@@ -453,7 +453,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
           <div className="bg-white rounded-XL shadow-2xl max-w-2xl w-full">
             <div className="p-6 border-b border-gray-200">
               <h3 className="text-xl font-bold text-gray-900">Editar rango MOTO (3 plazos)</h3>
-              <p className="text-gray-600 text-sm">Actualiza nombre, rango de años, estado y tasas 6/12/24</p>
+              <p className="text-gray-600 text-sm">Actualiza nombre, rango de años, estado y tasas 6/12/18</p>
             </div>
             <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -515,10 +515,10 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
                         <input
                           type="text"
                           inputMode="decimal"
-                          value={editStrRates[`m${t}` as 'm6' | 'm12' | 'm24']}
+                          value={editStrRates[`m${t}` as 'm6' | 'm12' | 'm18']}
                           onChange={(e) => setEditStrRates({ ...editStrRates, [`m${t}`]: e.target.value } as any)}
                           onBlur={() => {
-                            const raw = editStrRates[`m${t}` as 'm6' | 'm12' | 'm24'];
+                            const raw = editStrRates[`m${t}` as 'm6' | 'm12' | 'm18'];
                             const normalized = normalizePercentInput(raw);
                             if (normalized != null) {
                               setEditForm((prev) => ({
@@ -575,7 +575,7 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full">
             <div className="p-6 border-b border-gray-200">
               <h3 className="text-xl font-bold text-gray-900">Nuevo rango MOTO (3 plazos)</h3>
-              <p className="text-gray-600 text-sm">Crea 3 tasas para 6/12/24 meses en un solo paso</p>
+              <p className="text-gray-600 text-sm">Crea 3 tasas para 6/12/18 meses en un solo paso</p>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -638,10 +638,10 @@ export default function MotoRatesSection({ onNewRangoClick }: MotoRatesSectionPr
                         <input
                           type="text"
                           inputMode="decimal"
-                          value={formStrRates[`m${t}` as 'm6' | 'm12' | 'm24']}
+                          value={formStrRates[`m${t}` as 'm6' | 'm12' | 'm18']}
                           onChange={(e) => setFormStrRates({ ...formStrRates, [`m${t}`]: e.target.value } as any)}
                           onBlur={() => {
-                            const raw = formStrRates[`m${t}` as 'm6' | 'm12' | 'm24'];
+                            const raw = formStrRates[`m${t}` as 'm6' | 'm12' | 'm18'];
                             const normalized = normalizePercentInput(raw);
                             if (normalized != null) {
                               setForm((prev) => ({

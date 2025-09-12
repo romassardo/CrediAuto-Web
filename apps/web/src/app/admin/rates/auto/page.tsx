@@ -775,7 +775,7 @@ export default function AdminAutoRatesPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Tasas para Motocicletas</h2>
-                <p className="text-gray-600">Plazos disponibles: 6, 12 y 24 meses únicamente</p>
+                <p className="text-gray-600">Plazos disponibles: 6, 12 y 18 meses únicamente</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

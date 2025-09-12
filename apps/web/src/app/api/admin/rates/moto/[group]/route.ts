@@ -8,7 +8,7 @@ import { verifyAdminAuth } from '@/lib/auth-helpers';
 const TermsPartialSchema = z.object({
   6: z.number().min(0.0001).max(1).optional(),
   12: z.number().min(0.0001).max(1).optional(),
-  24: z.number().min(0.0001).max(1).optional(),
+  18: z.number().min(0.0001).max(1).optional(),
 }).partial();
 
 const UpdateGroupSchema = z.object({
@@ -76,8 +76,8 @@ function parseGroupParam(group: string) {
       return NextResponse.json({ success: false, error: 'El año desde debe ser menor o igual al año hasta' }, { status: 400 });
     }
 
-    // Validar solapamiento si cambia el rango y el estado final es activo (MOTO: 6/12/24)
-    const TERMS = [6, 12, 24] as const;
+    // Validar solapamiento si cambia el rango y el estado final es activo (MOTO: 6/12/18)
+    const TERMS = [6, 12, 18] as const;
     const overlaps: Array<{ term: number; ranges: Array<{ id: number; yearFrom: number; yearTo: number }> }> = [];
 
     for (const term of TERMS) {
@@ -104,25 +104,38 @@ function parseGroupParam(group: string) {
 
     if (overlaps.length > 0) {
       return NextResponse.json({ success: false, error: 'Rangos solapados para uno o más plazos', overlaps }, { status: 409 });
-    }    // Actualizar las 6 filas en transacción
+    }    // Upsert de las 3 filas en transacción (UPDATE si existe, INSERT si falta)
     const updated = await withTransaction(async (tx) => {
       for (const term of TERMS) {
         const row = currentRows.find(r => Number(r.termMonths) === term);
-        const currentRate = row ? (typeof row.interestRate === 'string' ? parseFloat(row.interestRate) : Number(row.interestRate)) : null;
-        const finalRate = (terms && terms[term as 6 | 12 | 24] != null) ? Number(terms[term as 6 | 12 | 24]) : currentRate;
-        await tx.$executeRaw`
-          UPDATE moto_interest_rate_ranges
-          SET
-            name = ${name ?? row?.name ?? null},
-            description = ${description ?? (row?.description ?? null)},
-            yearFrom = ${newFrom},
-            yearTo = ${newTo},
-            termMonths = ${term},
-            interestRate = ${finalRate},
-            isActive = ${(isActive != null ? (isActive ? 1 : 0) : (typeof row!.isActive === 'boolean' ? (row!.isActive ? 1 : 0) : (row!.isActive === 1 ? 1 : 0)))},
-            updatedAt = NOW()
-          WHERE yearFrom = ${parsedGroup.from} AND yearTo = ${parsedGroup.to} AND termMonths = ${term}
-        `;
+        const currentRate = row ? (typeof row.interestRate === 'string' ? parseFloat(row.interestRate) : Number(row.interestRate)) : 0.45;
+        const finalRate = (terms && terms[term as 6 | 12 | 18] != null) ? Number(terms[term as 6 | 12 | 18]) : currentRate;
+        const finalName = name ?? row?.name ?? currentRows[0]?.name ?? 'Rango MOTO';
+        const finalDescription = description ?? (row?.description ?? null);
+        const finalIsActive = isActive != null
+          ? (isActive ? 1 : 0)
+          : (row ? (typeof row.isActive === 'boolean' ? (row.isActive ? 1 : 0) : (row.isActive === 1 ? 1 : 0)) : 1);
+
+        if (row) {
+          await tx.$executeRaw`
+            UPDATE moto_interest_rate_ranges
+            SET
+              name = ${finalName},
+              description = ${finalDescription},
+              yearFrom = ${newFrom},
+              yearTo = ${newTo},
+              termMonths = ${term},
+              interestRate = ${finalRate},
+              isActive = ${finalIsActive},
+              updatedAt = NOW()
+            WHERE yearFrom = ${parsedGroup.from} AND yearTo = ${parsedGroup.to} AND termMonths = ${term}
+          `;
+        } else {
+          await tx.$executeRaw`
+            INSERT INTO moto_interest_rate_ranges (name, description, yearFrom, yearTo, termMonths, interestRate, isActive, createdByUserId, createdAt, updatedAt)
+            VALUES (${finalName}, ${finalDescription}, ${newFrom}, ${newTo}, ${term}, ${finalRate}, ${finalIsActive}, ${auth.user?.userId ?? null}, NOW(), NOW())
+          `;
+        }
       }
 
       const rows = await tx.$queryRaw<Array<{

@@ -6,7 +6,7 @@ import { verifyAdminAuth } from '@/lib/auth-helpers';
 const TermsSchema = z.object({
   6: z.number().min(0.0001).max(1),
   12: z.number().min(0.0001).max(1),
-  24: z.number().min(0.0001).max(1),
+  18: z.number().min(0.0001).max(1),
 });
 
 const CreateMotoRateRangeSchema = z.object({
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
     }
 
-    // Traer filas de moto_interest_rate_ranges (solo plazos permitidos 6/12/24) con info del creador
+    // Traer filas de moto_interest_rate_ranges (solo plazos permitidos 6/12/18) con info del creador
     const rows = await prisma.$queryRaw<Array<{
       id: number;
       name: string;
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
         u.email AS createdByUser_email
       FROM moto_interest_rate_ranges AS mrr
       LEFT JOIN users AS u ON u.id = mrr.createdByUserId
-      WHERE mrr.termMonths IN (6, 12, 24)
+      WHERE mrr.termMonths IN (6, 12, 18)
       ORDER BY mrr.yearFrom ASC, mrr.yearTo ASC, mrr.termMonths ASC
     `;
 
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/rates/moto  (crea 6 filas: 6/12/18/24/36/48)
+// POST /api/admin/rates/moto  (crea 3 filas: 6/12/18)
 export async function POST(request: NextRequest) {
   try {
     const auth = await verifyAdminAuth(request);
@@ -111,8 +111,8 @@ export async function POST(request: NextRequest) {
     }
     const { name, description, yearFrom, yearTo, isActive, terms } = parsed.data;
 
-    // Validar solapamientos por cada plazo (MOTO: 6/12/24)
-    const TERMS = [6, 12, 24];
+    // Validar solapamientos por cada plazo (MOTO: 6/12/18)
+    const TERMS = [6, 12, 18];
     const overlaps: Array<{ term: number; ranges: Array<{ id: number; name: string; yearFrom: number; yearTo: number }> }> = [];
 
     for (const term of TERMS) {
@@ -134,12 +134,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Rangos solapados para uno o más plazos', overlaps }, { status: 409 });
     }
 
-    // Crear las 3 filas en transacción (MOTO: 6/12/24)
+    // Crear las 3 filas en transacción (MOTO: 6/12/18)
     const created = await withTransaction(async (tx) => {
-      for (const term of [6, 12, 24]) {
+      for (const term of [6, 12, 18]) {
         await tx.$executeRaw`
           INSERT INTO moto_interest_rate_ranges (name, description, yearFrom, yearTo, termMonths, interestRate, isActive, createdByUserId, createdAt, updatedAt)
-          VALUES (${name}, ${description ?? null}, ${yearFrom}, ${yearTo}, ${term}, ${terms[term as 6 | 12 | 24]}, ${isActive ? 1 : 0}, ${createdByUserId}, NOW(), NOW())
+          VALUES (${name}, ${description ?? null}, ${yearFrom}, ${yearTo}, ${term}, ${terms[term as 6 | 12 | 18]}, ${isActive ? 1 : 0}, ${createdByUserId}, NOW(), NOW())
         `;
       }
       const rows = await tx.$queryRaw<Array<{
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
       }));
     });
 
-    return NextResponse.json({ success: true, data: created, message: 'Rango MOTO creado para 6/12/24 meses' }, { status: 201 });
+    return NextResponse.json({ success: true, data: created, message: 'Rango MOTO creado para 6/12/18 meses' }, { status: 201 });
   } catch (error) {
     console.error('Error POST /api/admin/rates/moto:', error);
     return NextResponse.json({ success: false, error: 'Error interno del servidor' }, { status: 500 });

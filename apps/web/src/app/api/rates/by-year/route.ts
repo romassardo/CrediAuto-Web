@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
       data: {
         year,
         interestRate: rateRange.interestRate,
+        unit: 'TNA',
         rateRange: {
           id: rateRange.id,
           name: rateRange.name,

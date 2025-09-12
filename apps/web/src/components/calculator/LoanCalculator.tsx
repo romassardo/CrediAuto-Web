@@ -32,8 +32,17 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
   const [ratesByTerm, setRatesByTerm] = useState<Record<number, number | null>>({});
   const [selectedTerm, setSelectedTerm] = useState<number>(24);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [lockRateTypeToTNA, setLockRateTypeToTNA] = useState(false); // cuando hay tasas del panel admin, forzamos TNA
+  const [fallbackTerms, setFallbackTerms] = useState<number[]>([]);
 
-  const availableTerms = useMemo(() => (product === 'AUTO' ? [6, 12, 18, 24, 36, 48] : [6, 12, 24]), [product]);
+  const availableTerms = useMemo(() => (product === 'AUTO' ? [6, 12, 18, 24, 36, 48] : [6, 12, 18]), [product]);
+
+  // Asegurar que el plazo seleccionado esté disponible para el producto actual
+  useEffect(() => {
+    if (!availableTerms.includes(selectedTerm)) {
+      setSelectedTerm(availableTerms[0]);
+    }
+  }, [availableTerms, selectedTerm]);
 
   // Obtener tasas por plazo según producto y año
   const fetchRatesByProductYear = async (prod: 'AUTO' | 'MOTO', year: number) => {
@@ -44,26 +53,41 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
       const queries = availableTerms.map(async (term) => {
         const res = await fetch(`/api/rates/lookup?product=${prod}&year=${year}&term=${term}`);
         if (!res.ok) {
-          return { term, rate: null as number | null, error: await res.json().catch(() => ({})) };
+          return { term, rate: null as number | null, unit: undefined as string | undefined, fallback: false, error: await res.json().catch(() => ({})) };
         }
         const json = await res.json();
         const rate = (json?.success && json?.data?.interestRate != null) ? Number(json.data.interestRate) : null;
-        return { term, rate };
+        const unit = json?.data?.unit as string | undefined;
+        const fallback = Boolean(json?.data?.fallback);
+        return { term, rate, unit, fallback };
       });
       const results = await Promise.all(queries);
       const map: Record<number, number | null> = {};
       let missing: number[] = [];
-      results.forEach(({ term, rate }) => {
+      const usedFallback: number[] = [];
+      let anyUnitTNA = false;
+      results.forEach(({ term, rate, unit, fallback }) => {
         map[term] = rate;
         if (rate == null) missing.push(term);
+        if (fallback) usedFallback.push(term);
+        if (unit === 'TNA') anyUnitTNA = true;
       });
       setRatesByTerm(map);
+      setFallbackTerms(usedFallback);
+      setLockRateTypeToTNA(anyUnitTNA);
       if (missing.length === availableTerms.length) {
         setRateError(`No hay tasas configuradas para ${prod} en el año ${year}.`);
-      } else if (missing.length > 0) {
-        setRateInfo(`Se aplicaron tasas para ${availableTerms.filter(t => !missing.includes(t)).join(', ')} meses. Faltan: ${missing.join(', ')}.`);
       } else {
-        setRateInfo('Tasas por plazo aplicadas correctamente.');
+        const infoParts: string[] = [];
+        if (missing.length > 0) {
+          infoParts.push(`Se aplicaron tasas para ${availableTerms.filter(t => !missing.includes(t)).join(', ')} meses. Faltan: ${missing.join(', ')}.`);
+        } else {
+          infoParts.push('Tasas por plazo aplicadas correctamente.');
+        }
+        if (usedFallback.length > 0 && prod === 'AUTO') {
+          infoParts.push(`Se usó tasa general (sin plazo) para: ${usedFallback.join(', ')} meses.`);
+        }
+        setRateInfo(infoParts.join(' '));
       }
     } catch (err) {
       console.error('Error al obtener tasas por plazo:', err);
@@ -81,13 +105,23 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
     }
   }, [vehicleYear, product]);
 
+  // Si las tasas provienen del panel admin (unit=TNA), forzamos el tipo de tasa a TNA en el UI
+  useEffect(() => {
+    if (lockRateTypeToTNA && inputs.tasa.tipo !== 'TNA') {
+      updateTasa('tipo', 'TNA');
+    }
+  }, [lockRateTypeToTNA]);
+
   useEffect(() => {
     try {
       const newResults: {[key: number]: Result} = {};
       availableTerms.forEach(term => {
         const rate = ratesByTerm[term];
         if (rate != null) {
-          const inputsForTerm = { ...inputs, plazoMeses: term, tasa: { ...inputs.tasa, valor: rate } };
+          const tasaForTerm = lockRateTypeToTNA
+            ? ({ tipo: 'TNA', valor: rate } as any)
+            : ({ ...inputs.tasa, valor: rate } as any);
+          const inputsForTerm = { ...inputs, plazoMeses: term, tasa: tasaForTerm };
           newResults[term] = calcular(inputsForTerm);
         }
       });
@@ -103,7 +137,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
       setResults({});
       onCalculationChange?.(null);
     }
-  }, [inputs.monto, inputs.ivaInteres, inputs.gastosOtorgamientoPct, inputs.gastosFijosIniciales, inputs.sellosPct, inputs.svsPctMensual, inputs.seguroAutoMensual, inputs.tasa.tipo, ratesByTerm, selectedTerm, onCalculationChange]);
+  }, [inputs.monto, inputs.ivaInteres, inputs.gastosOtorgamientoPct, inputs.gastosFijosIniciales, inputs.sellosPct, inputs.svsPctMensual, inputs.seguroAutoMensual, inputs.tasa.tipo, ratesByTerm, selectedTerm, onCalculationChange, lockRateTypeToTNA]);
 
   const updateInput = (field: keyof Inputs, value: any) => {
     setInputs(prev => ({ ...prev, [field]: value }));
@@ -227,12 +261,16 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
               <select
                 value={inputs.tasa.tipo}
                 onChange={(e) => updateTasa('tipo', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 shadow-sm"
+                disabled={lockRateTypeToTNA}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 transition-all bg-white text-gray-900 shadow-sm ${lockRateTypeToTNA ? 'border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:ring-brand-primary-600 focus:border-brand-primary-600'}`}
               >
                 <option value="TNA">TNA (Tasa Nominal Anual)</option>
                 <option value="TEA">TEA (Tasa Efectiva Anual)</option>
                 <option value="MENSUAL">Tasa Mensual</option>
               </select>
+              {lockRateTypeToTNA && (
+                <p className="mt-1 text-xs text-gray-500">Fijado en TNA por tasas configuradas desde el panel de administración.</p>
+              )}
             </div>
 
             <div>
@@ -285,7 +323,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
               </div>
 
               <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-                La cuota se calcula con tasa mensual que <strong>incluye IVA</strong> y se <strong>redondea a entero</strong>. Conversión TNA→TEM: 360/30 = TNA/12. El CFT anual se obtiene sobre el desembolso neto (descontando <strong>solo</strong> gastos de otorgamiento <em>netos de IVA</em>) y se anualiza con 360/30.
+                La cuota se calcula con tasa mensual que <strong>incluye IVA</strong> y se <strong>redondea a entero</strong>. Conversión TNA→TEM: (TNA/365)*30. Conversión TEA→TEM: (1+TEA)^(30/365)-1. El CFT anual se obtiene sobre el desembolso neto (descontando <strong>solo</strong> gastos de otorgamiento <em>netos de IVA</em>) y se anualiza con 365/30.
               </div>
             </div>
           )}
@@ -334,7 +372,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
                             <>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                 <div className="flex justify-between">
-                                  <span className="text-gray-600">Tasa de Interés</span>
+                                  <span className="text-gray-600">{lockRateTypeToTNA ? 'Tasa de Interés (TNA)' : `Tasa de Interés (${inputs.tasa.tipo})`}</span>
                                   <span className="font-semibold text-brand-accent-500">{(rate * 100).toFixed(1)}%</span>
                                 </div>
                                 <div className="flex justify-between">
