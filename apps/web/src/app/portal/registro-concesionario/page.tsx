@@ -45,7 +45,8 @@ export default function RegistroConcesionario() {
 
     setFormData(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : (nextValue as string).trim()
+      // Permitimos espacios durante la edición; normalizamos al enviar
+      [name]: type === "checkbox" ? checked : (nextValue as string)
     }));
   };
 
@@ -74,13 +75,25 @@ export default function RegistroConcesionario() {
     setIsSubmitting(true);
 
     try {
+      // Normalización final: trim a campos de texto (sin tocar CUIT/Teléfono que ya están normalizados)
+      const payload = {
+        ...formData,
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        email: formData.email.trim(),
+        nombreComercial: formData.nombreComercial.trim(),
+        direccion: formData.direccion.trim(),
+        ciudad: formData.ciudad.trim(),
+        provincia: formData.provincia.trim(),
+      };
+
       const response = await fetch('/api/dealers/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const contentType = response.headers.get('content-type') || '';

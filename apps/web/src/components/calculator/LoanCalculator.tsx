@@ -321,10 +321,6 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
                   />
                 </div>
               </div>
-
-              <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-                La cuota se calcula con tasa mensual que <strong>incluye IVA</strong> y se <strong>redondea a entero</strong>. Conversión TNA→TEM: (TNA/365)*30. Conversión TEA→TEM: (1+TEA)^(30/365)-1. El CFT anual se obtiene sobre el desembolso neto (descontando <strong>solo</strong> gastos de otorgamiento <em>netos de IVA</em>) y se anualiza con 365/30.
-              </div>
             </div>
           )}
         </div>
