@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Building2, Search, Eye, Check, X, Clock, User, Mail, Calendar } from 'lucide-react';
+import { Building2, Search, Eye, Check, X, Clock, User, Mail, Calendar, Ban, RotateCcw, Trash2 } from 'lucide-react';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 
@@ -17,6 +17,7 @@ interface Dealer {
   addressProvince: string;
   status: string;
   createdAt: string;
+  deletedAt?: string | null;
   owner?: {
     firstName: string;
     lastName: string;
@@ -165,10 +166,150 @@ export default function AdminDealers() {
     }
   };
 
+  // Eliminación definitiva: borra de la base de datos (solo si no tiene préstamos asociados)
+  const handleHardDeleteDealer = async (dealerId: string) => {
+    try {
+      const confirmed = typeof window !== 'undefined' && window.confirm(
+        'Esta acción es IRREVERSIBLE.\n\nSe eliminará definitivamente el concesionario y sus usuarios.\nNo podrás recuperar los datos.\n\n¿Deseas continuar?'
+      );
+      if (!confirmed) return;
+
+      setProcessingId(dealerId);
+      const token = getTokenFromCookies();
+      if (!token) {
+        showModal('Error de Autenticación', 'No se encontró token de acceso', 'error');
+        return;
+      }
+
+      const response = await fetch(`/api/admin/dealers/${dealerId}/hard-delete`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        if (response.status === 409) {
+          try {
+            const data = JSON.parse(text);
+            showModal('No se puede eliminar', data.error || 'El concesionario tiene solicitudes asociadas.', 'error');
+          } catch {
+            showModal('No se puede eliminar', 'El concesionario tiene solicitudes asociadas.', 'error');
+          }
+        } else {
+          throw new Error(`HTTP ${response.status} ${text}`);
+        }
+        return;
+      }
+
+      await response.json().catch(() => ({}));
+      await fetchDealers();
+      showModal('🗑️ Eliminación definitiva', 'El concesionario fue eliminado definitivamente.', 'success');
+    } catch (error) {
+      console.error('Error hard-deleting dealer:', error);
+      showModal('Error de Conexión', 'No se pudo conectar con el servidor', 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Restaurar concesionario eliminado: deletedAt = null, status = SUSPENDED
+  const handleRestoreDealer = async (dealerId: string) => {
+    try {
+      const confirmed = typeof window !== 'undefined' && window.confirm(
+        '¿Restaurar este concesionario?\n\nEl concesionario volverá en estado SUSPENDIDO. Luego podrás reactivar sus usuarios si corresponde.'
+      );
+      if (!confirmed) return;
+
+      setProcessingId(dealerId);
+      const token = getTokenFromCookies();
+
+      if (!token) {
+        showModal('Error de Autenticación', 'No se encontró token de acceso', 'error');
+        return;
+      }
+
+      const response = await fetch(`/api/admin/dealers/${dealerId}/restore`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status} ${text}`);
+      }
+
+      const data = await response.json().catch(() => ({ success: true }));
+      if (data.success) {
+        await fetchDealers();
+        showModal('✅ Concesionario restaurado', 'El concesionario fue restaurado en estado SUSPENDIDO.', 'success');
+      } else {
+        showModal('Error', data.error || 'No se pudo restaurar el concesionario', 'error');
+      }
+    } catch (error) {
+      console.error('Error restoring dealer:', error);
+      showModal('Error de Conexión', 'No se pudo conectar con el servidor', 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Bloquear (soft delete) concesionario: marca deletedAt y suspende usuarios
+  const handleDeleteDealer = async (dealerId: string) => {
+    try {
+      // Confirmación simple; para UX avanzada podemos migrar a un modal de confirmación
+      const confirmed = typeof window !== 'undefined' && window.confirm(
+        '¿Seguro que deseas bloquear este concesionario?\n\nEsto marcará al concesionario como eliminado, suspenderá a todos sus usuarios y cerrará sus sesiones activas.'
+      );
+      if (!confirmed) return;
+
+      setProcessingId(dealerId);
+      const token = getTokenFromCookies();
+
+      if (!token) {
+        showModal('Error de Autenticación', 'No se encontró token de acceso', 'error');
+        return;
+      }
+
+      const response = await fetch(`/api/admin/dealers/${dealerId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status} ${text}`);
+      }
+
+      const data = await response.json().catch(() => ({ success: true }));
+      if (data.success) {
+        await fetchDealers();
+        showModal('✅ Concesionario bloqueado', 'El concesionario fue bloqueado y sus usuarios suspendidos.', 'success');
+      } else {
+        showModal('Error', data.error || 'No se pudo bloquear el concesionario', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting dealer:', error);
+      showModal('Error de Conexión', 'No se pudo conectar con el servidor', 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const filteredDealers = useMemo(() => {
     let filtered = dealers;
 
-    if (selectedStatus !== 'ALL') {
+    // Cuando se selecciona 'DELETED' no filtramos por status porque el backend
+    // trae eliminados con su status previo (p.ej., 'SUSPENDED')
+    if (selectedStatus !== 'ALL' && selectedStatus !== 'DELETED') {
       filtered = filtered.filter(dealer => dealer.status === selectedStatus);
     }
 
@@ -218,8 +359,8 @@ export default function AdminDealers() {
         return 'Aprobados';
       case 'REJECTED':
         return 'Rechazados';
-      case 'SUSPENDED':
-        return 'Suspendidos';
+      case 'DELETED':
+        return 'Eliminados';
       default:
         return '';
     }
@@ -241,7 +382,7 @@ export default function AdminDealers() {
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-gray-300 p-4 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex flex-wrap gap-2">
-              {(['ALL', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED'] as const).map((status) => (
+              {(['ALL', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'DELETED'] as const).map((status) => (
                 <button
                   key={status}
                   onClick={() => setSelectedStatus(status)}
@@ -255,7 +396,7 @@ export default function AdminDealers() {
                   {status === 'PENDING_APPROVAL' && 'Pendientes'}
                   {status === 'APPROVED' && 'Aprobados'}
                   {status === 'REJECTED' && 'Rechazados'}
-                  {status === 'SUSPENDED' && 'Suspendidos'}
+                  {status === 'DELETED' && 'Eliminados'}
                 </button>
               ))}
             </div>
@@ -368,6 +509,34 @@ export default function AdminDealers() {
                               Rechazar
                             </button>
                           </div>
+                        )}
+                        {dealer.status === 'APPROVED' && !dealer.deletedAt && (
+                          <button
+                            onClick={() => handleDeleteDealer(dealer.id)}
+                            disabled={processingId === dealer.id}
+                            className="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                          >
+                            {processingId === dealer.id ? (
+                              <Clock className="w-3 h-3 animate-spin mr-1" />
+                            ) : (
+                              <Ban className="w-3 h-3 mr-1" />
+                            )}
+                            Bloquear
+                          </button>
+                        )}
+                        {(selectedStatus === 'DELETED' || !!dealer.deletedAt) && (
+                          <button
+                            onClick={() => handleRestoreDealer(dealer.id)}
+                            disabled={processingId === dealer.id}
+                            className="inline-flex items-center px-3 py-1.5 border border-emerald-300 text-xs font-medium rounded-md text-emerald-700 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
+                          >
+                            {processingId === dealer.id ? (
+                              <Clock className="w-3 h-3 animate-spin mr-1" />
+                            ) : (
+                              <RotateCcw className="w-3 h-3 mr-1" />
+                            )}
+                            Restaurar
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -592,6 +761,63 @@ export default function AdminDealers() {
                   >
                     <Check className="w-4 h-4 mr-2" />
                     Aprobar
+                  </button>
+                </div>
+              </div>
+            )}
+            {selectedDealer.status === 'APPROVED' && !selectedDealer.deletedAt && (
+              <div className="border-t bg-gray-50 px-6 py-4 rounded-b-xl">
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      handleDeleteDealer(selectedDealer.id);
+                      setIsModalOpen(false);
+                    }}
+                    disabled={processingId === selectedDealer.id}
+                    className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  >
+                    {processingId === selectedDealer.id ? (
+                      <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Ban className="w-4 h-4 mr-2" />
+                    )}
+                    Bloquear concesionario
+                  </button>
+                </div>
+              </div>
+            )}
+            {(selectedStatus === 'DELETED' || !!selectedDealer.deletedAt) && (
+              <div className="border-t bg-gray-50 px-6 py-4 rounded-b-xl">
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      handleRestoreDealer(selectedDealer.id);
+                      setIsModalOpen(false);
+                    }}
+                    disabled={processingId === selectedDealer.id}
+                    className="inline-flex items-center px-4 py-2 border border-emerald-300 text-sm font-medium rounded-md text-emerald-700 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
+                  >
+                    {processingId === selectedDealer.id ? (
+                      <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                    )}
+                    Restaurar concesionario
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleHardDeleteDealer(selectedDealer.id);
+                      setIsModalOpen(false);
+                    }}
+                    disabled={processingId === selectedDealer.id}
+                    className="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  >
+                    {processingId === selectedDealer.id ? (
+                      <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mr-2" />
+                    )}
+                    Eliminar definitivamente
                   </button>
                 </div>
               </div>

@@ -226,7 +226,18 @@ export async function DELETE(
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.user.update({ where: { id: target.id }, data: { deletedAt: new Date(), status: 'SUSPENDED' } });
+      // Generar email anonimizado usando timestamp para garantizar unicidad
+      const timestamp = Date.now();
+      const anonymizedEmail = `ejecutivo_eliminado_${timestamp}@anonimo.local`;
+      
+      await tx.user.update({ 
+        where: { id: target.id }, 
+        data: { 
+          deletedAt: new Date(), 
+          status: 'SUSPENDED',
+          email: anonymizedEmail // Anonizar email
+        } 
+      });
       await tx.refreshToken.updateMany({ where: { userId: target.id, revokedAt: null }, data: { revokedAt: new Date() } });
       await tx.auditLog.create({
         data: {
@@ -236,7 +247,8 @@ export async function DELETE(
           entityId: target.publicId,
           metadata: {
             dealerId: dealer.publicId,
-            targetEmail: target.email,
+            targetEmail: target.email, // Guardar email original en auditoría
+            anonymizedEmail: anonymizedEmail, // También guardar el anonimizado
             targetRole: target.role,
           },
           ip: request.headers.get('x-forwarded-for') || 'unknown',

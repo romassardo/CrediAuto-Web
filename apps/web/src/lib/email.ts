@@ -10,6 +10,9 @@ const getResend = (): Resend | null => {
   return resendClient;
 };
 
+// Remitente configurable desde variables de entorno
+const EMAIL_FROM = process.env.EMAIL_FROM || 'Crediexpress Automotor <onboarding@resend.dev>';
+
 interface SendCredentialsEmailParams {
   to: string;
   dealerName: string;
@@ -35,23 +38,26 @@ export async function sendDealerCredentials({
     }
 
     const { data, error } = await client.emails.send({
-      from: 'CrediAuto <noreply@crediauto.cl>',
+      from: EMAIL_FROM,
       to: [to],
-      subject: '¡Bienvenido a CrediAuto! - Credenciales de acceso',
+      subject: '¡Bienvenido a Crediexpress Automotor! - Credenciales de acceso',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Bienvenido a CrediAuto</title>
+          <title>Bienvenido a Crediexpress Automotor</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             
             <!-- Header con gradiente de marca -->
             <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">¡Bienvenido a CrediAuto!</h1>
+              <div style="margin-bottom: 16px;">
+                <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/recurso-15.svg" alt="Crediexpress Automotor" style="height: 48px; width: auto;" />
+              </div>
+              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">¡Bienvenido a Crediexpress Automotor!</h1>
               <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Tu concesionario ha sido aprobado</p>
             </div>
 
@@ -62,7 +68,7 @@ export async function sendDealerCredentials({
               </p>
               
               <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                Nos complace informarte que tu solicitud para unirte a CrediAuto ha sido <strong style="color: #059669;">aprobada</strong>. 
+                Nos complace informarte que tu solicitud para unirte a Crediexpress Automotor ha sido <strong style="color: #059669;">aprobada</strong>. 
                 Ya puedes acceder a tu portal de concesionario y comenzar a gestionar tus solicitudes de crédito.
               </p>
 
@@ -112,14 +118,14 @@ export async function sendDealerCredentials({
 
               <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin: 30px 0 0 0;">
                 Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos. 
-                ¡Bienvenido al equipo CrediAuto!
+                ¡Bienvenido al equipo Crediexpress Automotor!
               </p>
             </div>
 
             <!-- Footer -->
             <div style="background-color: #f8fafc; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                &copy; 2024 CrediAuto. Todos los derechos reservados.
+                &copy; 2025 Crediexpress Automotor. Todos los derechos reservados.
               </p>
             </div>
           </div>
@@ -127,11 +133,11 @@ export async function sendDealerCredentials({
         </html>
       `,
       text: `
-¡Bienvenido a CrediAuto!
+¡Bienvenido a Crediexpress Automotor!
 
 Estimado/a ${dealerName},
 
-Nos complace informarte que tu solicitud para unirte a CrediAuto ha sido aprobada.
+Nos complace informarte que tu solicitud para unirte a Crediexpress Automotor ha sido aprobada.
 
 Tus credenciales de acceso:
 Usuario: ${email}
@@ -141,18 +147,107 @@ IMPORTANTE: Por seguridad, deberás cambiar esta contraseña en tu primer inicio
 
 Accede a tu portal en: ${loginUrl}
 
-¡Bienvenido al equipo CrediAuto!
+¡Bienvenido al equipo Crediexpress Automotor!
       `
     });
 
     if (error) {
-      console.error('Error sending email:', error);
+      console.error('[email] Error sending credentials email via Resend:', error);
       return { success: false, error };
     }
 
+    const msgId = (data as any)?.id || (data as any)?.data?.id;
+    console.log('[email] Credentials email sent via Resend. Message ID:', msgId ?? '(unknown)');
     return { success: true, data };
   } catch (error) {
-    console.error('Error in sendDealerCredentials:', error);
+    console.error('[email] Error in sendDealerCredentials:', error);
+    return { success: false, error };
+  }
+}
+
+interface SendDealerInviteLinkParams {
+  to: string;
+  dealerName: string;
+  setPasswordUrl: string;
+  supportEmail?: string;
+}
+
+// Envía un email de invitación con enlace para establecer contraseña
+export async function sendDealerInviteLink({
+  to,
+  dealerName,
+  setPasswordUrl,
+  supportEmail,
+}: SendDealerInviteLinkParams) {
+  try {
+    const client = getResend();
+    if (!client) {
+      console.warn('Resend API key not configured. Skipping email send.');
+      return { success: false, error: new Error('RESEND_API_KEY not configured') } as const;
+    }
+
+    const { data, error } = await client.emails.send({
+      from: EMAIL_FROM,
+      to: [to],
+      subject: 'Bienvenido a Crediexpress Automotor – Establecé tu contraseña',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Establecé tu contraseña</title>
+        </head>
+        <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+              <div style="margin-bottom: 16px;">
+                <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/recurso-15.svg" alt="Crediexpress Automotor" style="height: 48px; width: auto;" />
+              </div>
+              <h1 style="color:white; margin:0; font-size: 24px; font-weight: 700;">¡Bienvenido a Crediexpress Automotor!</h1>
+              <p style="color: rgba(255,255,255,0.9); margin:8px 0 0;">Tu concesionario fue aprobado</p>
+            </div>
+            <div style="padding: 32px 28px;">
+              <p style="color:#374151; font-size:16px; line-height:1.6; margin:0 0 16px;">
+                Hola <strong>${dealerName}</strong>, para completar tu acceso por favor establecé tu contraseña.
+              </p>
+              <div style="text-align:center; margin: 28px 0;">
+                <a href="${setPasswordUrl}" style="display:inline-block; background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); color:white; text-decoration:none; padding: 12px 28px; border-radius: 10px; font-weight:600;">Establecer contraseña</a>
+              </div>
+              <p style="color:#6b7280; font-size:14px; margin:0;">
+                Este enlace expira en 24 horas y solo puede usarse una vez.
+              </p>
+              ${supportEmail ? `<p style="color:#6b7280; font-size:14px; margin:8px 0 0;">Si no solicitaste este acceso o necesitas ayuda, escribinos a <a href="mailto:${supportEmail}">${supportEmail}</a>.</p>` : ''}
+            </div>
+            <div style="background-color:#f8fafc; padding:16px 24px; text-align:center; border-top:1px solid #e5e7eb;">
+              <p style="color:#6b7280; font-size:12px; margin:0;">&copy; 2025 Crediexpress Automotor. Todos los derechos reservados.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Bienvenido a Crediexpress Automotor
+
+Hola ${dealerName},
+
+Tu concesionario fue aprobado. Para completar tu acceso, establecé tu contraseña usando el siguiente enlace (válido por 24 horas):
+
+${setPasswordUrl}
+
+Si no solicitaste este acceso o necesitás ayuda, por favor contactanos.
+      `,
+    });
+
+    if (error) {
+      console.error('[email] Error sending invite link email via Resend:', error);
+      return { success: false, error };
+    }
+    const msgId = (data as any)?.id || (data as any)?.data?.id;
+    console.log('[email] Invite link email sent via Resend. Message ID:', msgId ?? '(unknown)');
+    return { success: true, data };
+  } catch (error) {
+    console.error('[email] Error in sendDealerInviteLink:', error);
     return { success: false, error };
   }
 }

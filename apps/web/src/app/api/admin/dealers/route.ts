@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers, cookies } from 'next/headers';
-import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
-import { sendDealerCredentials } from '@/lib/email';
+import { sendDealerInviteLink } from '@/lib/email';
 import { v4 as uuidv4 } from 'uuid';
 import { debugAuth, errorLog } from '@/lib/logger';
+import crypto from 'node:crypto';
 
 // Claves para verificar tokens según su tipo
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
@@ -14,7 +14,8 @@ const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECR
 
 // Esquema para obtener dealers pendientes
 const getDealersSchema = z.object({
-  status: z.enum(['ALL', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED']).optional(),
+  // Se agrega 'DELETED' para listar concesionarios eliminados (soft delete)
+  status: z.enum(['ALL', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUSPENDED', 'DELETED']).optional(),
 });
 
 // Esquema para aprobar/rechazar dealer
@@ -75,12 +76,19 @@ export async function GET(request: NextRequest) {
     debugAuth('📥 GET /api/admin/dealers -> consultando dealers con status:', validation.data.status);
     let dealers: any[] = [];
     try {
-      const whereClause: any = {
-        deletedAt: null,
-      };
-      
-      // Solo agregar filtro de status si no es 'ALL'
-      if (validation.data.status && validation.data.status !== 'ALL') {
+      const whereClause: any = {};
+
+      // Filtro por eliminados vs activos
+      if (validation.data.status === 'DELETED') {
+        whereClause.deletedAt = { not: null };
+      } else if (validation.data.status === 'ALL') {
+        // 'ALL' incluye eliminados y activos → no filtrar por deletedAt
+      } else {
+        whereClause.deletedAt = null;
+      }
+
+      // Solo agregar filtro de status si no es 'ALL' ni 'DELETED'
+      if (validation.data.status && validation.data.status !== 'ALL' && validation.data.status !== 'DELETED') {
         whereClause.status = validation.data.status;
       }
       
@@ -131,6 +139,7 @@ export async function GET(request: NextRequest) {
         addressProvince: dealer.addressProvince || '',
         status: dealer.status,
         createdAt: dealer.createdAt,
+        deletedAt: dealer.deletedAt,
         owner: dealer.users.find((user: any) => user.role === 'DEALER') || null,
         users: dealer.users || [],
       }))
@@ -224,6 +233,14 @@ export async function POST(request: NextRequest) {
 
     const newStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
 
+    // Para aprobar es obligatorio contar con email del concesionario
+    if (action === 'approve' && (!dealer.email || dealer.email.trim() === '')) {
+      return NextResponse.json(
+        { error: 'El concesionario no tiene email configurado. Agrega un email antes de aprobar para poder enviar la invitación.' },
+        { status: 400 }
+      );
+    }
+
     // Actualizar status del dealer
     const updatedDealer = await prisma.dealer.update({
       where: { id: dealer.id },
@@ -236,19 +253,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (action === 'approve') {
-      // Generar contraseña temporal
-      const tempPassword =
-        Math.random().toString(36).slice(-8) +
-        Math.random().toString(36).slice(-8);
-      const passwordHash = await bcrypt.hash(tempPassword, 12);
-
-      // Crear o actualizar usuario
+      // Crear o actualizar usuario en estado INVITED (sin contraseña aún)
       let user;
       if (dealer.users.length > 0) {
         user = await prisma.user.update({
           where: { id: dealer.users[0].id },
           data: {
-            passwordHash,
+            passwordHash: null,
             status: 'INVITED',
           },
         });
@@ -261,24 +272,40 @@ export async function POST(request: NextRequest) {
             lastName: 'Admin',
             role: 'DEALER',
             status: 'INVITED',
-            passwordHash,
+            passwordHash: null,
             dealerId: dealer.id,
           },
         });
       }
 
-      // Enviar email con credenciales (si hay email)
+      // Generar token de establecimiento de contraseña (válido por 24h)
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+        },
+      });
+
+      // Enviar email con link para establecer contraseña (si hay email)
       const origin = request.headers.get('origin') ?? new URL(request.url).origin;
       if (dealer.email) {
-        const emailResult = await sendDealerCredentials({
+        const setPasswordUrl = `${origin}/set-password?token=${encodeURIComponent(rawToken)}`;
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[dev] Dealer invite setPasswordUrl:', setPasswordUrl);
+        }
+        const emailResult = await sendDealerInviteLink({
           to: dealer.email,
           dealerName: dealer.tradeName || '',
-          email: dealer.email,
-          tempPassword,
-          loginUrl: `${origin}/login`,
+          setPasswordUrl,
+          supportEmail: process.env.CONTACT_RECIPIENT || undefined,
         });
         if (!emailResult.success) {
-          console.error('Error sending credentials email:', emailResult.error);
+          console.error('Error sending invite link email:', emailResult.error);
         }
       }
 
@@ -289,8 +316,9 @@ export async function POST(request: NextRequest) {
           entityType: 'dealer',
           entityId: dealer.publicId,
           metadata: {
-            userCreated: user.publicId,
-            tempPasswordSent: Boolean(dealer.email),
+            userInvited: user.publicId,
+            inviteSent: Boolean(dealer.email),
+            inviteExpiresAt: expiresAt.toISOString(),
           },
           ip: request.headers.get('x-forwarded-for') || 'unknown',
         },
@@ -298,7 +326,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Concesionario aprobado y credenciales enviadas',
+        message: 'Concesionario aprobado e invitación enviada por email',
         dealer: {
           id: updatedDealer.publicId,
           status: updatedDealer.status,
@@ -307,8 +335,9 @@ export async function POST(request: NextRequest) {
         user: {
           id: user.publicId,
           email: user.email,
-          tempPassword, // Solo para desarrollo - remover en producción
+          status: user.status,
         },
+        ...(process.env.NODE_ENV !== 'production' ? { devSetPasswordUrl: `${origin}/set-password?token=${encodeURIComponent(rawToken)}` } : {}),
       });
     } else {
       await prisma.auditLog.create({

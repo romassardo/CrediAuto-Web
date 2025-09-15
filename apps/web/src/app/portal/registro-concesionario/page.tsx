@@ -108,15 +108,39 @@ export default function RegistroConcesionario() {
       if (response.ok && data.success) {
         setShowSuccess(true);
       } else {
-        // Mapear errores del servidor (Zod) si existen
-        const fieldErrors = (data.details as Record<string, string[] | undefined>) || {};
+        // Mapear errores del servidor (Zod) si existen, tolerando distintos formatos
+        const details = data?.details;
         const mapped: Record<string, string> = {};
-        Object.keys(fieldErrors).forEach((key) => {
-          const arr = fieldErrors[key];
-          if (arr && arr.length) mapped[key] = arr.join(' ');
-        });
+
+        if (details && typeof details === 'object' && !Array.isArray(details)) {
+          Object.entries(details as Record<string, unknown>).forEach(([key, val]) => {
+            if (Array.isArray(val)) {
+              const arr = val.filter((v) => typeof v === 'string') as string[];
+              if (arr.length) mapped[key] = arr.join(' ');
+            } else if (typeof val === 'string') {
+              mapped[key] = val;
+            } else if (val && typeof val === 'object') {
+              // Caso Prisma u otros objetos: intentar extraer mensaje o serializar
+              const maybeMessage = (val as any)?.message;
+              if (typeof maybeMessage === 'string') {
+                mapped[key] = maybeMessage;
+              } else {
+                try {
+                  mapped[key] = JSON.stringify(val);
+                } catch {
+                  mapped[key] = 'Error en el campo';
+                }
+              }
+            }
+          });
+        }
+
         if (Object.keys(mapped).length) setFormErrors(mapped);
-        setGeneralError(data.error || data.message || `No se pudo completar el registro (HTTP ${response.status}). Intenta nuevamente.`);
+        setGeneralError(
+          (typeof data?.error === 'string' && data.error) ||
+          (typeof data?.message === 'string' && data.message) ||
+          `No se pudo completar el registro (HTTP ${response.status}). Intenta nuevamente.`
+        );
       }
     } catch (error) {
       console.error('Error al enviar formulario:', error);

@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+
+// Asegurar runtime Node y evitar cache en desarrollo
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 15;
 
 // Schema de validación para el registro de concesionarios
 const registerDealerSchema = z.object({
@@ -188,18 +193,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let errorMessage = 'No se pudo completar el registro.';
-    let errorDetails: any = {};
-
+    // Manejo específico de errores Prisma
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      errorMessage = 'Error en la base de datos durante el registro.';
-      // Ocultamos detalles de Prisma en producción por seguridad
-      if (process.env.NODE_ENV === 'development') {
-        errorDetails = { code: error.code, meta: error.meta };
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        const meta = error.meta as any;
+        if (meta?.target?.includes('cuit')) {
+          return NextResponse.json(
+            { 
+              success: false, 
+              error: 'Ya existe un concesionario registrado con este CUIT',
+              field: 'cuit'
+            },
+            { status: 400 }
+          );
+        } else if (meta?.target?.includes('tradeName')) {
+          return NextResponse.json(
+            { 
+              success: false, 
+              error: 'Ya existe un concesionario registrado con este nombre comercial',
+              field: 'nombreComercial'
+            },
+            { status: 400 }
+          );
+        } else {
+          return NextResponse.json(
+            { 
+              success: false, 
+              error: 'Ya existe un registro con estos datos' 
+            },
+            { status: 400 }
+          );
+        }
       }
-    } else if (error instanceof Error) {
-      errorMessage = error.message;
+      
+      // Otros errores Prisma
+      const errorMessage = 'Error en la base de datos durante el registro.';
+      const errorDetails = process.env.NODE_ENV === 'development' 
+        ? { code: error.code, meta: error.meta }
+        : {};
+        
+      return NextResponse.json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: process.env.NODE_ENV === 'development' 
+          ? errorMessage 
+          : 'Ocurrió un problema. Por favor, intente más tarde.',
+        ...(process.env.NODE_ENV === 'development' && { details: errorDetails }),
+      }, { status: 500 });
     }
+
+    // Otros errores
+    const errorMessage = error instanceof Error ? error.message : 'Error inesperado';
 
     const responsePayload = {
       success: false,

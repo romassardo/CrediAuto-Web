@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    const { error } = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: CONTACT_FROM,
       to: CONTACT_RECIPIENT,
       replyTo: email,
@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
       const isDev = process.env.NODE_ENV !== 'production';
       const message = (error as any)?.message || String(error);
       const name = (error as any)?.name;
+      console.error('[/api/contact] Resend error:', { name, message, full: error });
       return NextResponse.json(
         {
           success: false,
@@ -102,6 +103,12 @@ export async function POST(req: NextRequest) {
         },
         { status: 502 }
       );
+    }
+
+    // Log de éxito en dev para poder rastrear en Resend Activity
+    if (process.env.NODE_ENV !== 'production') {
+      const msgId = (data as any)?.id || (data as any)?.data?.id;
+      console.log('[/api/contact] Email sent via Resend. Message ID:', msgId ?? '(unknown)');
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
