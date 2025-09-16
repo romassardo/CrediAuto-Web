@@ -8,6 +8,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { debugAuth, errorLog } from '@/lib/logger';
 import crypto from 'node:crypto';
 
+// Aseguramos runtime Node.js y comportamiento dinámico (sin cache) para usar Node APIs (crypto, Resend) en producción
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 15;
+
 // Claves para verificar tokens según su tipo
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '');
@@ -292,11 +297,14 @@ export async function POST(request: NextRequest) {
       });
 
       // Enviar email con link para establecer contraseña (si hay email)
-      const origin = request.headers.get('origin') ?? new URL(request.url).origin;
+      // Usamos NEXT_PUBLIC_BASE_URL (o APP_URL) si está configurado para evitar problemas de origen detrás de proxy
+      const incomingOrigin = request.headers.get('origin') ?? new URL(request.url).origin;
+      const configuredBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL;
+      const baseUrl = configuredBaseUrl || incomingOrigin;
       if (dealer.email) {
-        const setPasswordUrl = `${origin}/set-password?token=${encodeURIComponent(rawToken)}`;
+        const setPasswordUrl = `${baseUrl}/set-password?token=${encodeURIComponent(rawToken)}`;
         if (process.env.NODE_ENV !== 'production') {
-          console.log('[dev] Dealer invite setPasswordUrl:', setPasswordUrl);
+          console.log('[dev] Dealer invite setPasswordUrl:', setPasswordUrl, { incomingOrigin, configuredBaseUrl });
         }
         const emailResult = await sendDealerInviteLink({
           to: dealer.email,
@@ -306,6 +314,8 @@ export async function POST(request: NextRequest) {
         });
         if (!emailResult.success) {
           console.error('Error sending invite link email:', emailResult.error);
+        } else {
+          console.log('[admin/dealers] Invite email queued via Resend');
         }
       }
 

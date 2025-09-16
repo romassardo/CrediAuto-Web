@@ -66,7 +66,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const form = await request.formData()
+    let form: FormData
+    try {
+      form = await request.formData()
+    } catch (e) {
+      console.error('❌ Error parseando FormData:', e)
+      return NextResponse.json({ error: 'Formulario inválido: no se pudo leer los datos' }, { status: 400 })
+    }
+
     const all = form.getAll('files')
     const files = all.filter(isLikeFile) as Array<{
       arrayBuffer: () => Promise<ArrayBuffer>
@@ -75,33 +82,46 @@ export async function POST(request: Request) {
       name?: string
     }>
 
+    if (all.length === 0) {
+      return NextResponse.json({ error: 'No se recibieron archivos (campo files ausente)' }, { status: 400 })
+    }
     if (files.length === 0) {
-      return NextResponse.json({ error: 'No se recibieron archivos' }, { status: 400 })
+      return NextResponse.json({ error: 'No se recibieron archivos válidos', details: 'Los elementos enviados no son archivos' }, { status: 400 })
     }
     if (files.length > MAX_FILES) {
       return NextResponse.json({ error: `Máximo ${MAX_FILES} archivos` }, { status: 400 })
     }
 
     const baseDir = path.join(process.cwd(), 'public', 'uploads', 'loan-docs')
-    await fs.mkdir(baseDir, { recursive: true })
+    try {
+      await fs.mkdir(baseDir, { recursive: true })
+    } catch (e) {
+      console.error('❌ Error creando directorio de destino:', e)
+      return NextResponse.json({ error: 'No se pudo preparar el almacenamiento de archivos' }, { status: 500 })
+    }
 
     const saved: Array<{ name: string; size: number; type: string; url: string; storagePath: string } > = []
 
     for (const file of files) {
       const mime = typeof (file as any).type === 'string' ? (file as any).type : 'application/octet-stream'
       if (!ALLOWED_MIME.has(mime)) {
-        return NextResponse.json({ error: `Tipo no permitido: ${mime}` }, { status: 400 })
+        return NextResponse.json({ error: `Tipo no permitido: ${mime}`, allowed: Array.from(ALLOWED_MIME) }, { status: 415 })
       }
       const size = typeof (file as any).size === 'number' ? (file as any).size : 0
       const originalName = typeof (file as any).name === 'string' ? (file as any).name : 'archivo.bin'
       if (size > MAX_FILE_SIZE_BYTES) {
-        return NextResponse.json({ error: `El archivo ${originalName} excede 10MB` }, { status: 400 })
+        return NextResponse.json({ error: `El archivo ${originalName} excede el máximo permitido (10MB)`, maxBytes: MAX_FILE_SIZE_BYTES }, { status: 413 })
       }
 
       const unique = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeFileName(originalName)}`
       const destPath = path.join(baseDir, unique)
       const arrayBuf = await file.arrayBuffer()
-      await fs.writeFile(destPath, Buffer.from(arrayBuf))
+      try {
+        await fs.writeFile(destPath, Buffer.from(arrayBuf))
+      } catch (e: any) {
+        console.error('❌ Error escribiendo archivo en disco:', e)
+        return NextResponse.json({ error: 'No se pudo guardar el archivo', code: (e && e.code) || 'FS_ERROR' }, { status: 500 })
+      }
 
       const publicUrl = `/uploads/loan-docs/${unique}`
       saved.push({
