@@ -23,7 +23,13 @@ function getLogoAttachment() {
     return {
       content,
       filename: 'crediexpress-logo.png',
+      contentType: 'image/png',
+      // disposition inline ayuda a algunos clientes a respetar el CID
+      disposition: 'inline',
+      // Algunos ejemplos de Resend usan content_id (snake_case) en lugar de contentId
       contentId: 'crediexpress-logo',
+      content_id: 'crediexpress-logo',
+      headers: { 'Content-ID': '<crediexpress-logo>' },
     } as const;
   } catch (err) {
     // Fallback a path remoto por si falla la lectura local (no debería)
@@ -31,7 +37,11 @@ function getLogoAttachment() {
     return {
       path: `${baseUrl}/crediexpress-logo.png`,
       filename: 'crediexpress-logo.png',
+      contentType: 'image/png',
+      disposition: 'inline',
       contentId: 'crediexpress-logo',
+      content_id: 'crediexpress-logo',
+      headers: { 'Content-ID': '<crediexpress-logo>' },
     } as const;
   }
 }
