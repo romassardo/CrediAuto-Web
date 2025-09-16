@@ -1,10 +1,25 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { Suspense, useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+// Wrapper con Suspense para permitir el uso de useSearchParams según Next.js 15
 export default function SetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center text-white bg-gradient-to-br from-brand-primary-600 via-brand-primary-700 to-brand-primary-800">
+          Cargando…
+        </div>
+      }
+    >
+      <SetPasswordContent />
+    </Suspense>
+  );
+}
+
+function SetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = useMemo(() => searchParams.get('token') || '', [searchParams]);
@@ -108,7 +123,7 @@ export default function SetPasswordPage() {
 
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Establecer contraseña</h1>
-              <p className="text-gray-600">Creá tu contraseña para acceder al portal de CrediAuto</p>
+              <p className="text-gray-600">Creá tu contraseña para acceder al portal de Crediexpress Automotor</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">

@@ -245,6 +245,10 @@ export async function POST(request: NextRequest) {
 
     // Otros errores
     const errorMessage = error instanceof Error ? error.message : 'Error inesperado';
+    // Crear un objeto serializable con la información del error solo en desarrollo
+    const errorInfo = error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : { error: String(error) };
 
     const responsePayload = {
       success: false,
@@ -252,7 +256,7 @@ export async function POST(request: NextRequest) {
       message: process.env.NODE_ENV === 'development' 
         ? errorMessage 
         : 'Ocurrió un problema. Por favor, intente más tarde.',
-      ...(process.env.NODE_ENV === 'development' && { details: errorDetails }),
+      ...(process.env.NODE_ENV === 'development' ? { details: errorInfo } : {}),
     };
 
     return NextResponse.json(responsePayload, { status: 500 });
