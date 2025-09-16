@@ -1,4 +1,6 @@
 import { Resend } from 'resend';
+import fs from 'node:fs';
+import path from 'node:path';
 
 // Lazy initialization: avoid constructing Resend at module load time
 // so GET routes that import this module don't throw when RESEND_API_KEY is missing.
@@ -12,6 +14,27 @@ const getResend = (): Resend | null => {
 
 // Remitente configurable desde variables de entorno
 const EMAIL_FROM = process.env.EMAIL_FROM || 'Crediexpress Automotor <onboarding@resend.dev>';
+
+// Helper para obtener el logo como attachment inline (CID)
+function getLogoAttachment() {
+  try {
+    const filePath = path.join(process.cwd(), 'public', 'crediexpress-logo.png');
+    const content = fs.readFileSync(filePath).toString('base64');
+    return {
+      content,
+      filename: 'crediexpress-logo.png',
+      contentId: 'crediexpress-logo',
+    } as const;
+  } catch (err) {
+    // Fallback a path remoto por si falla la lectura local (no debería)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    return {
+      path: `${baseUrl}/crediexpress-logo.png`,
+      filename: 'crediexpress-logo.png',
+      contentId: 'crediexpress-logo',
+    } as const;
+  }
+}
 
 interface SendCredentialsEmailParams {
   to: string;
@@ -55,7 +78,7 @@ export async function sendDealerCredentials({
             <!-- Header con gradiente de marca -->
             <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
               <div style="margin-bottom: 16px;">
-                <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/recurso-15.svg" alt="Crediexpress Automotor" style="height: 48px; width: auto;" />
+                <img src="cid:crediexpress-logo" alt="Crediexpress Automotor" style="height: 48px; width: auto;" />
               </div>
               <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">¡Bienvenido a Crediexpress Automotor!</h1>
               <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Tu concesionario ha sido aprobado</p>
@@ -148,7 +171,8 @@ IMPORTANTE: Por seguridad, deberás cambiar esta contraseña en tu primer inicio
 Accede a tu portal en: ${loginUrl}
 
 ¡Bienvenido al equipo Crediexpress Automotor!
-      `
+      `,
+      attachments: [getLogoAttachment()],
     });
 
     if (error) {
@@ -202,7 +226,7 @@ export async function sendDealerInviteLink({
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
             <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
               <div style="margin-bottom: 16px;">
-                <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/recurso-15.svg" alt="Crediexpress Automotor" style="height: 48px; width: auto;" />
+                <img src="cid:crediexpress-logo" alt="Crediexpress Automotor" style="height: 48px; width: auto;" />
               </div>
               <h1 style="color:white; margin:0; font-size: 24px; font-weight: 700;">¡Bienvenido a Crediexpress Automotor!</h1>
               <p style="color: rgba(255,255,255,0.9); margin:8px 0 0;">Tu concesionario fue aprobado</p>
@@ -237,6 +261,7 @@ ${setPasswordUrl}
 
 Si no solicitaste este acceso o necesitás ayuda, por favor contactanos.
       `,
+      attachments: [getLogoAttachment()],
     });
 
     if (error) {
