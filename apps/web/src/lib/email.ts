@@ -88,7 +88,7 @@ export async function sendDealerCredentials({
             <!-- Header con gradiente de marca -->
             <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
               <div style="margin-bottom: 16px;">
-                <img src="cid:crediexpress-logo" alt="Crediexpress Automotor" style="height: 48px; width: auto;" />
+                <img src="cid:crediexpress-logo" alt="Crediexpress Automotor" width="200" style="display:block; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;" />
               </div>
               <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">¡Bienvenido a Crediexpress Automotor!</h1>
               <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Tu concesionario ha sido aprobado</p>
@@ -236,7 +236,7 @@ export async function sendDealerInviteLink({
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
             <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
               <div style="margin-bottom: 16px;">
-                <img src="cid:crediexpress-logo" alt="Crediexpress Automotor" style="height: 48px; width: auto;" />
+                <img src="cid:crediexpress-logo" alt="Crediexpress Automotor" width="200" style="display:block; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;" />
               </div>
               <h1 style="color:white; margin:0; font-size: 24px; font-weight: 700;">¡Bienvenido a Crediexpress Automotor!</h1>
               <p style="color: rgba(255,255,255,0.9); margin:8px 0 0;">Tu concesionario fue aprobado</p>
