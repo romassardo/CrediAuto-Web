@@ -28,6 +28,13 @@ function sanitizeFileName(name: string) {
   return `${safeBase}${ext}`
 }
 
+// En runtime Node.js, el objeto global File puede no existir.
+// Usamos una verificación basada en la presencia de arrayBuffer() para detectar blobs/archivos compatibles.
+function isLikeFile(input: unknown): input is { arrayBuffer: () => Promise<ArrayBuffer> } {
+  const anyVal = input as any
+  return !!anyVal && typeof anyVal === 'object' && typeof anyVal.arrayBuffer === 'function'
+}
+
 async function ensureAuth() {
   const hdrs = await headers()
   const userId = hdrs.get('x-user-id')
@@ -61,7 +68,12 @@ export async function POST(request: Request) {
 
     const form = await request.formData()
     const all = form.getAll('files')
-    const files = all.filter((f): f is File => f instanceof File)
+    const files = all.filter(isLikeFile) as Array<{
+      arrayBuffer: () => Promise<ArrayBuffer>
+      type?: string
+      size?: number
+      name?: string
+    }>
 
     if (files.length === 0) {
       return NextResponse.json({ error: 'No se recibieron archivos' }, { status: 400 })
@@ -76,23 +88,26 @@ export async function POST(request: Request) {
     const saved: Array<{ name: string; size: number; type: string; url: string; storagePath: string } > = []
 
     for (const file of files) {
-      if (!ALLOWED_MIME.has(file.type)) {
-        return NextResponse.json({ error: `Tipo no permitido: ${file.type}` }, { status: 400 })
+      const mime = typeof (file as any).type === 'string' ? (file as any).type : 'application/octet-stream'
+      if (!ALLOWED_MIME.has(mime)) {
+        return NextResponse.json({ error: `Tipo no permitido: ${mime}` }, { status: 400 })
       }
-      if (file.size > MAX_FILE_SIZE_BYTES) {
-        return NextResponse.json({ error: `El archivo ${file.name} excede 10MB` }, { status: 400 })
+      const size = typeof (file as any).size === 'number' ? (file as any).size : 0
+      const originalName = typeof (file as any).name === 'string' ? (file as any).name : 'archivo.bin'
+      if (size > MAX_FILE_SIZE_BYTES) {
+        return NextResponse.json({ error: `El archivo ${originalName} excede 10MB` }, { status: 400 })
       }
 
-      const unique = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeFileName(file.name)}`
+      const unique = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeFileName(originalName)}`
       const destPath = path.join(baseDir, unique)
       const arrayBuf = await file.arrayBuffer()
       await fs.writeFile(destPath, Buffer.from(arrayBuf))
 
       const publicUrl = `/uploads/loan-docs/${unique}`
       saved.push({
-        name: file.name,
-        size: file.size,
-        type: file.type,
+        name: originalName,
+        size,
+        type: mime,
         url: publicUrl,
         storagePath: `uploads/loan-docs/${unique}`,
       })
