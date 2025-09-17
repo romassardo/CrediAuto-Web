@@ -17,6 +17,15 @@ export const maxDuration = 15;
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '');
 
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 // Esquema para obtener dealers pendientes
 const getDealersSchema = z.object({
   // Se agrega 'DELETED' para listar concesionarios eliminados (soft delete)
@@ -330,7 +339,7 @@ export async function POST(request: NextRequest) {
             inviteSent: Boolean(dealer.email),
             inviteExpiresAt: expiresAt.toISOString(),
           },
-          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          ip: getClientIp(request),
         },
       });
 
@@ -357,7 +366,7 @@ export async function POST(request: NextRequest) {
           entityType: 'dealer',
           entityId: dealer.publicId,
           metadata: { reason: reason || 'Sin razón especificada' },
-          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          ip: getClientIp(request),
         },
       });
 
