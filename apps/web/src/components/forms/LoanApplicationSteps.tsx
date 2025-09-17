@@ -618,29 +618,7 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
               />
             </div>
 
-            {calculationResult && (
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
-                <h4 className="font-semibold text-blue-900 mb-3">Resumen de la Solicitud</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-blue-700 font-medium">Monto</p>
-                    <p className="text-blue-900 font-bold">${calculationResult.totales.desembolsoBruto.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-blue-700 font-medium">Cuota</p>
-                    <p className="text-blue-900 font-bold">${calculationResult.rows[0]?.cuotaTotal.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-blue-700 font-medium">Plazo</p>
-                    <p className="text-blue-900 font-bold">{calculationResult.rows.length} meses</p>
-                  </div>
-                  <div>
-                    <p className="text-blue-700 font-medium">CFT</p>
-                    <p className="text-blue-900 font-bold">{(calculationResult.totales.cftEfectivoAnual * 100).toFixed(2)}%</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Se eliminó el bloque de "Resumen de la Solicitud" a pedido del cliente */}
           </div>
         )}
 

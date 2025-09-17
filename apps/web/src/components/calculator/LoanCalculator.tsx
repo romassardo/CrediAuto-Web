@@ -112,6 +112,13 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
     }
   }, [lockRateTypeToTNA]);
 
+  // Forzar IVA sobre intereses fijo en 21% (0.21)
+  useEffect(() => {
+    if (inputs.ivaInteres !== 0.21) {
+      setInputs((prev) => ({ ...prev, ivaInteres: 0.21 }));
+    }
+  }, [inputs.ivaInteres]);
+
   useEffect(() => {
     try {
       const newResults: {[key: number]: Result} = {};
@@ -277,15 +284,14 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 IVA sobre Intereses *
               </label>
-              <select
-                value={inputs.ivaInteres}
-                onChange={(e) => updateInput('ivaInteres', Number(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 shadow-sm"
-              >
-                <option value={0}>Sin IVA (0%)</option>
-                <option value={0.105}>IVA Reducido (10.5%)</option>
-                <option value={0.21}>IVA General (21%)</option>
-              </select>
+              <input
+                type="text"
+                value="21%"
+                disabled
+                aria-readonly="true"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed shadow-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500">Fijado en 21%.</p>
             </div>
           </div>
           <div className="flex justify-end">
