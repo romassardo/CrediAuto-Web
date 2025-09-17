@@ -13,7 +13,8 @@ const getResend = (): Resend | null => {
 };
 
 // Remitente configurable desde variables de entorno
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Crediexpress Automotor <onboarding@resend.dev>';
+// Fallback seguro al dominio verificado para evitar modo "testing only" de Resend
+const EMAIL_FROM = process.env.EMAIL_FROM || 'Crediexpress Automotor <notificaciones@crediexpressautos.com.ar>';
 
 // Helper para obtener el logo como attachment inline (CID)
 function getLogoAttachment() {
@@ -223,11 +224,18 @@ export async function sendDealerInviteLink({
   supportEmail,
 }: SendDealerInviteLinkParams) {
   try {
+    // DEBUG: Log all parameters
+    console.log('🔍 [DEBUG] sendDealerInviteLink called with:', { to, dealerName, setPasswordUrl, supportEmail });
+    console.log('🔍 [DEBUG] NODE_ENV:', process.env.NODE_ENV);
+    console.log('🔍 [DEBUG] RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+    
     const client = getResend();
     if (!client) {
-      console.warn('Resend API key not configured. Skipping email send.');
+      console.warn('❌ Resend API key not configured. Skipping email send.');
       return { success: false, error: new Error('RESEND_API_KEY not configured') } as const;
     }
+    
+    console.log('✅ [DEBUG] Resend client initialized successfully');
 
     // Construir línea de contacto evitando enlaces mailto si el dominio no coincide con el dominio del remitente
     const fromMatch = EMAIL_FROM.match(/<([^>]+)>/)?.[1] || EMAIL_FROM;
@@ -245,6 +253,9 @@ export async function sendDealerInviteLink({
     // Base URL para recursos públicos
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'https://crediexpressautos.com.ar';
 
+    console.log('🔍 [DEBUG] About to send email with Resend...');
+    console.log('🔍 [DEBUG] EMAIL_FROM:', EMAIL_FROM);
+    
     const { data, error } = await client.emails.send({
       from: EMAIL_FROM,
       to: [to],
@@ -306,14 +317,16 @@ ${setPasswordUrl}
 
 Si no solicitaste este acceso o necesitás ayuda, por favor contactanos.
       `,
-      attachments: [getLogoAttachment()],
     });
 
     if (error) {
+      console.error('❌ [ERROR] Resend API error:', error);
       console.error('[email] Error sending invite link email via Resend:', error);
       return { success: false, error };
     }
+    
     const msgId = (data as any)?.id || (data as any)?.data?.id;
+    console.log('✅ [SUCCESS] Email sent successfully! Message ID:', msgId ?? '(unknown)');
     console.log('[email] Invite link email sent via Resend. Message ID:', msgId ?? '(unknown)');
     return { success: true, data };
   } catch (error) {
