@@ -52,7 +52,12 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(RESEND_API_KEY);
 
-    const subject = `Nuevo contacto desde la web - ${name}`;
+    // Prefijo configurable para el asunto, con fallback por defecto
+    const SUBJECT_PREFIX = process.env.CONTACT_SUBJECT_PREFIX || 'Consulta Web - CrediAuto';
+    const subjectBase = `${SUBJECT_PREFIX} | ${name}`;
+    const subject = phone && phone.trim()
+      ? `${subjectBase} | ${phone.trim()}`
+      : subjectBase;
 
     const html = `
       <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height:1.6; color:#111">
@@ -82,12 +87,15 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
+    const text = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\nTeléfono: ${phone}\n\nMensaje:\n${message}\n`;
+
     const { data, error } = await resend.emails.send({
       from: CONTACT_FROM,
       to: CONTACT_RECIPIENT,
       replyTo: email,
       subject,
       html,
+      text,
     });
 
     if (error) {
