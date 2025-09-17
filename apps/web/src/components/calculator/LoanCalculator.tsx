@@ -366,16 +366,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
                             <div className="text-sm text-red-600">No hay tasa configurada para este plazo. No es posible calcular.</div>
                           ) : (
                             <>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">{lockRateTypeToTNA ? 'Tasa de Interés (TNA)' : `Tasa de Interés (${inputs.tasa.tipo})`}</span>
-                                  <span className="font-semibold text-brand-accent-500">{(rate * 100).toFixed(1)}%</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">Monto que recibís</span>
-                                  <span className="font-semibold text-green-600">${Math.round(result.totales.desembolsoNeto).toLocaleString('es-AR')}</span>
-                                </div>
-                              </div>
+                              {/* Información adicional (tasa, monto neto) oculta por solicitud del cliente */}
                               <div className="mt-4">
                                 <button
                                   onClick={() => {

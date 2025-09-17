@@ -70,9 +70,13 @@ export async function sendDealerCredentials({
       return { success: false, error: new Error('RESEND_API_KEY not configured') } as const;
     }
 
+    // Base URL para recursos públicos (logo, links) – mejora compatibilidad en clientes de email
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'https://crediexpressautos.com.ar';
+
     const { data, error } = await client.emails.send({
       from: EMAIL_FROM,
       to: [to],
+      replyTo: process.env.CONTACT_RECIPIENT || undefined,
       subject: '¡Bienvenido a Crediexpress Automotor! - Credenciales de acceso',
       html: `
         <!DOCTYPE html>
@@ -86,9 +90,9 @@ export async function sendDealerCredentials({
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             
             <!-- Header con gradiente de marca -->
-            <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+            <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); background-color: #1e40af; padding: 40px 30px; text-align: center;">
               <div style="margin-bottom: 16px;">
-                <img src="cid:crediexpress-logo" alt="Crediexpress Automotor" width="200" style="display:block; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;" />
+                <img src="${baseUrl}/crediexpress-logo.png" alt="Crediexpress Automotor" width="200" style="display:block; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;" />
               </div>
               <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">¡Bienvenido a Crediexpress Automotor!</h1>
               <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">Tu concesionario ha sido aprobado</p>
@@ -128,15 +132,16 @@ export async function sendDealerCredentials({
                 </div>
               </div>
 
-              <!-- Botón de acceso -->
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${loginUrl}" 
-                   style="display: inline-block; background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); 
-                          color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; 
-                          font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                  Acceder a mi Portal
-                </a>
-              </div>
+              <!-- Botón de acceso (bulletproof) -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:30px auto;">
+                <tr>
+                  <td bgcolor="#1E40AF" style="border-radius:8px; text-align:center;">
+                    <a href="${loginUrl}" style="font-size:16px; font-weight:600; line-height:100%; color:#ffffff; text-decoration:none; padding:14px 32px; display:inline-block; background-color:#1E40AF; border-radius:8px;">
+                      Acceder a mi Portal
+                    </a>
+                  </td>
+                </tr>
+              </table>
 
               <!-- Información adicional -->
               <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px; border-radius: 4px; margin: 20px 0;">
@@ -182,7 +187,7 @@ Accede a tu portal en: ${loginUrl}
 
 ¡Bienvenido al equipo Crediexpress Automotor!
       `,
-      attachments: [getLogoAttachment()],
+      // Sin attachments: el logo se sirve por URL pública para mayor compatibilidad
     });
 
     if (error) {
@@ -220,9 +225,26 @@ export async function sendDealerInviteLink({
       return { success: false, error: new Error('RESEND_API_KEY not configured') } as const;
     }
 
+    // Construir línea de contacto evitando enlaces mailto si el dominio no coincide con el dominio del remitente
+    const fromMatch = EMAIL_FROM.match(/<([^>]+)>/)?.[1] || EMAIL_FROM;
+    const fromDomain = fromMatch.split('@')[1]?.trim().toLowerCase();
+    const support = supportEmail?.trim();
+    const supportDomain = support ? support.split('@')[1]?.toLowerCase() : undefined;
+    const contactLine = support
+      ? `<p style="color:#6b7280; font-size:14px; margin:8px 0 0;">Si no solicitaste este acceso o necesitás ayuda, escribinos a ${
+          fromDomain && supportDomain && fromDomain === supportDomain
+            ? `<a href="mailto:${support}">${support}</a>`
+            : `${support}`
+        }.</p>`
+      : '';
+
+    // Base URL para recursos públicos
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_URL || 'https://crediexpressautos.com.ar';
+
     const { data, error } = await client.emails.send({
       from: EMAIL_FROM,
       to: [to],
+      replyTo: supportEmail || process.env.CONTACT_RECIPIENT || undefined,
       subject: 'Bienvenido a Crediexpress Automotor – Establecé tu contraseña',
       html: `
         <!DOCTYPE html>
@@ -234,9 +256,9 @@ export async function sendDealerInviteLink({
         </head>
         <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-            <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+            <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); background-color: #1e40af; padding: 40px 30px; text-align: center;">
               <div style="margin-bottom: 16px;">
-                <img src="cid:crediexpress-logo" alt="Crediexpress Automotor" width="200" style="display:block; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;" />
+                <img src="${baseUrl}/crediexpress-logo.png" alt="Crediexpress Automotor" width="200" style="display:block; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;" />
               </div>
               <h1 style="color:white; margin:0; font-size: 24px; font-weight: 700;">¡Bienvenido a Crediexpress Automotor!</h1>
               <p style="color: rgba(255,255,255,0.9); margin:8px 0 0;">Tu concesionario fue aprobado</p>
@@ -245,13 +267,18 @@ export async function sendDealerInviteLink({
               <p style="color:#374151; font-size:16px; line-height:1.6; margin:0 0 16px;">
                 Hola <strong>${dealerName}</strong>, para completar tu acceso por favor establecé tu contraseña.
               </p>
-              <div style="text-align:center; margin: 28px 0;">
-                <a href="${setPasswordUrl}" style="display:inline-block; background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); color:white; text-decoration:none; padding: 12px 28px; border-radius: 10px; font-weight:600;">Establecer contraseña</a>
-              </div>
+              <!-- Botón (bulletproof) -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:28px auto;">
+                <tr>
+                  <td bgcolor="#1E40AF" style="border-radius:10px; text-align:center;">
+                    <a href="${setPasswordUrl}" style="display:inline-block; background-color:#1E40AF; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:10px; font-weight:600;">Establecer contraseña</a>
+                  </td>
+                </tr>
+              </table>
               <p style="color:#6b7280; font-size:14px; margin:0;">
                 Este enlace expira en 24 horas y solo puede usarse una vez.
               </p>
-              ${supportEmail ? `<p style="color:#6b7280; font-size:14px; margin:8px 0 0;">Si no solicitaste este acceso o necesitas ayuda, escribinos a <a href="mailto:${supportEmail}">${supportEmail}</a>.</p>` : ''}
+              ${contactLine}
             </div>
             <div style="background-color:#f8fafc; padding:16px 24px; text-align:center; border-top:1px solid #e5e7eb;">
               <p style="color:#6b7280; font-size:12px; margin:0;">&copy; 2025 Crediexpress Automotor. Todos los derechos reservados.</p>

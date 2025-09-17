@@ -233,13 +233,6 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
                   {calculationData.loanTerm} meses
                 </p>
               </div>
-              
-              <div className="bg-white rounded-lg p-3 border border-green-200 text-center">
-                <p className="text-xs text-green-700 font-medium mb-1">CFT Anual</p>
-                <p className="text-lg font-bold text-green-900">
-                  {(calculationData.cft * 100)?.toFixed(2)}%
-                </p>
-              </div>
             </div>
             
             <div className="bg-green-100 rounded-lg p-2 text-center border border-green-200">
