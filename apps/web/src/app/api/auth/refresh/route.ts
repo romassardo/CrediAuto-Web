@@ -17,6 +17,15 @@ async function hashToken(token: string): Promise<string> {
   return bcrypt.hash(token, 12);
 }
 
+// Normaliza la IP del cliente para no exceder el tamaño de columna (IPv6 hasta 45 chars)
+function getClientIp(request: NextRequest): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const rCookie = request.cookies.get('refresh_token')?.value;
@@ -84,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Rotación segura: crear nuevo registro, revocar el anterior y enlazar replacedBy
     const userAgent = request.headers.get('user-agent') || undefined;
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const ip = getClientIp(request);
 
     const newHash = await hashToken(refreshToken);
     const newRecord = await prisma.refreshToken.create({
