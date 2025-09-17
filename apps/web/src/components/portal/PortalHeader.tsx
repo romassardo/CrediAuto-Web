@@ -49,7 +49,7 @@ const PortalHeader: React.FC<PortalHeaderProps> = ({ user, isExecutive }) => {
                   {isExecutive ? 'Portal Ejecutivo' : 'Dashboard Concesionario'}
                 </h1>
                 <p className="text-brand-primary-100 text-sm drop-shadow-sm">
-                  {isExecutive ? 'Calculadora y solicitudes' : 'Gestiona tu equipo y solicitudes'}
+                  {isExecutive ? 'Simulador y solicitudes' : 'Gestiona tu equipo y solicitudes'}
                 </p>
               </div>
             </div>

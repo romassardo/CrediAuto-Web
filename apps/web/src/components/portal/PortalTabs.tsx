@@ -10,7 +10,7 @@ interface PortalTabsProps {
 
 const PortalTabs: React.FC<PortalTabsProps> = ({ activeTab, setActiveTab, canAccessFullDashboard, isExecutive }) => {
   const availableTabs = [
-    { id: 'main', label: 'Calculadora y Solicitud', icon: Calculator },
+    { id: 'main', label: 'Simulador y Solicitud', icon: Calculator },
     ...(canAccessFullDashboard ? [
       { id: 'team', label: 'Gestión de Equipo', icon: Users },
       { id: 'overview', label: 'Resumen', icon: Eye },
@@ -50,7 +50,7 @@ const PortalTabs: React.FC<PortalTabsProps> = ({ activeTab, setActiveTab, canAcc
           {isExecutive && (
             <div className="mt-3 flex items-center gap-2 text-white/70 text-xs">
               <AlertCircle className="w-3 h-3" />
-              <span>Acceso limitado: Solo calculadora y solicitudes</span>
+              <span>Acceso limitado: Solo simulador y solicitudes</span>
             </div>
           )}
         </div>

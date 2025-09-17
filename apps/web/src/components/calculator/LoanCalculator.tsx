@@ -16,7 +16,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
     plazoMeses: 36,
     tasa: { tipo: 'TNA', valor: 0.60 }, // 60% TNA
     ivaInteres: 0.21, // 21% IVA
-    gastosOtorgamientoPct: 0.03, // 3%
+    gastosOtorgamientoPct: 0, // 0%
     gastosFijosIniciales: 0,
     sellosPct: 0.012, // 1.2% sellos
     svsPctMensual: 0,
@@ -175,9 +175,9 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <Calculator className="w-6 h-6 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-white">Calculadora de Préstamos</h2>
+            <h2 className="text-3xl font-bold text-white">Simulador de Préstamos</h2>
           </div>
-          <p className="text-brand-primary-100 text-lg">Calcula tu préstamo prendario en tiempo real</p>
+          <p className="text-brand-primary-100 text-lg">Simulá tu préstamo prendario en tiempo real</p>
         </div>
       </div>
 
@@ -314,7 +314,7 @@ export default function LoanCalculator({ onCalculationChange, onCalculationCompl
                     value={(inputs.gastosOtorgamientoPct ?? 0) * 100}
                     onChange={(e) => updateInput('gastosOtorgamientoPct', Number(e.target.value) / 100)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-600 focus:border-brand-primary-600 transition-all bg-white text-gray-900 placeholder-gray-400 hover:border-gray-400 shadow-sm"
-                    placeholder="3"
+                    placeholder="0"
                     min="0"
                     max="20"
                     step="0.1"

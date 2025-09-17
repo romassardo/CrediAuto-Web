@@ -594,71 +594,17 @@ export default function LoanApplicationSteps({ calculationResult, calculationDat
               </div>
             </div>
 
-            {condicionVehiculo && (
-              <div className="p-4 bg-brand-accent-500/10 rounded-lg border border-brand-accent-500/20">
-                <p className="text-sm text-gray-700">
-                  <strong>Nota:</strong> {condicionVehiculo === 'nuevo' 
-                    ? 'Para vehículos 0km se requiere factura proforma del concesionario.'
-                    : 'Para vehículos usados se requiere título de propiedad y verificación policial.'
-                  }
-                </p>
-              </div>
-            )}
+            {/* Nota sobre documentación según condición del vehículo eliminada por solicitud del cliente */}
           </div>
         )}
 
         {/* Step 4: Documentación */}
         {currentStep === 4 && (
           <div className="space-y-6">
-            <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
-              <Upload className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="font-medium text-green-800">Documentación Requerida</p>
-                <p className="text-sm text-green-700">Adjunte todos los documentos necesarios para procesar su solicitud</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900">Documentos Personales</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-brand-primary-600 rounded-full"></div>
-                    DNI del titular (frente y dorso)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-brand-primary-600 rounded-full"></div>
-                    Últimos 3 recibos de sueldo
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-brand-primary-600 rounded-full"></div>
-                    Certificado de trabajo
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-brand-primary-600 rounded-full"></div>
-                    Comprobante de ingresos
-                  </li>
-                </ul>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900">Documentos del Vehículo</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-brand-accent-500 rounded-full"></div>
-                    {condicionVehiculo === 'nuevo' ? 'Factura proforma' : 'Título de propiedad'}
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-brand-accent-500 rounded-full"></div>
-                    {condicionVehiculo === 'nuevo' ? 'Cotización oficial' : 'Verificación policial'}
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-brand-accent-500 rounded-full"></div>
-                    Fotos del vehículo
-                  </li>
-                </ul>
-              </div>
-            </div>
+            {/* Sección simplificada: solo una descripción antes del uploader */}
+            <p className="text-sm text-gray-700">
+              Adjuntá aquí la documentación necesaria para procesar tu solicitud.
+            </p>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
