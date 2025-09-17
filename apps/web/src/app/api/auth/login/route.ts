@@ -39,6 +39,17 @@ async function hashToken(token: string): Promise<string> {
   return bcrypt.hash(token, 12);
 }
 
+// Normaliza la IP del cliente para no exceder el tamaño de columna (IPv6 hasta 45 chars)
+function getClientIp(request: NextRequest): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  // Tomar el primer IP en caso de lista separada por comas
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  // Limitar a 45 caracteres (suficiente para IPv6) para evitar P2000
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -202,9 +213,7 @@ export async function POST(request: NextRequest) {
     // Guardar refresh token en la base de datos
     const tokenHash = await hashToken(refreshToken);
     const userAgent = request.headers.get('user-agent') || undefined;
-    const ip = request.headers.get('x-forwarded-for') || 
-               request.headers.get('x-real-ip') || 
-               'unknown';
+    const ip = getClientIp(request);
 
     await prisma.refreshToken.create({
       data: {
@@ -262,7 +271,7 @@ export async function POST(request: NextRequest) {
     // Configurar cookies seguras
     const cookieOptions = {
       httpOnly: true,
-      secure: false, // HTTP sin SSL en producción
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const,
       path: '/'
     };
