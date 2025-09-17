@@ -14,7 +14,13 @@ const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECR
 
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname
-  
+  // Permitir el acceso directo a archivos estáticos subidos sin pasar por el middleware
+  // Esto evita redirecciones cuando el token está ausente/expirado y asegura que
+  // /uploads/* se sirva como contenido estático.
+  if (path.startsWith('/uploads/')) {
+    return NextResponse.next()
+  }
+
   // Verificar si es una ruta protegida
   const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route))
   const isPublicRoute = publicRoutes.some(route => path === route) || path === '/'
@@ -145,7 +151,7 @@ export const config = {
     /*
      * Ejecutar en todas las rutas incluyendo API routes para agregar headers de usuario
      */
-    '/((?!_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt|uploads).*)',
     '/api/:path*'
   ],
 }
