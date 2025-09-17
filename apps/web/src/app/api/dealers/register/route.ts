@@ -11,6 +11,15 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 15;
 
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 // Schema de validación para el registro de concesionarios
 const registerDealerSchema = z.object({
   // Datos del responsable
@@ -155,7 +164,7 @@ export async function POST(request: NextRequest) {
             city: validatedData.ciudad,
             userEmail: validatedData.email,
           },
-          ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          ip: getClientIp(request),
         },
       });
 

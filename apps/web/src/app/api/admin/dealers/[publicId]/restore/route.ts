@@ -6,6 +6,14 @@ import { debugAuth, errorLog } from '@/lib/logger';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '');
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
 
 // POST /api/admin/dealers/[publicId]/restore
 // Restaura concesionario eliminado: deletedAt = null, estado SUSPENDED (no re-activa usuarios)
@@ -88,7 +96,7 @@ export async function POST(request: Request, context: any) {
         entityType: 'dealer',
         entityId: dealer.publicId,
         metadata: { previousStatus: dealer.status, newStatus: updated.status },
-        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        ip: getClientIp(request),
       },
     });
 

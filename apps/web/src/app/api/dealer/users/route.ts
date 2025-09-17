@@ -8,6 +8,15 @@ import { z } from 'zod';
 import { debugAuth, errorLog } from '@/lib/logger';
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 // Esquema para crear ejecutivo de cuentas (dealer define contraseña inicial)
 const createUserSchema = z.object({
   email: z.string().email('Email inválido').toLowerCase(),
@@ -238,7 +247,7 @@ export async function POST(request: NextRequest) {
           dealerId: dealer.publicId,
           createdByDealer: true,
         },
-        ip: request.headers.get('x-forwarded-for') || 'unknown'
+        ip: getClientIp(request)
       }
     });
 

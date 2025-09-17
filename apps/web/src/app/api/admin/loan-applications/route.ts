@@ -9,6 +9,15 @@ import type { Prisma, LoanApplicationStatus } from '@prisma/client';
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '');
 
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 export async function GET(request: Request) {
   try {
     // 1) Verificar rol ADMIN desde headers, con fallback a JWT en cookie
@@ -306,7 +315,7 @@ export async function PATCH(request: Request) {
 
     // 4) Registrar en audit log
     try {
-      const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+      const ip = getClientIp(request);
       await prisma.auditLog.create({
         data: {
           actorUserId: userId ? parseInt(userId, 10) : undefined,

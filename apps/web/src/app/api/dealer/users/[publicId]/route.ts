@@ -7,6 +7,15 @@ import { debugAuth, errorLog } from '@/lib/logger';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
 
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 // Reutiliza el patrón de autorización del dealer (igual que en /api/dealer/users)
 async function verifyDealerAuth(request: NextRequest) {
   try {
@@ -181,7 +190,7 @@ export async function PATCH(
             changed,
             ...(dataToUpdate.status ? { newStatus: dataToUpdate.status } : {}),
           },
-          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          ip: getClientIp(request),
         },
       });
     });
@@ -251,7 +260,7 @@ export async function DELETE(
             anonymizedEmail: anonymizedEmail, // También guardar el anonimizado
             targetRole: target.role,
           },
-          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          ip: getClientIp(request),
         },
       });
     });

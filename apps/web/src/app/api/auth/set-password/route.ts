@@ -8,6 +8,15 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 15;
 
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 const setPasswordSchema = z.object({
   token: z.string().min(16, 'Token inválido'),
   password: z
@@ -75,7 +84,7 @@ export async function POST(req: NextRequest) {
         entityType: 'user',
         entityId: String(updatedUser.id),
         metadata: { method: 'invite-link' },
-        ip: req.headers.get('x-forwarded-for') || 'unknown',
+        ip: getClientIp(req),
       },
     });
 

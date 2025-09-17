@@ -7,6 +7,15 @@ import { prisma } from '@/lib/prisma';
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret');
 const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret');
 
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Contraseña actual requerida'),
   newPassword: z.string().min(8, 'La nueva contraseña debe tener al menos 8 caracteres'),
@@ -130,7 +139,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           wasInvited: user.status === 'INVITED',
         },
-        ip: request.headers.get('x-forwarded-for') || 'unknown'
+        ip: getClientIp(request)
       }
     });
 

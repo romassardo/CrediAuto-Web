@@ -6,6 +6,15 @@ import { z } from 'zod';
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret');
 const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret');
 
+// Normaliza la IP del cliente (primer IP de X-Forwarded-For, recortada a 45)
+function getClientIp(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for');
+  const xri = request.headers.get('x-real-ip');
+  const raw = (xff || xri || 'unknown').toString();
+  const first = raw.split(',')[0]?.trim() || 'unknown';
+  return first.length > 45 ? first.slice(0, 45) : first;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // 1) Preferir headers inyectados por el middleware (funciona incluso si access_token expiró y se usó refresh_token)
@@ -265,7 +274,7 @@ export async function PATCH(request: NextRequest) {
         entityType: 'user',
         entityId: current.publicId,
         metadata: { changed: Object.keys(dataToUpdate) },
-        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        ip: getClientIp(request),
       },
     });
 
