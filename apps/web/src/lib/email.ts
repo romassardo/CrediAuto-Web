@@ -87,6 +87,10 @@ export async function sendDealerCredentials({
           <title>Bienvenido a Crediexpress Automotor</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
+          <!-- Preheader: texto oculto que aparece como adelanto en la bandeja de entrada -->
+          <div style="display:none; max-height:0; overflow:hidden; font-size:1px; line-height:1px; color:#ffffff; opacity:0;">
+            Tu concesionario fue aprobado. Accedé al portal y cambiá tu contraseña en el primer ingreso.
+          </div>
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             
             <!-- Header con gradiente de marca -->
@@ -255,6 +259,10 @@ export async function sendDealerInviteLink({
           <title>Establecé tu contraseña</title>
         </head>
         <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
+          <!-- Preheader: texto oculto que aparece como adelanto en la bandeja de entrada -->
+          <div style="display:none; max-height:0; overflow:hidden; font-size:1px; line-height:1px; color:#ffffff; opacity:0;">
+            Establecé tu contraseña para acceder a tu portal de Crediexpress Automotor.
+          </div>
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
             <div style="background: linear-gradient(135deg, #2e3192 0%, #1e40af 100%); background-color: #1e40af; padding: 40px 30px; text-align: center;">
               <div style="margin-bottom: 16px;">
