@@ -124,11 +124,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Preparar respuesta con nuevas cookies
+    // Preparar respuesta con nuevas cookies (controlar Secure vía COOKIE_SECURE)
     const response = NextResponse.json({ success: true });
+    const SECURE_COOKIES = process.env.COOKIE_SECURE === 'true';
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: SECURE_COOKIES,
       sameSite: 'lax' as const,
       path: '/',
     };

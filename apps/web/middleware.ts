@@ -31,16 +31,21 @@ export default async function middleware(req: NextRequest) {
   // Obtener tokens de las cookies (access y refresh por separado)
   const accessToken = req.cookies.get('access_token')?.value
   const refreshToken = req.cookies.get('refresh_token')?.value
+  // Permitir Authorization Bearer como alternativa (por ejemplo, cuando cookies no se envían por HTTP)
+  const authHeader = req.headers.get('authorization') || req.headers.get('Authorization')
+  const bearerToken = authHeader && authHeader.toLowerCase().startsWith('bearer ')
+    ? authHeader.slice(7).trim()
+    : null
 
   // Si no hay token y es ruta protegida, redirigir a login
   if (isProtectedRoute && !accessToken && !refreshToken) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  // Si hay token, verificar su validez y permisos (fallback a refresh si access expiró)
-  if (accessToken || refreshToken) {
+  // Si hay token (cookies o Authorization), verificar su validez y permisos
+  if (accessToken || refreshToken || bearerToken) {
     let payload: any | null = null
-    let tokenType: 'access' | 'refresh' | null = null
+    let tokenType: 'access' | 'refresh' | 'bearer' | null = null
 
     // Intentar validar access_token primero
     if (accessToken) {
@@ -58,6 +63,14 @@ export default async function middleware(req: NextRequest) {
           } catch {
             // ambos tokens inválidos
           }
+        } else if (bearerToken) {
+          try {
+            const result = await jwtVerify(bearerToken, JWT_SECRET)
+            payload = result.payload
+            tokenType = 'bearer'
+          } catch {
+            // bearer inválido
+          }
         }
       }
     } else if (refreshToken) {
@@ -67,6 +80,14 @@ export default async function middleware(req: NextRequest) {
         tokenType = 'refresh'
       } catch {
         // refresh inválido
+      }
+    } else if (bearerToken) {
+      try {
+        const result = await jwtVerify(bearerToken, JWT_SECRET)
+        payload = result.payload
+        tokenType = 'bearer'
+      } catch {
+        // bearer inválido
       }
     }
 
@@ -99,7 +120,8 @@ export default async function middleware(req: NextRequest) {
           request: { headers: requestHeaders },
         })
       }
-      // Para métodos con body, dejamos pasar sin alterar request para preservar el body
+      // Para métodos con body, si la autenticación proviene de Bearer o cookies ya verificadas,
+      // dejamos pasar sin alterar request para preservar el body
       return NextResponse.next()
     }
 

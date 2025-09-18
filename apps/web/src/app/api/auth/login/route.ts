@@ -268,12 +268,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Configurar cookies seguras
+    // Configurar cookies (controlar flag Secure vía env para despliegues HTTP sin SSL)
+    const SECURE_COOKIES = process.env.COOKIE_SECURE === 'true';
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: SECURE_COOKIES,
       sameSite: 'lax' as const,
-      path: '/'
+      path: '/',
     };
 
     response.cookies.set('access_token', accessToken, {

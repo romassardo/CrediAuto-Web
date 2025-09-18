@@ -7,11 +7,20 @@ import StatusBadge from './StatusBadge';
 import LoanApplicationModal from './LoanApplicationModal';
 import ReconsiderModal from './ReconsiderModal';
 
-// Utilidad para obtener el token desde cookies del navegador
+// Utilidad para obtener el token: primero cookies (si no httpOnly/secure),
+// si no está disponible, fallback a localStorage (se setea en /api/auth/login response)
 function getTokenFromCookies(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie?.match(/(?:^|;\s*)access_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  if (typeof window === 'undefined') return null;
+  // Intentar leer desde cookies visibles
+  const cookieMatch = document.cookie?.match(/(?:^|;\s*)access_token=([^;]+)/);
+  if (cookieMatch) return decodeURIComponent(cookieMatch[1]);
+  // Fallback: localStorage
+  try {
+    const ls = window.localStorage?.getItem('access_token');
+    return ls || null;
+  } catch {
+    return null;
+  }
 }
 
 interface LoanApplication {
