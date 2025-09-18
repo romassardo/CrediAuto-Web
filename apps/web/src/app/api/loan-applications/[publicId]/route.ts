@@ -20,6 +20,22 @@ export async function GET(
     let userId = headersList.get('x-user-id');
     let dealerId = headersList.get('x-user-dealer-id');
 
+    // Fallback 1: Authorization Bearer cuando el middleware no pudo inyectar headers
+    if (!userRole || !userId) {
+      try {
+        const authHeader = headersList.get('authorization');
+        const bearer = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+        if (bearer) {
+          const { payload } = await jwtVerify(bearer, JWT_SECRET);
+          userRole = (payload as any).role ? String((payload as any).role) : userRole;
+          userId = (payload as any).userId ? String((payload as any).userId) : userId;
+          dealerId = (payload as any).dealerId != null ? String((payload as any).dealerId) : dealerId;
+        }
+      } catch (e) {
+        // ignorar y continuar con cookies
+      }
+    }
+
     if (!userRole || !userId) {
       try {
         const cookieStore = await cookies();
@@ -55,9 +71,17 @@ export async function GET(
     }
 
     // 2) Restricción por rol: Dealer/Ejecutivo solo pueden ver solicitudes de su dealer
-    const parsedDealerId = dealerId ? parseInt(dealerId, 10) : undefined;
+    let parsedDealerId = dealerId ? parseInt(dealerId, 10) : undefined;
     const where: any = { publicId };
     if (userRole !== 'ADMIN') {
+      // Si falta dealerId en el token, derivarlo desde BD (caso tokens antiguos)
+      if (!parsedDealerId) {
+        const parsedUserId = parseInt(String(userId), 10);
+        if (Number.isFinite(parsedUserId)) {
+          const u = await prisma.user.findFirst({ where: { id: parsedUserId, deletedAt: null }, select: { dealerId: true } });
+          if (u?.dealerId) parsedDealerId = u.dealerId;
+        }
+      }
       if (!parsedDealerId) {
         return NextResponse.json({ error: 'No autorizado: falta dealerId.' }, { status: 403 });
       }
