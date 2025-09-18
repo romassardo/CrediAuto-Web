@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import StatusBadge from './StatusBadge';
 import LoanApplicationModal from './LoanApplicationModal';
 import ReconsiderModal from './ReconsiderModal';
+import { authFetch } from '@/lib/authFetch';
 
 // Utilidad para obtener el token: primero cookies (si no httpOnly/secure),
 // si no está disponible, fallback a localStorage (se setea en /api/auth/login response)
@@ -376,7 +377,7 @@ const OverviewTabContent: React.FC<OverviewTabContentProps> = ({ refreshTrigger 
       });
 
       const token = getTokenFromCookies();
-      const response = await fetch(`/api/loan-applications/${reconsiderApplicationId}/reconsider`, {
+      const response = await authFetch(`/api/loan-applications/${reconsiderApplicationId}/reconsider`, {
         method: 'PATCH',
         credentials: 'include',
         headers: {
