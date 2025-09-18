@@ -52,11 +52,14 @@ export async function GET(req: NextRequest) {
     const contentType = guessContentType(abs)
     const headers = new Headers()
     headers.set('Content-Type', contentType)
+    headers.set('Content-Length', String(buf.length))
     if (download) {
       const filename = name || path.basename(abs)
       headers.set('Content-Disposition', `attachment; filename="${filename}"`)
     }
-    return new NextResponse(buf, { status: 200, headers })
+    // Convertir Buffer (Node) a Uint8Array (BodyInit aceptado por Response)
+    const data = new Uint8Array(buf)
+    return new NextResponse(data, { status: 200, headers })
   } catch (e: any) {
     const msg = e?.message || 'Server error'
     const code = msg === 'invalid_path' ? 400 : msg === 'forbidden_path' ? 403 : 500
