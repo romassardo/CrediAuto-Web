@@ -492,7 +492,11 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                         {doc.url && (
                           <>
                             <button
-                              onClick={() => window.open(doc.url, '_blank')}
+                              onClick={() => {
+                                const storage = doc.storagePath || (doc.url?.startsWith('/') ? doc.url.replace(/^\//, '') : undefined);
+                                const openUrl = storage ? `/api/uploads/proxy?p=${encodeURIComponent(storage)}` : doc.url;
+                                window.open(openUrl, '_blank');
+                              }}
                               className="p-1.5 rounded-lg text-brand-primary-600 hover:bg-brand-primary-50 transition-colors"
                               title="Ver documento"
                             >
@@ -500,10 +504,16 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                             </button>
                             <button
                               onClick={() => {
+                                const storage = doc.storagePath || (doc.url?.startsWith('/') ? doc.url.replace(/^\//, '') : undefined);
+                                const base = storage ? `/api/uploads/proxy?p=${encodeURIComponent(storage)}&download=1` : (doc.url || '#');
+                                const fname = doc.name || doc.originalName || `documento-${index + 1}`;
+                                const url = storage ? `${base}&name=${encodeURIComponent(fname)}` : base;
                                 const link = document.createElement('a');
-                                link.href = doc.url;
-                                link.download = doc.name || `documento-${index + 1}`;
+                                link.href = url;
+                                link.download = fname;
+                                document.body.appendChild(link);
                                 link.click();
+                                link.remove();
                               }}
                               className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
                               title="Descargar documento"
@@ -609,10 +619,33 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                           <div className="flex items-center gap-1">
                             {doc.url && (
                               <>
-                                <button onClick={() => window.open(doc.url, '_blank')} className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-100 transition-colors" title="Ver documento">
+                                <button
+                                  onClick={() => {
+                                    const storage = doc.storagePath || (doc.url?.startsWith('/') ? doc.url.replace(/^\//, '') : undefined);
+                                    const openUrl = storage ? `/api/uploads/proxy?p=${encodeURIComponent(storage)}` : doc.url;
+                                    window.open(openUrl, '_blank');
+                                  }}
+                                  className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-100 transition-colors"
+                                  title="Ver documento"
+                                >
                                   <ExternalLink className="w-4 h-4" />
                                 </button>
-                                <button onClick={() => { const link = document.createElement('a'); link.href = doc.url; link.download = doc.name || `documento-recon-${index + 1}`; link.click(); }} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors" title="Descargar documento">
+                                <button
+                                  onClick={() => {
+                                    const storage = doc.storagePath || (doc.url?.startsWith('/') ? doc.url.replace(/^\//, '') : undefined);
+                                    const base = storage ? `/api/uploads/proxy?p=${encodeURIComponent(storage)}&download=1` : (doc.url || '#');
+                                    const fname = doc.name || doc.originalName || `documento-recon-${index + 1}`;
+                                    const url = storage ? `${base}&name=${encodeURIComponent(fname)}` : base;
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = fname;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    link.remove();
+                                  }}
+                                  className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                                  title="Descargar documento"
+                                >
                                   <Download className="w-4 h-4" />
                                 </button>
                               </>

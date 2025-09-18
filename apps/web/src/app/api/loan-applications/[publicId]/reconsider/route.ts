@@ -111,6 +111,7 @@ export async function PATCH(
             originalName: file.name,
             filename: uniqueFilename,
             url: `/uploads/loan-docs/${uniqueFilename}`,
+            storagePath: `uploads/loan-docs/${uniqueFilename}`,
             size: file.size,
             type: file.type,
             uploadedAt: new Date().toISOString(),
