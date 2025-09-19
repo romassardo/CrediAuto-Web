@@ -14,17 +14,9 @@ function isBypassed(url: string) {
 }
 
 function getAccessTokenFromCookies(): string | null {
-  if (typeof window === 'undefined') return null;
-  // Intentar leer desde cookies visibles (no httpOnly)
+  if (typeof document === 'undefined') return null;
   const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
-  if (match) return decodeURIComponent(match[1]);
-  // Fallback a localStorage (token guardado en login para header Authorization)
-  try {
-    const ls = window.localStorage?.getItem('access_token');
-    return ls || null;
-  } catch {
-    return null;
-  }
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 let refreshInFlight: Promise<boolean> | null = null;

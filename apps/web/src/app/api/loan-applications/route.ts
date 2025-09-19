@@ -84,26 +84,7 @@ export async function POST(request: Request) {
       hasXDealer: !!headersList.get('x-user-dealer-id'),
     });
 
-    // Fallback 1: Authorization: Bearer <token> (cuando middleware no puede inyectar headers en métodos con body)
-    if (!userId || !dealerId || !role) {
-      try {
-        const authHeaderLower = request.headers.get('authorization') || headersList.get('authorization') || '';
-        const bearer = authHeaderLower.match(/^Bearer\s+(.+)$/i)?.[1];
-        if (bearer) {
-          const { payload } = await jwtVerify(bearer, JWT_SECRET);
-          const pUserId = (payload as any).userId;
-          const pDealerId = (payload as any).dealerId;
-          const pRole = (payload as any).role;
-          if (pUserId) userId = String(pUserId);
-          if (pDealerId) dealerId = String(pDealerId);
-          if (pRole) role = String(pRole);
-        }
-      } catch (err) {
-        // Ignorar, seguiremos con cookies
-      }
-    }
-
-    // Fallback 2: si los headers/bearer faltan, verificar JWT desde cookies (access_token primero, luego refresh_token con su secreto)
+    // Fallback robusto: si los headers faltan, verificar JWT desde cookies (access_token primero, luego refresh_token con su secreto)
     if (!userId || !dealerId || !role) {
       try {
         const cookieStore = await cookies();
@@ -154,72 +135,53 @@ export async function POST(request: Request) {
 
     const { personalData, spouseData, employmentData, vehicleData, calculationData, documents } = validation.data;
 
-    // Helpers para ajustar precisión/longitud a lo que espera la DB
-    const r2 = (n: number | string | null | undefined) => {
-      const num = typeof n === 'string' ? parseFloat(n) : (n ?? 0);
-      return Number.isFinite(num) ? Number((num as number).toFixed(2)) : 0;
-    };
-    const r4 = (n: number | string | null | undefined) => {
-      const num = typeof n === 'string' ? parseFloat(n) : (n ?? 0);
-      return Number.isFinite(num) ? Number((num as number).toFixed(4)) : 0;
-    };
-    const trimMax = (s: string | null | undefined, max: number) => {
-      if (!s) return null;
-      const v = String(s);
-      return v.length > max ? v.slice(0, max) : v;
-    };
-
     // 3. Preparar y guardar los datos en la base de datos usando Prisma
     const newLoanApplication = await prisma.loanApplication.create({
       data: {
         publicId: randomUUID(),
         
         // Datos Personales del Solicitante
-        applicantFirstName: trimMax(personalData.nombre, 100)!,
-        applicantLastName: trimMax(personalData.apellido, 100)!,
-        applicantCuil: trimMax(personalData.cuil, 15)!,
-        applicantEmail: trimMax(personalData.email, 255)!,
-        applicantPhone: trimMax(personalData.telefono, 50)!,
-        applicantBirthDate: (() => {
-          if (!personalData.fechaNacimiento) return null;
-          const d = new Date(personalData.fechaNacimiento);
-          return Number.isFinite(d.getTime()) ? d : null;
-        })(),
-        applicantAddress: trimMax(personalData.domicilio || null, 255),
-        applicantCity: trimMax(personalData.ciudad || null, 100),
-        applicantProvince: trimMax(personalData.provincia || null, 100),
-        applicantPostalCode: trimMax(personalData.codigoPostal || null, 20),
+        applicantFirstName: personalData.nombre,
+        applicantLastName: personalData.apellido,
+        applicantCuil: personalData.cuil,
+        applicantEmail: personalData.email,
+        applicantPhone: personalData.telefono,
+        applicantBirthDate: personalData.fechaNacimiento ? new Date(personalData.fechaNacimiento) : null,
+        applicantAddress: personalData.domicilio,
+        applicantCity: personalData.ciudad,
+        applicantProvince: personalData.provincia,
+        applicantPostalCode: personalData.codigoPostal,
         applicantMaritalStatus: personalData.estadoCivil,
         
         // Datos del Cónyuge
-        spouseFirstName: trimMax(spouseData?.nombreConyuge ?? null, 100),
-        spouseLastName: trimMax(spouseData?.apellidoConyuge ?? null, 100),
-        spouseCuil: trimMax(spouseData?.cuilConyuge ?? null, 15),
-        spouseIncome: spouseData?.ingresoConyuge != null ? r2(spouseData.ingresoConyuge) : null,
+        spouseFirstName: spouseData?.nombreConyuge ?? null,
+        spouseLastName: spouseData?.apellidoConyuge ?? null,
+        spouseCuil: spouseData?.cuilConyuge ?? null,
+        spouseIncome: spouseData?.ingresoConyuge ?? null,
         
         // Datos Laborales
-        employmentType: trimMax(employmentData?.tipoEmpleo ?? null, 100),
-        employmentTypeOther: trimMax(employmentData?.tipoEmpleoOtro ?? null, 255),
-        companyName: trimMax(employmentData?.nombreEmpresa ?? null, 255),
-        companyPhone: trimMax(employmentData?.telefonoEmpresa ?? null, 50),
-        workExperience: trimMax(employmentData?.experienciaLaboral ?? null, 100),
+        employmentType: employmentData?.tipoEmpleo ?? null,
+        employmentTypeOther: employmentData?.tipoEmpleoOtro ?? null,
+        companyName: employmentData?.nombreEmpresa ?? null,
+        companyPhone: employmentData?.telefonoEmpresa ?? null,
+        workExperience: employmentData?.experienciaLaboral ?? null,
         
         // Datos del Vehículo
         vehicleCondition: vehicleData?.condicionVehiculo ?? null,
-        vehicleBrand: trimMax(vehicleData?.marca ?? null, 100),
-        vehicleModel: trimMax(vehicleData?.modelo ?? null, 100),
+        vehicleBrand: vehicleData?.marca ?? null,
+        vehicleModel: vehicleData?.modelo ?? null,
         vehicleYear: vehicleData?.anio ?? null,
-        vehicleVersion: trimMax(vehicleData?.version ?? null, 255),
+        vehicleVersion: vehicleData?.version ?? null,
         
         // Cálculos del Préstamo
-        vehiclePrice: r2(calculationData.vehiclePrice),
-        loanAmount: r2(calculationData.loanAmount),
+        vehiclePrice: calculationData.vehiclePrice,
+        loanAmount: calculationData.loanAmount,
         loanTermMonths: calculationData.loanTermMonths,
-        monthlyPayment: r2(calculationData.monthlyPayment),
-        totalAmount: r2(calculationData.totalAmount),
-        interestRate: r4(calculationData.interestRate),
-        cftAnnual: r4(calculationData.cftAnnual),
-        downPayment: r2(calculationData.vehiclePrice - calculationData.loanAmount),
+        monthlyPayment: calculationData.monthlyPayment,
+        totalAmount: calculationData.totalAmount,
+        interestRate: calculationData.interestRate,
+        cftAnnual: calculationData.cftAnnual,
+        downPayment: calculationData.vehiclePrice - calculationData.loanAmount,
         
         // Documentos
         documentsMetadata: documents && documents.length ? documents : undefined,
@@ -246,11 +208,7 @@ export async function POST(request: Request) {
     );
 
   } catch (error) {
-    console.error('Error al crear la solicitud de préstamo:', {
-      message: (error as any)?.message,
-      code: (error as any)?.code,
-      meta: (error as any)?.meta,
-    });
+    console.error('Error al crear la solicitud de préstamo:', error);
     // Devolvemos un error genérico para no exponer detalles internos.
     return NextResponse.json({ error: 'Ocurrió un error en el servidor.' }, { status: 500 });
   }

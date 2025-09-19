@@ -228,10 +228,7 @@ export async function GET(
       dealer: (a as any).dealer ? {
         id: (a as any).dealer.id,
         legalName: (a as any).dealer.legalName ?? undefined,
-        tradeName: (a as any).dealer.tradeName ?? undefined,
-        // Alinear con la lista: exponer companyName y contactEmail para la UI
-        companyName: (a as any).dealer.tradeName ?? (a as any).dealer.legalName ?? undefined,
-        contactEmail: (a as any).dealer.email ?? undefined,
+        tradeName: (a as any).dealer.tradeName,
         cuit: (a as any).dealer.cuit ?? undefined,
         email: (a as any).dealer.email ?? undefined,
         phone: (a as any).dealer.phone ?? undefined,

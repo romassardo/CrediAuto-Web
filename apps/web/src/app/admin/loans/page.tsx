@@ -1172,7 +1172,7 @@ export default function AdminLoansPage() {
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${m.who === 'ADMIN' ? 'bg-brand-primary-600' : 'bg-orange-600'}`}>{m.who === 'ADMIN' ? 'A' : 'D'}</div>
                                 <div className="flex-1">
                                   <div className="text-xs text-gray-500">{m.who === 'ADMIN' ? 'Admin' : 'Concesionario'} • {m.at ? new Date(m.at).toLocaleString('es-AR') : 'Fecha no disponible'}</div>
-                                  <div className={`mt-1 p-3 rounded-lg whitespace-pre-wrap border ${m.who === 'ADMIN' ? 'bg-brand-primary-50 border-brand-primary-200 text-gray-900' : 'bg-orange-50 border-orange-200 text-orange-900'}`}>
+                                  <div className={`mt-1 p-3 rounded-lg whitespace-pre-wrap border ${m.who === 'ADMIN' ? 'bg-brand-primary-50 border-brand-primary-200 text-brand-primary-900' : 'bg-orange-50 border-orange-200 text-orange-900'}`}>
                                     {m.text}
                                   </div>
                                 </div>

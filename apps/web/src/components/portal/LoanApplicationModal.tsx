@@ -492,11 +492,7 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                         {doc.url && (
                           <>
                             <button
-                              onClick={() => {
-                                const storage = doc.storagePath || (doc.url?.startsWith('/') ? doc.url.replace(/^\//, '') : undefined);
-                                const openUrl = storage ? `/api/uploads/proxy?p=${encodeURIComponent(storage)}` : doc.url;
-                                window.open(openUrl, '_blank');
-                              }}
+                              onClick={() => window.open(doc.url, '_blank')}
                               className="p-1.5 rounded-lg text-brand-primary-600 hover:bg-brand-primary-50 transition-colors"
                               title="Ver documento"
                             >
@@ -504,16 +500,10 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                             </button>
                             <button
                               onClick={() => {
-                                const storage = doc.storagePath || (doc.url?.startsWith('/') ? doc.url.replace(/^\//, '') : undefined);
-                                const base = storage ? `/api/uploads/proxy?p=${encodeURIComponent(storage)}&download=1` : (doc.url || '#');
-                                const fname = doc.name || doc.originalName || `documento-${index + 1}`;
-                                const url = storage ? `${base}&name=${encodeURIComponent(fname)}` : base;
                                 const link = document.createElement('a');
-                                link.href = url;
-                                link.download = fname;
-                                document.body.appendChild(link);
+                                link.href = doc.url;
+                                link.download = doc.name || `documento-${index + 1}`;
                                 link.click();
-                                link.remove();
                               }}
                               className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
                               title="Descargar documento"
@@ -577,7 +567,7 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${m.who === 'ADMIN' ? 'bg-brand-primary-600' : 'bg-orange-600'}`}>{m.who === 'ADMIN' ? 'A' : 'D'}</div>
                             <div className="flex-1">
                               <div className="text-xs text-gray-500">{m.who === 'ADMIN' ? 'Admin' : 'Concesionario'} • {m.at ? new Date(m.at).toLocaleString('es-AR') : 'Fecha no disponible'}</div>
-                              <div className={`mt-1 p-3 rounded-lg whitespace-pre-wrap border ${m.who === 'ADMIN' ? 'bg-brand-primary-50 border-brand-primary-200 text-gray-900' : 'bg-orange-50 border-orange-200 text-orange-900'}`}>
+                              <div className={`mt-1 p-3 rounded-lg whitespace-pre-wrap border ${m.who === 'ADMIN' ? 'bg-brand-primary-50 border-brand-primary-200 text-brand-primary-900' : 'bg-orange-50 border-orange-200 text-orange-900'}`}>
                                 {m.text}
                               </div>
                             </div>
@@ -619,33 +609,10 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
                           <div className="flex items-center gap-1">
                             {doc.url && (
                               <>
-                                <button
-                                  onClick={() => {
-                                    const storage = doc.storagePath || (doc.url?.startsWith('/') ? doc.url.replace(/^\//, '') : undefined);
-                                    const openUrl = storage ? `/api/uploads/proxy?p=${encodeURIComponent(storage)}` : doc.url;
-                                    window.open(openUrl, '_blank');
-                                  }}
-                                  className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-100 transition-colors"
-                                  title="Ver documento"
-                                >
+                                <button onClick={() => window.open(doc.url, '_blank')} className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-100 transition-colors" title="Ver documento">
                                   <ExternalLink className="w-4 h-4" />
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    const storage = doc.storagePath || (doc.url?.startsWith('/') ? doc.url.replace(/^\//, '') : undefined);
-                                    const base = storage ? `/api/uploads/proxy?p=${encodeURIComponent(storage)}&download=1` : (doc.url || '#');
-                                    const fname = doc.name || doc.originalName || `documento-recon-${index + 1}`;
-                                    const url = storage ? `${base}&name=${encodeURIComponent(fname)}` : base;
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.download = fname;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    link.remove();
-                                  }}
-                                  className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
-                                  title="Descargar documento"
-                                >
+                                <button onClick={() => { const link = document.createElement('a'); link.href = doc.url; link.download = doc.name || `documento-recon-${index + 1}`; link.click(); }} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors" title="Descargar documento">
                                   <Download className="w-4 h-4" />
                                 </button>
                               </>
