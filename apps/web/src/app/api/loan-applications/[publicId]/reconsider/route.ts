@@ -1,11 +1,51 @@
 import { NextRequest } from 'next/server';
 import { headers, cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, stat } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { jwtVerify } from 'jose';
 import { Prisma } from '@prisma/client';
+import { fileURLToPath } from 'url';
+
+// Helper: resolver robusto para apps/web/public/uploads/loan-docs
+async function resolveUploadsDir(): Promise<string> {
+  // 1) Intento directo con process.cwd() si ya apunta al proyecto Next
+  try {
+    const publicDir = path.join(process.cwd(), 'public');
+    const st = await stat(publicDir);
+    if (st.isDirectory()) {
+      const target = path.join(publicDir, 'uploads', 'loan-docs');
+      await mkdir(target, { recursive: true });
+      return target;
+    }
+  } catch {}
+
+  // 2) Buscar ascendiendo desde el archivo compilado hasta encontrar "public"
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    let dir = path.dirname(__filename);
+    for (let i = 0; i < 10; i++) {
+      const publicDir = path.join(dir, 'public');
+      try {
+        const st2 = await stat(publicDir);
+        if (st2.isDirectory()) {
+          const target = path.join(publicDir, 'uploads', 'loan-docs');
+          await mkdir(target, { recursive: true });
+          return target;
+        }
+      } catch {}
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  } catch {}
+
+  // 3) Fallback: crear en process.cwd()/public/uploads/loan-docs
+  const fallback = path.join(process.cwd(), 'public', 'uploads', 'loan-docs');
+  await mkdir(fallback, { recursive: true });
+  return fallback;
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -90,9 +130,8 @@ export async function PATCH(
     let newDocumentsMetadata: any[] = [];
     
     if (files && files.length > 0) {
-      // Crear directorio si no existe
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'loan-docs');
-      await mkdir(uploadDir, { recursive: true });
+      // Resolver directorio de subida de forma robusta
+      const uploadDir = await resolveUploadsDir();
 
       for (const file of files) {
         if (file.size > 0) {
@@ -109,8 +148,10 @@ export async function PATCH(
           // Agregar metadata
           newDocumentsMetadata.push({
             originalName: file.name,
+            name: file.name,
             filename: uniqueFilename,
             url: `/uploads/loan-docs/${uniqueFilename}`,
+            storagePath: `uploads/loan-docs/${uniqueFilename}`,
             size: file.size,
             type: file.type,
             uploadedAt: new Date().toISOString(),

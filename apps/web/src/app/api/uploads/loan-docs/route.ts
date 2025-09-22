@@ -4,6 +4,7 @@ import { jwtVerify } from 'jose'
 import { randomUUID } from 'crypto'
 import path from 'path'
 import fs from 'fs/promises'
+import { fileURLToPath } from 'url'
 
 // Aseguramos Node.js runtime para usar fs
 export const runtime = 'nodejs'
@@ -33,6 +34,47 @@ function sanitizeFileName(name: string) {
 function isLikeFile(input: unknown): input is { arrayBuffer: () => Promise<ArrayBuffer> } {
   const anyVal = input as any
   return !!anyVal && typeof anyVal === 'object' && typeof anyVal.arrayBuffer === 'function'
+}
+
+// Resuelve la carpeta apps/web/public/uploads/loan-docs de forma robusta
+// subiendo desde el archivo compilado (.next/server/app/...) hasta encontrar "public"
+async function resolveUploadsDir(): Promise<string> {
+  // 1) Intento directo con process.cwd() si ya apunta al proyecto de Next
+  try {
+    const publicDir = path.join(process.cwd(), 'public')
+    const stat = await fs.stat(publicDir)
+    if (stat.isDirectory()) {
+      const target = path.join(publicDir, 'uploads', 'loan-docs')
+      await fs.mkdir(target, { recursive: true })
+      return target
+    }
+  } catch {}
+
+  // 2) Buscar directorio que contenga "public" ascendiendo desde el archivo actual
+  try {
+    const __filename = fileURLToPath(import.meta.url)
+    let dir = path.dirname(__filename)
+    // subir hasta 10 niveles como máximo
+    for (let i = 0; i < 10; i++) {
+      const publicDir = path.join(dir, 'public')
+      try {
+        const st = await fs.stat(publicDir)
+        if (st.isDirectory()) {
+          const target = path.join(publicDir, 'uploads', 'loan-docs')
+          await fs.mkdir(target, { recursive: true })
+          return target
+        }
+      } catch {}
+      const parent = path.dirname(dir)
+      if (parent === dir) break
+      dir = parent
+    }
+  } catch {}
+
+  // 3) Fallback: crear en process.cwd()/public/uploads/loan-docs
+  const fallback = path.join(process.cwd(), 'public', 'uploads', 'loan-docs')
+  await fs.mkdir(fallback, { recursive: true })
+  return fallback
 }
 
 async function ensureAuth() {
@@ -92,11 +134,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Máximo ${MAX_FILES} archivos` }, { status: 400 })
     }
 
-    const baseDir = path.join(process.cwd(), 'public', 'uploads', 'loan-docs')
+    let baseDir: string
     try {
-      await fs.mkdir(baseDir, { recursive: true })
+      baseDir = await resolveUploadsDir()
     } catch (e) {
-      console.error('❌ Error creando directorio de destino:', e)
+      console.error('❌ Error resolviendo directorio de destino:', e)
       return NextResponse.json({ error: 'No se pudo preparar el almacenamiento de archivos' }, { status: 500 })
     }
 
