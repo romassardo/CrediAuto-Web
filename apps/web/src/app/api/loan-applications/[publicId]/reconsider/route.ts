@@ -56,9 +56,10 @@ export async function PATCH(
     const resolvedParams = await params;
     const { publicId } = resolvedParams;
 
-    // Obtener token JWT: preferir cookie, pero aceptar Authorization: Bearer como fallback
+    // Obtener token JWT: preferir cookie access_token; si falta o expira, aceptar refresh_token; como fallback aceptar Authorization: Bearer
     const cookieStore = await cookies();
     const fromCookie = cookieStore.get('access_token')?.value;
+    const fromRefresh = cookieStore.get('refresh_token')?.value;
     let accessToken = fromCookie;
     if (!accessToken) {
       const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
@@ -73,14 +74,26 @@ export async function PATCH(
 
     // Verificar y decodificar JWT
     const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
+    const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || '');
     let payload: any;
     
     try {
       const { payload: jwtPayload } = await jwtVerify(accessToken, JWT_SECRET);
       payload = jwtPayload;
     } catch (jwtError) {
-      console.error('Error verificando JWT en reconsideración:', jwtError);
-      return Response.json({ error: 'No autorizado - Token inválido' }, { status: 401 });
+      // Intentar con refresh_token si está disponible
+      if (fromRefresh) {
+        try {
+          const { payload: jwtPayload } = await jwtVerify(fromRefresh, JWT_REFRESH_SECRET);
+          payload = jwtPayload;
+        } catch (e2) {
+          console.error('Error verificando JWT en reconsideración (access y refresh fallidos):', e2);
+          return Response.json({ error: 'No autorizado - Token inválido' }, { status: 401 });
+        }
+      } else {
+        console.error('Error verificando JWT en reconsideración:', jwtError);
+        return Response.json({ error: 'No autorizado - Token inválido' }, { status: 401 });
+      }
     }
 
     const userId = payload.userId as number;
@@ -187,23 +200,34 @@ export async function PATCH(
       }
     });
 
-    // Registrar en audit log
-    await prisma.auditLog.create({
-      data: {
-        actorUserId: userId,
-        action: 'LOAN_APPLICATION_RECONSIDER',
-        entityType: 'LoanApplication',
-        entityId: publicId,
-        metadata: {
-          reason: reconsiderationReason,
-          filesCount: newDocumentsMetadata.length,
-          previousStatus: 'REJECTED'
-        },
-        ip: request.headers.get('x-forwarded-for') || 
-            request.headers.get('x-real-ip') || 
-            'unknown'
-      }
-    });
+    // Helper de IP (normaliza a primera IP y recorta a 45)
+    function getClientIp(req: Request): string {
+      const xff = req.headers.get('x-forwarded-for');
+      const xri = req.headers.get('x-real-ip');
+      const raw = (xff || xri || 'unknown').toString();
+      const first = raw.split(',')[0].trim();
+      return first.slice(0, 45);
+    }
+
+    // Registrar en audit log (con IP normalizada para evitar Prisma P2000)
+    try {
+      await prisma.auditLog.create({
+        data: {
+          actorUserId: userId,
+          action: 'LOAN_APPLICATION_RECONSIDER',
+          entityType: 'LoanApplication',
+          entityId: publicId,
+          metadata: {
+            reason: reconsiderationReason,
+            filesCount: newDocumentsMetadata.length,
+            previousStatus: 'REJECTED'
+          },
+          ip: getClientIp(request)
+        }
+      });
+    } catch (logErr) {
+      console.warn('⚠️ No se pudo registrar audit log en reconsideración:', logErr);
+    }
 
     return Response.json({
       success: true,

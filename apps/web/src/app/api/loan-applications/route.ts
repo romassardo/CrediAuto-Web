@@ -69,6 +69,39 @@ const loanApplicationSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // Helper: parsea fecha de nacimiento en formatos comunes (yyyy-MM-dd, dd/MM/yyyy, dd-MM-yyyy)
+    const parseBirthDate = (s?: string | null): Date | null => {
+      if (!s) return null;
+      const t = String(s).trim();
+      if (!t) return null;
+      // ISO simple: 1975-06-11
+      if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+        const d = new Date(`${t}T00:00:00Z`);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      // dd/MM/yyyy
+      let m = t.match(/^([0-3]?\d)\/([01]?\d)\/(\d{4})$/);
+      if (m) {
+        const dd = m[1].padStart(2, '0');
+        const mm = m[2].padStart(2, '0');
+        const yyyy = m[3];
+        const d = new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      // dd-MM-yyyy
+      m = t.match(/^([0-3]?\d)-([01]?\d)-(\d{4})$/);
+      if (m) {
+        const dd = m[1].padStart(2, '0');
+        const mm = m[2].padStart(2, '0');
+        const yyyy = m[3];
+        const d = new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      // Fallback: intentar Date nativo
+      const d = new Date(t);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
     // 1. Extraer información del usuario que envía la solicitud
     const headersList = await headers();
     let userId = headersList.get('x-user-id');
@@ -146,7 +179,7 @@ export async function POST(request: Request) {
         applicantCuil: personalData.cuil,
         applicantEmail: personalData.email,
         applicantPhone: personalData.telefono,
-        applicantBirthDate: personalData.fechaNacimiento ? new Date(personalData.fechaNacimiento) : null,
+        applicantBirthDate: parseBirthDate(personalData.fechaNacimiento),
         applicantAddress: personalData.domicilio,
         applicantCity: personalData.ciudad,
         applicantProvince: personalData.provincia,

@@ -37,20 +37,10 @@ function isLikeFile(input: unknown): input is { arrayBuffer: () => Promise<Array
 }
 
 // Resuelve la carpeta apps/web/public/uploads/loan-docs de forma robusta
-// subiendo desde el archivo compilado (.next/server/app/...) hasta encontrar "public"
+// 1) Prioriza ascender desde el archivo compilado (.next/server/app/...) hasta encontrar "public" vecino del proyecto
+// 2) Como último recurso, usa process.cwd()/public
 async function resolveUploadsDir(): Promise<string> {
-  // 1) Intento directo con process.cwd() si ya apunta al proyecto de Next
-  try {
-    const publicDir = path.join(process.cwd(), 'public')
-    const stat = await fs.stat(publicDir)
-    if (stat.isDirectory()) {
-      const target = path.join(publicDir, 'uploads', 'loan-docs')
-      await fs.mkdir(target, { recursive: true })
-      return target
-    }
-  } catch {}
-
-  // 2) Buscar directorio que contenga "public" ascendiendo desde el archivo actual
+  // 1) Buscar directorio que contenga "public" ascendiendo desde el archivo actual
   try {
     const __filename = fileURLToPath(import.meta.url)
     let dir = path.dirname(__filename)
@@ -62,6 +52,9 @@ async function resolveUploadsDir(): Promise<string> {
         if (st.isDirectory()) {
           const target = path.join(publicDir, 'uploads', 'loan-docs')
           await fs.mkdir(target, { recursive: true })
+          if (process.env.DEBUG_UPLOADS) {
+            console.log('[uploads] resolved via import.meta.url ->', target)
+          }
           return target
         }
       } catch {}
@@ -71,9 +64,26 @@ async function resolveUploadsDir(): Promise<string> {
     }
   } catch {}
 
-  // 3) Fallback: crear en process.cwd()/public/uploads/loan-docs
+  // 2) Intento con process.cwd() si ya apunta al proyecto de Next
+  try {
+    const publicDir = path.join(process.cwd(), 'public')
+    const stat = await fs.stat(publicDir)
+    if (stat.isDirectory()) {
+      const target = path.join(publicDir, 'uploads', 'loan-docs')
+      await fs.mkdir(target, { recursive: true })
+      if (process.env.DEBUG_UPLOADS) {
+        console.log('[uploads] resolved via process.cwd() ->', target)
+      }
+      return target
+    }
+  } catch {}
+
+  // 3) Fallback final: crear en process.cwd()/public/uploads/loan-docs
   const fallback = path.join(process.cwd(), 'public', 'uploads', 'loan-docs')
   await fs.mkdir(fallback, { recursive: true })
+  if (process.env.DEBUG_UPLOADS) {
+    console.log('[uploads] resolved via fallback ->', fallback)
+  }
   return fallback
 }
 
