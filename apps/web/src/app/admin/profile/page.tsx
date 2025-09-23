@@ -134,7 +134,7 @@ export default function AdminProfilePage() {
                           value={form.email}
                           onChange={onChange}
                           required
-                          className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                          className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                           placeholder="tu@email.com"
                         />
                         <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -148,7 +148,7 @@ export default function AdminProfilePage() {
                           name="phone"
                           value={form.phone}
                           onChange={onChange}
-                          className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                          className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                           placeholder="Ej: +54 9 11 5555-5555"
                         />
                         <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />

@@ -109,7 +109,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
                 value={newUser.firstName}
                 onChange={(e) => setNewUser({...newUser, firstName: e.target.value})}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="Nombre"
               />
             </div>
@@ -120,7 +120,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
                 value={newUser.lastName}
                 onChange={(e) => setNewUser({...newUser, lastName: e.target.value})}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="Apellido"
               />
             </div>
@@ -131,7 +131,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
                 value={newUser.email}
                 onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="email@ejemplo.com"
               />
             </div>
@@ -141,7 +141,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
                 type="tel"
                 value={newUser.phone}
                 onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="+54 9 11 1234 5678"
               />
             </div>
@@ -152,7 +152,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
                 value={newUser.password}
                 onChange={(e) => setNewUser({...newUser, password: e.target.value})}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="Mínimo 8 caracteres"
               />
             </div>
@@ -163,7 +163,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
                 value={newUser.confirmPassword}
                 onChange={(e) => setNewUser({...newUser, confirmPassword: e.target.value})}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="Repetir contraseña"
               />
             </div>
@@ -229,7 +229,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
                             type="email"
                             value={editForm.email}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
-                            className="w-full px-3 py-2 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                            className="w-full px-3 py-2 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                             placeholder="email@ejemplo.com"
                           />
                           <Mail className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -239,7 +239,7 @@ const TeamTabContent: React.FC<TeamTabContentProps> = ({
                             type="tel"
                             value={editForm.phone}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value }))}
-                            className="w-full px-3 py-2 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent"
+                            className="w-full px-3 py-2 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                             placeholder="+54 9 11 1234 5678"
                           />
                           <Phone className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
