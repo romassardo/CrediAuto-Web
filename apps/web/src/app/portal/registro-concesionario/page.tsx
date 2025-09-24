@@ -13,7 +13,7 @@ export default function RegistroConcesionario() {
     email: "",
     telefono: "",
     
-    // Datos del concesionario
+    // Datos de la agencia
     nombreComercial: "",
     cuit: "",
     direccion: "",
@@ -205,13 +205,13 @@ export default function RegistroConcesionario() {
               <div className="space-y-6">
                 <div className="inline-flex items-center px-4 py-2 rounded-full bg-brand-accent-500/10 border border-brand-accent-500/20">
                   <Sparkles className="w-4 h-4 text-brand-primary-600 mr-2" />
-                  <span className="text-sm font-medium text-brand-primary-600">Portal exclusivo para concesionarios</span>
+                  <span className="text-sm font-medium text-brand-primary-600">Portal exclusivo para agencias</span>
                 </div>
                 
                 <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
                   <span className="text-brand-primary-600">Sumate a nuestra</span>
                   <br />
-                  <span className="bg-gradient-to-r from-brand-accent-500 to-yellow-400 bg-clip-text text-transparent">red de concesionarios</span>
+                  <span className="bg-gradient-to-r from-brand-accent-500 to-yellow-400 bg-clip-text text-transparent">red de agencias</span>
                 </h1>
                 
                 <p className="text-xl text-gray-600 leading-relaxed text-center">
@@ -248,7 +248,7 @@ export default function RegistroConcesionario() {
                     <Building className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Red de +50 concesionarios</h3>
+                    <h3 className="font-semibold text-gray-900 mb-1">Red de +50 agencias</h3>
                     <p className="text-gray-600 text-sm">Forma parte de nuestra comunidad de socios</p>
                   </div>
                 </div>
@@ -304,7 +304,7 @@ export default function RegistroConcesionario() {
                   <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
                     <Building className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-3xl font-bold text-white mb-2">Información del Concesionario</h2>
+                  <h2 className="text-3xl font-bold text-white mb-2">Información de la Agencia</h2>
                   <p className="text-brand-primary-100 text-lg">Completá todos los campos para procesar tu solicitud</p>
                 </div>
               </div>
@@ -403,13 +403,13 @@ export default function RegistroConcesionario() {
                   </div>
                 </div>
 
-                {/* Sección: Datos del Concesionario */}
+                {/* Sección: Datos de la Agencia */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
                     <div className="w-8 h-8 bg-brand-primary-600 rounded-full flex items-center justify-center shadow-sm">
                       <Building className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900">Datos del Concesionario</h3>
+                    <h3 className="text-xl font-semibold text-gray-900">Datos de la Agencia</h3>
                   </div>
 
                   <div>
@@ -537,7 +537,7 @@ export default function RegistroConcesionario() {
                   ) : (
                     <>
                       <Building className="w-5 h-5" />
-                      Registrar Concesionario
+                      Registrar Agencia
                     </>
                   )}
                 </button>
