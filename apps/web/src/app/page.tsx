@@ -4,33 +4,69 @@ import ContactForm from "@/components/landing/ContactForm";
 
 export default function Home() {
   return (
-    <div id="top" className="min-h-screen bg-white overflow-x-hidden pt-20 md:pt-28">
+    <div id="top" className="min-h-screen bg-white overflow-x-hidden pt-16 lg:pt-18">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-8 lg:px-16 py-3 md:py-6 bg-white border-b border-gray-100 shadow-sm">
-        <div className="flex items-center">
-          <img
-            src="/recurso-15.svg"
-            alt="Crediexpress Automotor"
-            className="block h-auto w-[160px] md:w-[240px] lg:w-[320px]"
-          />
-        </div>
-        
-        {/* Mobile Navigation - Solo botón Agencias */}
-        <div className="flex md:hidden">
-          <Link href="/login" prefetch={false} className="text-white px-3 py-2 rounded-xl font-sans font-medium hover:opacity-90 transition-colors text-sm" style={{backgroundColor: '#1E2480'}}>
-            Agencias
-          </Link>
-        </div>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-lg shadow-gray-900/5">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 lg:h-18">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <img
+                src="/recurso-15.svg"
+                alt="Crediexpress Automotor"
+                className="h-8 lg:h-10 w-auto"
+              />
+            </div>
+            
+            {/* Mobile Navigation */}
+            <div className="flex md:hidden">
+              <Link 
+                href="/login" 
+                prefetch={false} 
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-md"
+              >
+                Ingreso al Portal
+              </Link>
+            </div>
 
-        {/* Desktop Navigation - Menú completo */}
-        <nav className="hidden md:flex items-center space-x-6 lg:space-x-12">
-          <a href="#top" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Inicio</a>
-          <a href="#quienes-somos" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Quienes somos</a>
-          <a href="#contacto" className="font-sans font-medium transition-colors hover:opacity-80" style={{color: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>Contacto</a>
-          <Link href="/login" prefetch={false} className="text-white px-3 lg:px-6 py-1.5 lg:py-3 rounded-xl lg:rounded-2xl font-sans font-medium hover:opacity-90 transition-colors" style={{backgroundColor: '#1E2480', fontSize: 'clamp(0.85rem, 2vw, 1.44rem)'}}>
-            Agencias
-          </Link>
-        </nav>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-1">
+              <a 
+                href="#top" 
+                className="px-3 py-2 text-sm lg:text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-all duration-200"
+              >
+                Inicio
+              </a>
+              <a 
+                href="#agencias-concesionarios" 
+                className="px-3 py-2 text-sm lg:text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-all duration-200"
+              >
+                Agencias
+              </a>
+              <a 
+                href="#quienes-somos" 
+                className="px-3 py-2 text-sm lg:text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-all duration-200"
+              >
+                Quienes somos
+              </a>
+              <a 
+                href="#contacto" 
+                className="px-3 py-2 text-sm lg:text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-all duration-200"
+              >
+                Contacto
+              </a>
+              <div className="ml-6">
+                <Link 
+                  href="/login" 
+                  prefetch={false} 
+                  className="inline-flex items-center px-4 lg:px-6 py-2 lg:py-2.5 text-sm lg:text-base font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Ingreso al Portal
+                </Link>
+              </div>
+            </nav>
+          </div>
+        </div>
       </header>
 
       {/* Hero Section */}
@@ -127,7 +163,7 @@ export default function Home() {
         }}
       >
         {/* Agencias & Concesionarios Section */}
-        <section className="py-16 md:py-20 lg:py-24">
+        <section id="agencias-concesionarios" className="scroll-mt-20 md:scroll-mt-24 lg:scroll-mt-32 py-16 md:py-20 lg:py-24">
           <div className="mx-auto px-4 md:px-6 lg:px-8 xl:px-12 w-full max-w-[1200px] lg:max-w-[1400px] xl:max-w-[1600px]">
             <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-y-8 lg:gap-y-10 gap-x-4 lg:gap-x-8">
               <div className="relative shrink-0 self-center order-2 lg:order-1">
@@ -266,7 +302,7 @@ export default function Home() {
         </section>
 
         {/* Contact Form */}
-        <section id="contacto" className="scroll-mt-20 md:scroll-mt-24 lg:scroll-mt-32 pt-12 md:pt-16 lg:pt-24 xl:pt-32 pb-12 md:pb-16 lg:pb-20">
+        <section id="contacto" className="scroll-mt-20 md:scroll-mt-24 lg:scroll-mt-32 pt-12 md:pt-16 lg:pt-24 xl:pt-32 pb-4 md:pb-6">
           <div className="container mx-auto px-4 md:px-6 lg:px-8">
             <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto">
               {/* Form */}
@@ -285,36 +321,134 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Redes y contacto */}
+        <section className="pt-4 md:pt-6 pb-8 md:pb-12">
+          <div className="container mx-auto px-4 md:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="font-sans font-bold text-2xl md:text-3xl" style={{ color: '#1E2480' }}>
+                  Conectá con nosotros
+                </h2>
+              </div>
+
+              <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
+                {/* Facebook */}
+                <a
+                  href="https://www.facebook.com/share/1DEAH1HJGX/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-200"
+                  aria-label="Facebook Crediexpress Automotor"
+                >
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                    </svg>
+                  </div>
+                  <span className="font-sans font-medium text-gray-700">Facebook</span>
+                </a>
+
+                {/* Instagram */}
+                <a
+                  href="https://www.instagram.com/crediexpress.automotor?igsh=MTZzbndsY3p1aXc2cw=="
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-200"
+                  aria-label="Instagram Crediexpress Automotor"
+                >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fd5949 0%, #d6249f 25%, #285AEB 50%)' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
+                  </div>
+                  <span className="font-sans font-medium text-gray-700">Instagram</span>
+                </a>
+
+                {/* LinkedIn */}
+                <a
+                  href="https://www.linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-200 opacity-60"
+                  aria-label="LinkedIn Crediexpress Automotor"
+                >
+                  <div className="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                      <path d="M20.45 20.45h-3.55v-5.54c0-1.32-.02-3.01-1.84-3.01-1.84 0-2.12 1.43-2.12 2.91v5.64h-3.55V9h3.41v1.56h.05c.48-.91 1.65-1.87 3.39-1.87 3.63 0 4.3 2.39 4.3 5.5v6.26z" />
+                      <path d="M5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z" />
+                    </svg>
+                  </div>
+                  <span className="font-sans font-medium text-gray-400">LinkedIn</span>
+                </a>
+
+                {/* WhatsApp */}
+                <a
+                  href="https://wa.me/5491180243948"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-200"
+                  aria-label="WhatsApp Crediexpress Automotor"
+                >
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                      <path d="M21 11.5a8.38 8.38 0 0 1-12.87 7L3 21l1.64-4.81A8.5 8.5 0 1 1 21 11.5z" />
+                    </svg>
+                  </div>
+                  <span className="font-sans font-medium text-gray-700">WhatsApp</span>
+                </a>
+
+                {/* Email */}
+                <a
+                  href="mailto:prendarios@centeroffice.com.ar"
+                  className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-200"
+                  aria-label="Email Crediexpress Automotor"
+                >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#1E2480' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                      <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                  </div>
+                  <span className="font-sans font-medium text-gray-700">Email</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       {/* Footer */}
-      <footer className="bg-white py-8 md:py-12 lg:py-16 border-t border-gray-100">
+      <footer className="bg-gray-50 py-6 border-t border-gray-200">
         <div className="container mx-auto px-4 md:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            {/* Footer Content */}
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 lg:gap-12">
+            {/* Main Footer Content */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               
-              {/* Logo Section */}
+              {/* Logo */}
               <div className="flex-shrink-0">
                 <img
                   src="/recurso-15.svg"
                   alt="Crediexpress Automotor"
-                  className="h-auto w-[200px] md:w-[240px] lg:w-[280px]"
+                  className="h-auto w-[160px] md:w-[180px]"
                 />
               </div>
 
               {/* Institutional Links */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 lg:gap-8">
+              <div className="flex items-center gap-4 md:gap-6">
                 <a 
                   href="https://www.bcra.gob.ar/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:opacity-80 transition-opacity"
+                  title="Banco Central de la República Argentina"
                 >
                   <img
                     src="/Banco Central.png"
-                    alt="Banco Central de la República Argentina"
-                    className="h-12 md:h-14 lg:h-16 w-auto"
+                    alt="BCRA"
+                    className="h-8 w-auto"
                   />
                 </a>
                 
@@ -323,11 +457,12 @@ export default function Home() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:opacity-80 transition-opacity"
+                  title="Protección de Datos Personales"
                 >
                   <img
                     src="/Base de datos.jpg"
-                    alt="Protección de Datos Personales"
-                    className="h-12 md:h-14 lg:h-16 w-auto"
+                    alt="Datos Personales"
+                    className="h-8 w-auto"
                   />
                 </a>
                 
@@ -336,11 +471,12 @@ export default function Home() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:opacity-80 transition-opacity"
+                  title="AFIP - Data Fiscal"
                 >
                   <img
                     src="/Data Fiscal.png"
-                    alt="AFIP - Data Fiscal"
-                    className="h-12 md:h-14 lg:h-16 w-auto"
+                    alt="AFIP"
+                    className="h-8 w-auto"
                   />
                 </a>
                 
@@ -349,20 +485,21 @@ export default function Home() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:opacity-80 transition-opacity"
+                  title="Usuarios Financieros"
                 >
                   <img
                     src="/usuarios financieros.jpg"
-                    alt="Usuarios Financieros - BCRA"
-                    className="h-12 md:h-14 lg:h-16 w-auto"
+                    alt="Usuarios Financieros"
+                    className="h-8 w-auto"
                   />
                 </a>
               </div>
             </div>
 
-            {/* Legal Text */}
-            <div className="mt-8 lg:mt-12 pt-6 lg:pt-8 border-t border-gray-200">
-              <p className="text-gray-600 text-xs md:text-sm lg:text-base leading-relaxed font-sans font-normal">
-                El período mínimo para la devolución de un préstamo es de 3 meses, siendo el máximo 60 meses. La TNA de un préstamo varía dependiendo del perfil crediticio del solicitante, siendo la mínima 50,0% y la máxima 120,0%. A su vez, la TEA mínima es de 62.14% siendo la máxima 177.10%. (CFT) con IVA: Mínimo: 75,19% - Máximo: 214.29% A modo de ejemplo Monto solicitado de $8.000.000 a 24 meses TNA (sin IVA): 50,0% - TEA (sin IVA): 62.14% - CFTEA (con IVA): 75.19% Cuota: $582.119,- Total a pagar: $13.970.856, -
+            {/* Legal Text - Compacted */}
+            <div className="mt-6 pt-4 border-t border-gray-300">
+              <p className="text-gray-500 text-xs leading-tight font-sans text-center">
+                TNA varía según perfil crediticio (min: 50%, máx: 120%). TEA (min: 62.14%, máx: 177.10%). CFT con IVA (min: 75.19%, máx: 214.29%). Plazos: 3-60 meses. Ejemplo: $8M a 24 meses, TNA 50%, cuota $582.119. © 2025 Crediexpress Automotor.
               </p>
             </div>
           </div>
