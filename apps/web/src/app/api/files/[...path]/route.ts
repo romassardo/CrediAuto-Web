@@ -104,7 +104,9 @@ export async function GET(request: Request, context: { params: Promise<{ path: s
       headers.set('Content-Disposition', `inline; filename="${filename}"`)
     }
 
-    return new Response(buf, { status: 200, headers })
+    // Convertir Buffer a ArrayBuffer exacto para BodyInit compatible
+    const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+    return new Response(ab, { status: 200, headers })
   } catch (err) {
     console.error('❌ Error sirviendo archivo:', err)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
