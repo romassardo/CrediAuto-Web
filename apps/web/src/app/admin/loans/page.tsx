@@ -156,6 +156,27 @@ export default function AdminLoansPage() {
     return null;
   };
 
+  // Construye una URL segura usando la nueva ruta de archivos.
+  // Prioriza storagePath (p.ej. "uploads/loan-docs/filename.pdf").
+  // Si solo hay url y comienza con "/uploads/", la transforma a "/api/files/uploads/...".
+  // Con download=true agrega Content-Disposition: attachment desde el backend.
+  const buildDocUrl = (doc: any, download: boolean = false): string => {
+    try {
+      const sp = typeof doc?.storagePath === 'string' ? doc.storagePath : null;
+      if (sp && sp.startsWith('uploads/')) {
+        return `/api/files/${sp}${download ? '?download=1' : ''}`;
+      }
+      const url = typeof doc?.url === 'string' ? doc.url : '';
+      if (url.startsWith('/uploads/')) {
+        return `/api/files/${url.slice(1)}${download ? '?download=1' : ''}`;
+      }
+      // Fallback: devolver la url original si no coincide el patrón
+      return download && url ? `${url}` : (url || '#');
+    } catch {
+      return '#';
+    }
+  };
+
   const handleOpenDetailsModal = async (app: AdminLoanApplication) => {
     setIsModalOpen(true);
     // Marcar observación del dealer/ejecutivo (reconsideración) como leída en este navegador
@@ -1089,7 +1110,7 @@ export default function AdminLoansPage() {
                             {doc.url && (
                               <>
                                 <button
-                                  onClick={() => window.open(doc.url, '_blank')}
+                                  onClick={() => window.open(buildDocUrl(doc), '_blank')}
                                   className="p-1.5 rounded-lg text-brand-primary-600 hover:bg-brand-primary-50 transition-colors"
                                   title="Ver documento"
                                 >
@@ -1098,7 +1119,7 @@ export default function AdminLoansPage() {
                                 <button
                                   onClick={() => {
                                     const link = document.createElement('a');
-                                    link.href = doc.url;
+                                    link.href = buildDocUrl(doc, true);
                                     link.download = doc.name || `documento-${index + 1}`;
                                     link.click();
                                   }}
@@ -1214,10 +1235,10 @@ export default function AdminLoansPage() {
                               <div className="flex items-center gap-1">
                                 {doc.url && (
                                   <>
-                                    <button onClick={() => window.open(doc.url, '_blank')} className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-100 transition-colors" title="Ver documento">
+                                    <button onClick={() => window.open(buildDocUrl(doc), '_blank')} className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-100 transition-colors" title="Ver documento">
                                       <ExternalLink className="w-4 h-4" />
                                     </button>
-                                    <button onClick={() => { const link = document.createElement('a'); link.href = doc.url; link.download = doc.name || `documento-recon-${index + 1}`; link.click(); }} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors" title="Descargar documento">
+                                    <button onClick={() => { const link = document.createElement('a'); link.href = buildDocUrl(doc, true); link.download = doc.name || `documento-recon-${index + 1}`; link.click(); }} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors" title="Descargar documento">
                                       <Download className="w-4 h-4" />
                                     </button>
                                   </>

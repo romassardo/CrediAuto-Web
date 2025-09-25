@@ -20,6 +20,10 @@ export default async function middleware(req: NextRequest) {
   if (path.startsWith('/uploads/')) {
     return NextResponse.next()
   }
+  // Excluir la nueva ruta de archivos para servir descargas/visualizaciones sin pasar por auth middleware
+  if (path.startsWith('/api/files/')) {
+    return NextResponse.next()
+  }
 
   // Verificar si es una ruta protegida
   const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route))
