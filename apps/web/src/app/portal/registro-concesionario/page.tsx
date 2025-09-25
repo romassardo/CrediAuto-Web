@@ -217,7 +217,7 @@ export default function RegistroConcesionario() {
                 <p className="text-xl text-gray-600 leading-relaxed text-center">
                 Accedé a herramientas exclusivas que hacen que la gestión de créditos prendarios sea más simple, ágil y transparente. 
                 <br />
-                Sumate a una red que impulsa tu concesionaria todos los días.
+                Sumate a una red que impulsa tu agencia todos los días.
                 </p>
               </div>
 
@@ -254,7 +254,7 @@ export default function RegistroConcesionario() {
                 </div>
               </div>
 
-              {/* Mockup Portal Concesionarios */}
+              {/* Mockup Portal Agencias */}
               <div className="relative hidden lg:block">
                 <div className="absolute inset-0 bg-gradient-to-r from-brand-primary-600/10 to-brand-accent-500/10 rounded-2xl blur-xl"></div>
                 <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl">
