@@ -101,7 +101,6 @@ export async function GET(request: Request, context: { params: Promise<{ path: s
 
     // Permitir sugerir nombre original via ?name=...
     const requestedName = url.searchParams.get('name') || url.searchParams.get('filename') || ''
-    const ext = path.extname(fullPath)
 
     function stripPath(input: string) {
       return input.replace(/[\\/]/g, '')

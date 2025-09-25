@@ -145,11 +145,12 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
   const buildDocUrl = (doc: any, download: boolean = false): string => {
     try {
       const sp = typeof doc?.storagePath === 'string' ? doc.storagePath : null;
-      const name = typeof doc?.name === 'string' && doc.name.trim() ? doc.name.trim() : '';
+      const candName = (doc && (doc.name || doc.originalName || doc.filename || doc.fileName)) || '';
+      const name = typeof candName === 'string' && candName.trim() ? candName.trim() : '';
       const makeWithQuery = (base: string) => {
         const qs: string[] = [];
         if (download) qs.push('download=1');
-        if (download && name) qs.push(`name=${encodeURIComponent(name)}`);
+        if (name) qs.push(`name=${encodeURIComponent(name)}`);
         return qs.length ? `${base}?${qs.join('&')}` : base;
       };
       if (sp && sp.startsWith('uploads/')) {
