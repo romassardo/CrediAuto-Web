@@ -145,15 +145,22 @@ const LoanApplicationModal: React.FC<LoanApplicationModalProps> = ({ application
   const buildDocUrl = (doc: any, download: boolean = false): string => {
     try {
       const sp = typeof doc?.storagePath === 'string' ? doc.storagePath : null;
+      const name = typeof doc?.name === 'string' && doc.name.trim() ? doc.name.trim() : '';
+      const makeWithQuery = (base: string) => {
+        const qs: string[] = [];
+        if (download) qs.push('download=1');
+        if (download && name) qs.push(`name=${encodeURIComponent(name)}`);
+        return qs.length ? `${base}?${qs.join('&')}` : base;
+      };
       if (sp && sp.startsWith('uploads/')) {
-        return `/api/files/${sp}${download ? '?download=1' : ''}`;
+        return makeWithQuery(`/api/files/${sp}`);
       }
       const url = typeof doc?.url === 'string' ? doc.url : '';
       if (url.startsWith('/uploads/')) {
-        return `/api/files/${url.slice(1)}${download ? '?download=1' : ''}`;
+        return makeWithQuery(`/api/files/${url.slice(1)}`);
       }
       // Fallback: devolver la url original si no coincide el patrón
-      return download && url ? `${url}` : (url || '#');
+      return download && url ? makeWithQuery(url) : (url || '#');
     } catch {
       return '#';
     }

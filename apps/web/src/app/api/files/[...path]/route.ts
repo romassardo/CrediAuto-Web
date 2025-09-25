@@ -97,11 +97,36 @@ export async function GET(request: Request, context: { params: Promise<{ path: s
     headers.set('Content-Length', String(buf.length))
     headers.set('Cache-Control', 'public, max-age=3600, must-revalidate')
 
-    const filename = path.basename(fullPath)
-    if (download) {
-      headers.set('Content-Disposition', `attachment; filename="${filename}"`)
+    const filenameStored = path.basename(fullPath)
+
+    // Permitir sugerir nombre original via ?name=...
+    const requestedName = url.searchParams.get('name') || url.searchParams.get('filename') || ''
+    const ext = path.extname(fullPath)
+
+    function stripPath(input: string) {
+      return input.replace(/[\\/]/g, '')
+    }
+    function ensureExt(name: string, ext: string) {
+      const lower = name.toLowerCase()
+      const lowerExt = ext.toLowerCase()
+      if (lower.endsWith(lowerExt)) return name
+      // quita extensión existente breve para evitar duplicados
+      const base = name.replace(/\.[^.\s]{1,10}$/,'')
+      return base + ext
+    }
+    function sanitizeAscii(name: string) {
+      const ascii = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      return ascii.replace(/[^A-Za-z0-9._\-\s]/g,'-').replace(/\s+/g,' ').trim() || 'archivo'
+    }
+
+    let downloadName = filenameStored
+    if (requestedName) {
+      const unicodeName = ensureExt(stripPath(requestedName), ext)
+      const asciiName = sanitizeAscii(unicodeName)
+      // RFC 5987 con fallback ASCII
+      headers.set('Content-Disposition', `${download ? 'attachment' : 'inline'}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(unicodeName)}`)
     } else {
-      headers.set('Content-Disposition', `inline; filename="${filename}"`)
+      headers.set('Content-Disposition', `${download ? 'attachment' : 'inline'}; filename="${downloadName}"`)
     }
 
     // Usar Uint8Array (ArrayBufferView) compatible con BodyInit
