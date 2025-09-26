@@ -124,28 +124,28 @@ export default function Home() {
           </p>
 
           {/* SVG Icons */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-2 lg:gap-0 w-full mx-auto max-w-[1200px] lg:max-w-[1400px]">
-            <div className="flex justify-center items-center">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-2 lg:gap-0 w-full mx-auto max-w-[1200px] lg:max-w-[1400px] items-stretch">
+            <div className="flex justify-center items-center flex-1 h-[280px] md:h-[300px] lg:h-[340px] xl:h-[380px]">
               <img
                 src="/Recurso 17.svg"
                 alt="Hasta el 70% del valor"
-                className="w-full max-w-[280px] md:max-w-[320px] lg:max-w-[380px] xl:max-w-[450px] h-auto drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
+                className="h-full w-auto max-w-[450px] drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
               />
             </div>
             
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center flex-1 h-[280px] md:h-[300px] lg:h-[340px] xl:h-[380px]">
               <img
                 src="/Recurso 18.svg"
                 alt="Hasta 60 cuotas"
-                className="w-full max-w-[280px] md:max-w-[320px] lg:max-w-[380px] xl:max-w-[450px] h-auto drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
+                className="h-full w-auto max-w-[450px] drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
               />
             </div>
             
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center flex-1 h-[280px] md:h-[300px] lg:h-[340px] xl:h-[380px]">
               <img
                 src="/Recurso 19.svg"
                 alt="0KM hasta 15 años"
-                className="w-full max-w-[280px] md:max-w-[320px] lg:max-w-[380px] xl:max-w-[450px] h-auto drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
+                className="h-full w-auto max-w-[450px] drop-shadow-[0_15px_30px_rgba(0,0,0,0.25)]"
               />
             </div>
           </div>
